@@ -1,0 +1,19 @@
+
+# Ignore PowerPoint presentations
+*.pptx
+
+# Ignore Excel spreadsheets
+*.xlsx
+
+# Ignore PDFs
+*.pdf
+
+# Ignore images 
+*.jpg
+*.png   
+*.svg
+
+#Do not ignore images inside FrontEnd File
+!FrontEnd/**/*.jpg
+!FrontEnd/**/*.png
+!FrontEnd/**/*.svg
