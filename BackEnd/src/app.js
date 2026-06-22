@@ -150,10 +150,20 @@ app.post('/api/auth/register', async (req, res) => {
   const fullName = String(req.body.fullName || '').trim();
   const email = String(req.body.email || '').trim().toLowerCase();
   const phone = String(req.body.phone || '').trim();
+  const role = String(req.body.role || 'donor').trim().toLowerCase();
+  const address = String(req.body.address || '').trim() || null;
   const bloodGroup = String(req.body.bloodGroup || '').trim() || null;
   const password = String(req.body.password || '');
   const city = String(req.body.city || '').trim() || null;
   const district = String(req.body.district || '').trim() || null;
+  const totalDonations = Number.parseInt(req.body.totalDonations, 10);
+  const profileImageName = String(req.body.profileImageName || '').trim() || null;
+  const profileImageData = String(req.body.profileImageData || '').trim() || null;
+  const orgName = String(req.body.orgName || '').trim() || null;
+  const orgDocumentsName = String(req.body.orgDocumentsName || '').trim() || null;
+  const orgDocumentsData = String(req.body.orgDocumentsData || '').trim() || null;
+  const orgPhotoName = String(req.body.orgPhotoName || '').trim() || null;
+  const orgPhotoData = String(req.body.orgPhotoData || '').trim() || null;
 
   if (!fullName || !email || !password) {
     return res.status(400).json({ message: 'Full name, email, and password are required.' });
@@ -163,6 +173,10 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(400).json({ message: 'Password must be at least 6 characters.' });
   }
 
+  if (!['donor', 'org'].includes(role)) {
+    return res.status(400).json({ message: 'Only donor and organization accounts can be registered here.' });
+  }
+
   try {
     const existingUsers = await query('SELECT user_id FROM users WHERE email = ? LIMIT 1', [email]);
     if (existingUsers.length > 0) {
@@ -170,25 +184,80 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const passwordHash = createPasswordHash(password);
+
+    if (role === 'donor') {
+      if (!profileImageData || !profileImageName) {
+        return res.status(400).json({ message: 'Profile picture is required for donor registration.' });
+      }
+
+      const insertUser = await query(
+        `INSERT INTO users (full_name, email, password_hash, phone, role, address, city, district, profile_image_name, profile_image_data)
+         VALUES (?, ?, ?, ?, 'donor', ?, ?, ?, ?, ?)`,
+        [fullName, email, passwordHash, phone || null, address, city, district, profileImageName, profileImageData]
+      );
+
+      await query(
+        `INSERT INTO donor_profiles (user_id, blood_group, is_available, total_donations, profile_picture, profile_picture_name)
+         VALUES (?, ?, TRUE, 0, ?, ?)`,
+        [insertUser.insertId, bloodGroup, profileImageData, profileImageName]
+      );
+
+      if (!Number.isNaN(totalDonations) && totalDonations > 0) {
+        await query(
+          'UPDATE donor_profiles SET total_donations = ? WHERE user_id = ?',
+          [totalDonations, insertUser.insertId]
+        );
+      }
+
+      return res.status(201).json({
+        message: 'Account created successfully.',
+        user: {
+          userId: insertUser.insertId,
+          fullName,
+          email,
+          phone: phone || null,
+          address,
+          role: 'donor',
+          city,
+          district,
+          profileImageName,
+          profileImageData,
+        },
+      });
+    }
+
+    if (!orgName || !address || !orgDocumentsData || !orgDocumentsName || !orgPhotoData || !orgPhotoName) {
+      return res.status(400).json({ message: 'Organization name, address, documents, and photo are required.' });
+    }
+
     const insertUser = await query(
-      `INSERT INTO users (full_name, email, password_hash, phone, role, city, district)
-       VALUES (?, ?, ?, ?, 'donor', ?, ?)`,
-      [fullName, email, passwordHash, phone || null, city, district]
+      `INSERT INTO users (full_name, email, password_hash, phone, role, address, city, district)
+       VALUES (?, ?, ?, ?, 'org', ?, ?, ?)`,
+      [orgName, email, passwordHash, phone || null, address, city, district]
     );
 
     await query(
-      `INSERT INTO donor_profiles (user_id, blood_group, is_available, total_donations)
-       VALUES (?, ?, TRUE, 0)`,
-      [insertUser.insertId, bloodGroup]
+      `INSERT INTO organizations (user_id, org_name, org_type, address, contact, verification_documents, verification_documents_name, building_photo, building_photo_name, verified)
+       VALUES (?, ?, 'ngo', ?, ?, ?, ?, ?, ?, FALSE)`,
+      [insertUser.insertId, orgName, address, phone || null, orgDocumentsData, orgDocumentsName, orgPhotoData, orgPhotoName]
     );
 
-    res.status(201).json({
-      message: 'Account created successfully.',
+    return res.status(201).json({
+      message: 'Verified Successfully.',
       user: {
         userId: insertUser.insertId,
-        fullName,
+        fullName: orgName,
         email,
-        role: 'donor',
+        phone: phone || null,
+        address,
+        role: 'org',
+        city,
+        district,
+        orgName,
+        orgDocumentsName,
+        orgDocumentsData,
+        orgPhotoName,
+        orgPhotoData,
       },
     });
   } catch (error) {
@@ -228,8 +297,176 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.get('/api/me', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email query parameter is required.' });
+  }
+
+  try {
+    const rows = await query(
+      `SELECT u.user_id, u.full_name, u.email, u.phone, u.address, u.role, u.city, u.district, u.profile_image_name, u.profile_image_data, u.created_at,
+              d.donor_id, d.blood_group, d.is_available, d.last_donated_at, d.total_donations, d.profile_picture, d.profile_picture_name,
+              o.org_id, o.org_name, o.org_type, o.address AS org_address, o.contact, o.verification_documents_name, o.building_photo_name, o.verified
+       FROM users u
+       LEFT JOIN donor_profiles d ON d.user_id = u.user_id
+       LEFT JOIN organizations o ON o.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const row = rows[0];
+    res.json({
+      user: {
+        userId: row.user_id,
+        fullName: row.full_name,
+        email: row.email,
+        phone: row.phone,
+        address: row.address,
+        role: row.role,
+        city: row.city,
+        district: row.district,
+        profileImageName: row.profile_image_name,
+        profileImageData: row.profile_image_data,
+        createdAt: row.created_at,
+        donorProfile: row.donor_id ? {
+          donorId: row.donor_id,
+          bloodGroup: row.blood_group,
+          isAvailable: Boolean(row.is_available),
+          lastDonatedAt: row.last_donated_at,
+          totalDonations: row.total_donations,
+          profilePicture: row.profile_picture,
+          profilePictureName: row.profile_picture_name,
+        } : null,
+        organization: row.org_id ? {
+          orgId: row.org_id,
+          orgName: row.org_name,
+          orgType: row.org_type,
+          address: row.org_address || row.address,
+          contact: row.contact,
+          verificationDocumentsName: row.verification_documents_name,
+          buildingPhotoName: row.building_photo_name,
+          verified: Boolean(row.verified),
+        } : null,
+      },
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.put('/api/me', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const fullName = String(req.body.fullName || '').trim();
+  const phone = String(req.body.phone || '').trim() || null;
+  const address = String(req.body.address || '').trim() || null;
+  const city = String(req.body.city || '').trim() || null;
+  const district = String(req.body.district || '').trim() || null;
+  const bloodGroup = String(req.body.bloodGroup || '').trim() || null;
+  const isAvailable = req.body.isAvailable;
+  const profileImageName = String(req.body.profileImageName || '').trim() || null;
+  const profileImageData = String(req.body.profileImageData || '').trim() || null;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required.' });
+  }
+
+  try {
+    const rows = await query(
+      `SELECT u.user_id, u.full_name, u.email, u.phone, u.address, u.role, u.city, u.district, u.profile_image_name, u.profile_image_data,
+              d.donor_id, d.blood_group, d.is_available, d.last_donated_at, d.total_donations, d.profile_picture, d.profile_picture_name,
+              o.org_id, o.org_name, o.org_type, o.address AS org_address, o.contact, o.verification_documents_name, o.building_photo_name, o.verified
+       FROM users u
+       LEFT JOIN donor_profiles d ON d.user_id = u.user_id
+       LEFT JOIN organizations o ON o.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const user = rows[0];
+
+    await query(
+      'UPDATE users SET full_name = ?, phone = ?, address = ?, city = ?, district = ?, profile_image_name = COALESCE(?, profile_image_name), profile_image_data = COALESCE(?, profile_image_data) WHERE user_id = ?',
+      [fullName || user.full_name, phone, address, city, district, profileImageName, profileImageData, user.user_id]
+    );
+
+    if (user.donor_id) {
+      const availabilityValue = isAvailable === undefined || isAvailable === null
+        ? user.is_available
+        : Boolean(isAvailable);
+
+      await query(
+        'UPDATE donor_profiles SET blood_group = ?, is_available = ?, profile_picture = COALESCE(?, profile_picture), profile_picture_name = COALESCE(?, profile_picture_name) WHERE user_id = ?',
+        [bloodGroup || user.blood_group, availabilityValue ? 1 : 0, profileImageData, profileImageName, user.user_id]
+      );
+    }
+
+    const updatedRows = await query(
+            `SELECT u.user_id, u.full_name, u.email, u.phone, u.address, u.role, u.city, u.district, u.profile_image_name, u.profile_image_data, u.created_at,
+              d.donor_id, d.blood_group, d.is_available, d.last_donated_at, d.total_donations, d.profile_picture, d.profile_picture_name,
+              o.org_id, o.org_name, o.org_type, o.address AS org_address, o.contact, o.verification_documents_name, o.building_photo_name, o.verified
+       FROM users u
+       LEFT JOIN donor_profiles d ON d.user_id = u.user_id
+       LEFT JOIN organizations o ON o.user_id = u.user_id
+       WHERE u.user_id = ?
+       LIMIT 1`,
+      [user.user_id]
+    );
+
+    const updated = updatedRows[0];
+    res.json({
+      message: 'Profile updated successfully.',
+      user: {
+        userId: updated.user_id,
+        fullName: updated.full_name,
+        email: updated.email,
+        phone: updated.phone,
+        address: updated.address,
+        role: updated.role,
+        city: updated.city,
+        district: updated.district,
+        profileImageName: updated.profile_image_name,
+        profileImageData: updated.profile_image_data,
+        createdAt: updated.created_at,
+        donorProfile: updated.donor_id ? {
+          donorId: updated.donor_id,
+          bloodGroup: updated.blood_group,
+          isAvailable: Boolean(updated.is_available),
+          lastDonatedAt: updated.last_donated_at,
+          totalDonations: updated.total_donations,
+          profilePicture: updated.profile_picture,
+          profilePictureName: updated.profile_picture_name,
+        } : null,
+        organization: updated.org_id ? {
+          orgId: updated.org_id,
+          orgName: updated.org_name,
+          orgType: updated.org_type,
+          address: updated.org_address || updated.address,
+          contact: updated.contact,
+          verificationDocumentsName: updated.verification_documents_name,
+          buildingPhotoName: updated.building_photo_name,
+          verified: Boolean(updated.verified),
+        } : null,
+      },
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(frontendDir, 'index.html'));
+  res.sendFile(path.join(frontendDir, 'register.html'));
 });
 
 app.use((req, res) => {

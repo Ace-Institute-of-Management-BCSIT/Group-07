@@ -28,6 +28,62 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
 .btn-ghost:hover{background:#f0f0f0}
 .btn-red{background:var(--red);color:var(--white);border:none;font:600 .9rem var(--ff-body);padding:9px 22px;border-radius:6px;cursor:pointer;transition:background .2s}
 .btn-red:hover{background:var(--red-dark)}
+.nav-auth{position:relative;display:flex;align-items:center}
+.profile-shell{position:relative;min-width:248px}
+.profile-trigger{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s}
+.profile-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
+.profile-trigger-left{display:flex;align-items:center;gap:10px;min-width:0}
+.profile-initial{width:30px;height:30px;border-radius:50%;background:var(--red);color:var(--white);display:inline-flex;align-items:center;justify-content:center;font:700 .95rem var(--ff-body);flex-shrink:0}
+.profile-avatar-photo{width:30px;height:30px;border-radius:50%;background-size:cover;background-position:center;background-repeat:no-repeat;flex-shrink:0;border:1px solid rgba(255,255,255,.6)}
+.profile-name{font:600 .92rem var(--ff-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profile-arrow{display:inline-flex;align-items:center;justify-content:center;color:var(--mid);transition:transform .2s}
+.profile-shell.open .profile-arrow{transform:rotate(180deg)}
+.profile-menu{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.12);padding:6px;display:none;z-index:120}
+.profile-menu.open{display:block}
+.profile-menu button{width:100%;border:none;background:none;border-radius:10px;padding:11px 12px;text-align:left;font:500 .9rem var(--ff-body);color:var(--ink);cursor:pointer;transition:background .2s}
+.profile-menu button:hover{background:#f7f7f7}
+.profile-menu .menu-sep{height:1px;background:var(--border);margin:6px 0}
+.profile-badge-name{display:none}
+
+.register-shell{position:relative;min-width:248px}
+.register-trigger{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s}
+.register-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
+.register-trigger-left{display:flex;align-items:center;gap:10px;min-width:0}
+.register-trigger-label{font:600 .92rem var(--ff-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.register-menu{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.12);padding:6px;display:none;z-index:120}
+.register-menu.open{display:block}
+.register-menu button{width:100%;border:none;background:none;border-radius:10px;padding:11px 12px;text-align:left;font:500 .9rem var(--ff-body);color:var(--ink);cursor:pointer;transition:background .2s}
+.register-menu button:hover{background:#f7f7f7}
+.register-menu .menu-sep{height:1px;background:var(--border);margin:6px 0}
+
+.profile-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+.profile-backdrop.open{display:flex}
+.profile-card{width:100%;max-width:560px;max-height:calc(100vh - 40px);background:var(--white);border-radius:22px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+.profile-card-header{padding:24px 24px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+.profile-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red-dark));color:var(--white);display:flex;align-items:center;justify-content:center;font:700 1.4rem var(--ff-body);box-shadow:0 12px 22px rgba(214,43,43,.25)}
+.profile-avatar-photo-large{width:64px;height:64px;border-radius:50%;background-size:cover;background-position:center;background-repeat:no-repeat;box-shadow:0 12px 22px rgba(214,43,43,.25);border:2px solid rgba(255,255,255,.7)}
+.profile-title h3{font-family:var(--ff-head);font-size:1.5rem;line-height:1.1;margin-bottom:4px}
+.profile-title p{color:var(--mid);font-size:.88rem}
+.profile-card-body{padding:24px;overflow:auto;flex:1}
+.profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.profile-item{background:#fafafa;border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.profile-item span{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:6px}
+.profile-item strong{font-size:.95rem;color:var(--ink);word-break:break-word}
+.profile-card-actions{padding:0 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
+.profile-actions-left,.profile-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:.78rem;font-weight:600;background:#fdecea;color:var(--red)}
+
+@media (max-width: 720px){
+  nav{padding:0 18px}
+  .nav-links{display:none}
+  .profile-badge-name{display:none}
+  .hero{grid-template-columns:1fr;padding:56px 18px 48px}
+  .section{padding:56px 18px}
+  .events-grid{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
+  .profile-card-header{align-items:flex-start}
+}
 
 /* ── HERO ── */
 .hero{background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);padding:72px 48px 64px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
@@ -117,11 +173,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
     </a>
   </div>
   <div class="nav-right">
-    <button class="btn-ghost" onclick="location.href='login.html'">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Login
-    </button>
-    <button class="btn-red" onclick="location.href='register.html'">Donate Now</button>
+    <div class="nav-auth" id="navAuth"></div>
   </div>
 </nav>
 
@@ -197,7 +249,6 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
       </a>
       <p>Connecting donors across Kathmandu Valley with those in need through technology and compassion. Every donation saves lives.</p>
       <div class="footer-btns">
-        <button class="btn-red" onclick="location.href='register.html'">Donate Now</button>
         <button class="btn-ghost">Learn More</button>
       </div>
     </div>
@@ -234,7 +285,34 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
   </div>
 </footer>
 
+<div class="profile-backdrop" id="profileBackdrop" aria-hidden="true">
+  <div class="profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+    <div class="profile-card-header">
+      <div id="profileAvatarLarge">${getAvatarMarkup(user, true)}</div>
+      <div class="profile-title">
+        <h3 id="profileTitle">My Profile</h3>
+        <p id="profileSubtitle">Signed-in account details</p>
+      </div>
+    </div>
+    <div class="profile-card-body">
+      <div class="profile-grid" id="profileGrid"></div>
+    </div>
+    <div class="profile-card-actions">
+      <div class="profile-actions-left">
+        <button class="btn-ghost" type="button" onclick="closeProfileModal()">Close</button>
+      </div>
+      <div class="profile-actions-right">
+        <button class="btn-ghost" type="button" id="profileEditButton" onclick="toggleProfileEditMode()">Edit</button>
+        <button class="btn-red" type="button" id="profileSaveButton" onclick="saveProfileChanges()" style="display:none">Save</button>
+        <button class="btn-ghost" type="button" id="profileCancelButton" onclick="cancelProfileEdit()" style="display:none">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+const AUTH_STORAGE_KEY='saveabeatUser';
+
 let EVENTS = [
   {title:"Bir Hospital Blood Drive",org:"Organized by Bir Hospital Foundation",date:"2025-09-15",time:"9:00 AM – 5:00 PM",location:"Bir Hospital",dist:"2.3km away",spots:45,total:100,type:"Drive",
    img:"https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&auto=format&fit=crop&q=70"},
@@ -247,6 +325,414 @@ let EVENTS = [
 ];
 
 function badgeClass(t){return t==="Drive"?"badge-drive":t==="Camp"?"badge-camp":"badge-emergency"}
+
+function getStoredUser(){
+  try{
+    return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+  }catch(error){
+    return null;
+  }
+}
+
+function saveStoredUser(user){
+  sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+}
+
+function clearStoredUser(){
+  sessionStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+function getInitial(name){
+  const source = String(name || 'U').trim();
+  return source ? source.charAt(0).toUpperCase() : 'U';
+}
+
+function formatProfileValue(value, fallback='Not provided'){
+  if(value === null || value === undefined || value === ''){
+    return fallback;
+  }
+  return value;
+}
+
+function getAvatarData(user){
+  return user?.profileImageData || user?.donorProfile?.profilePicture || null;
+}
+
+function getAvatarMarkup(user, isLarge = false){
+  const avatarData = getAvatarData(user);
+  const initials = getInitial(user?.fullName || user?.email || 'U');
+  if(avatarData){
+    return `<span class="${isLarge ? 'profile-avatar-photo-large' : 'profile-avatar-photo'}" style="background-image:url('${avatarData}')"></span>`;
+  }
+  return `<span class="profile-initial"${isLarge ? ' style="width:64px;height:64px;font-size:1.4rem;"' : ''}>${initials}</span>`;
+}
+
+function renderAuthArea(user){
+  const host=document.getElementById('navAuth');
+  if(!host){
+    return;
+  }
+
+  if(!user){
+    host.innerHTML=`
+      <div class="register-shell" id="registerShell">
+        <button class="register-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleRegisterMenu()">
+          <span class="register-trigger-left">
+            <span class="register-trigger-label">Register Now</span>
+          </span>
+          <span class="profile-arrow" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="register-menu" id="registerMenu" role="menu" aria-label="Register options">
+          <button type="button" role="menuitem" onclick="location.href='login.html?role=admin'">Admin Login</button>
+          <div class="menu-sep"></div>
+          <button type="button" role="menuitem" onclick="location.href='register.html?role=org'">Organization Register</button>
+          <button type="button" role="menuitem" onclick="location.href='register.html?role=donor'">Donor Register</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  host.innerHTML=`
+    <div class="profile-shell" id="profileShell">
+      <button class="profile-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleProfileMenu()">
+        <span class="profile-trigger-left">
+          ${getAvatarMarkup(user)}
+          <span class="profile-name">${user.fullName || 'My Profile'}</span>
+        </span>
+        <span class="profile-arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </button>
+    <div class="profile-menu" id="profileMenu" role="menu" aria-label="Account menu">
+      <button type="button" role="menuitem" onclick="openProfileModal()">My Profile</button>
+      <div class="menu-sep"></div>
+      <button type="button" role="menuitem" onclick="handleLogout()">Logout</button>
+    </div>
+    </div>
+  `;
+}
+
+function toggleProfileMenu(){
+  const menu=document.getElementById('profileMenu');
+  const shell=document.getElementById('profileShell');
+  if(!menu){
+    return;
+  }
+  menu.classList.toggle('open');
+  shell?.classList.toggle('open', menu.classList.contains('open'));
+}
+
+function closeProfileMenu(){
+  const menu=document.getElementById('profileMenu');
+  const shell=document.getElementById('profileShell');
+  if(menu){
+    menu.classList.remove('open');
+  }
+  shell?.classList.remove('open');
+}
+
+function toggleRegisterMenu(){
+  const menu=document.getElementById('registerMenu');
+  const shell=document.getElementById('registerShell');
+  if(!menu){
+    return;
+  }
+  menu.classList.toggle('open');
+  shell?.classList.toggle('open', menu.classList.contains('open'));
+}
+
+function closeRegisterMenu(){
+  const menu=document.getElementById('registerMenu');
+  const shell=document.getElementById('registerShell');
+  if(menu){
+    menu.classList.remove('open');
+  }
+  shell?.classList.remove('open');
+}
+
+let profileDraft = null;
+let profileEditing = false;
+
+function getProfileFieldValue(user, field){
+  const donorProfile = user.donorProfile || {};
+  const sourceMap = {
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    city: user.city,
+    district: user.district,
+    bloodGroup: donorProfile.bloodGroup,
+    isAvailable: donorProfile.isAvailable,
+  };
+  return sourceMap[field];
+}
+
+function profileFieldMarkup(field, label, value, inputType = 'text', options = []){
+  if(profileEditing && field !== 'email'){
+    if(field === 'profilePicture'){
+      return `
+        <div class="profile-item">
+          <span>${label}</span>
+          <strong><input data-profile-field="${field}" type="file" accept="image/*" class="file-input"></strong>
+          <div class="field-note">Upload a new photo to replace your profile icon.</div>
+        </div>
+      `;
+    }
+
+    if(field === 'bloodGroup'){
+      return `
+        <div class="profile-item">
+          <span>${label}</span>
+          <strong><select data-profile-field="${field}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body)">
+            <option value="">Not provided</option>
+            ${options.map((option) => `<option value="${option}" ${option === value ? 'selected' : ''}>${option}</option>`).join('')}
+          </select></strong>
+        </div>
+      `;
+    }
+
+    if(field === 'isAvailable'){
+      return `
+        <div class="profile-item">
+          <span>${label}</span>
+          <strong><select data-profile-field="${field}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body)">
+            <option value="true" ${value ? 'selected' : ''}>Available</option>
+            <option value="false" ${!value ? 'selected' : ''}>Unavailable</option>
+          </select></strong>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="profile-item">
+        <span>${label}</span>
+        <strong><input data-profile-field="${field}" type="${inputType}" value="${value ?? ''}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body)"></strong>
+      </div>
+    `;
+  }
+
+  if(field === 'isAvailable'){
+    return `
+      <div class="profile-item">
+        <span>${label}</span>
+        <strong>${value ? 'Available' : 'Unavailable'}</strong>
+      </div>
+    `;
+  }
+
+  if(field === 'profilePicture'){
+    return `
+      <div class="profile-item">
+        <span>${label}</span>
+        <strong>${value ? 'Photo uploaded' : 'No photo uploaded'}</strong>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="profile-item">
+      <span>${label}</span>
+      <strong>${formatProfileValue(value)}</strong>
+    </div>
+  `;
+}
+
+function buildProfileRows(user){
+  const donorProfile = user.donorProfile || {};
+  const organization = user.organization || {};
+
+  return [
+    { field: 'fullName', label: 'Full Name', value: user.fullName },
+    { field: 'email', label: 'Email', value: user.email },
+    { field: 'phone', label: 'Phone', value: user.phone },
+    { field: 'role', label: 'Role', value: user.role },
+    { field: 'profilePicture', label: 'Profile Picture', value: getAvatarData(user) },
+    { field: 'bloodGroup', label: 'Blood Group', value: donorProfile.bloodGroup, options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
+    { field: 'isAvailable', label: 'Availability', value: donorProfile.isAvailable },
+    { field: 'city', label: 'City', value: user.city },
+    { field: 'district', label: 'District', value: user.district },
+    { field: 'totalDonations', label: 'Total Donations', value: donorProfile.totalDonations },
+    { field: 'organization', label: 'Organization', value: organization.orgName },
+    { field: 'organizationType', label: 'Organization Type', value: organization.orgType },
+    { field: 'address', label: 'Address', value: organization.address },
+  ];
+}
+
+function openProfileModal(){
+  const user = getStoredUser();
+  if(!user){
+    return;
+  }
+
+  const backdrop=document.getElementById('profileBackdrop');
+  const grid=document.getElementById('profileGrid');
+  const avatar=document.getElementById('profileAvatarLarge');
+  const title=document.getElementById('profileTitle');
+  const subtitle=document.getElementById('profileSubtitle');
+
+  if(!backdrop || !grid || !avatar || !title || !subtitle){
+    return;
+  }
+
+  avatar.innerHTML=getAvatarMarkup(user, true);
+  title.textContent=user.fullName || 'My Profile';
+  subtitle.textContent=user.email || 'Signed-in account details';
+
+  const rows = buildProfileRows(user);
+  grid.innerHTML = rows.map((row) => profileFieldMarkup(row.field, row.label, getProfileFieldValue(user, row.field), 'text', row.options || [])).join('');
+
+  backdrop.classList.add('open');
+  backdrop.setAttribute('aria-hidden', 'false');
+  closeProfileMenu();
+  profileEditing = false;
+  profileDraft = null;
+  updateProfileEditControls();
+}
+
+function closeProfileModal(){
+  const backdrop=document.getElementById('profileBackdrop');
+  if(!backdrop){
+    return;
+  }
+  backdrop.classList.remove('open');
+  backdrop.setAttribute('aria-hidden', 'true');
+  profileEditing = false;
+  profileDraft = null;
+  updateProfileEditControls();
+}
+
+function handleLogout(){
+  clearStoredUser();
+  closeProfileMenu();
+  closeProfileModal();
+  renderAuthArea(null);
+}
+
+function updateProfileEditControls(){
+  const editButton=document.getElementById('profileEditButton');
+  const saveButton=document.getElementById('profileSaveButton');
+  const cancelButton=document.getElementById('profileCancelButton');
+  if(editButton){
+    editButton.style.display = profileEditing ? 'none' : 'inline-flex';
+  }
+  if(saveButton){
+    saveButton.style.display = profileEditing ? 'inline-flex' : 'none';
+  }
+  if(cancelButton){
+    cancelButton.style.display = profileEditing ? 'inline-flex' : 'none';
+  }
+}
+
+function toggleProfileEditMode(){
+  const user = getStoredUser();
+  const grid=document.getElementById('profileGrid');
+  if(!user || !grid){
+    return;
+  }
+
+  profileEditing = true;
+  profileDraft = JSON.parse(JSON.stringify(user));
+  grid.innerHTML = buildProfileRows(profileDraft).map((row) => profileFieldMarkup(row.field, row.label, getProfileFieldValue(profileDraft, row.field), 'text', row.options || [])).join('');
+  updateProfileEditControls();
+}
+
+function cancelProfileEdit(){
+  profileEditing = false;
+  profileDraft = null;
+  openProfileModal();
+}
+
+async function saveProfileChanges(){
+  const user = getStoredUser();
+  const grid=document.getElementById('profileGrid');
+  if(!user || !grid){
+    return;
+  }
+
+  const fullName = String(grid.querySelector('[data-profile-field="fullName"]')?.value || '').trim();
+  const phone = String(grid.querySelector('[data-profile-field="phone"]')?.value || '').trim();
+  const city = String(grid.querySelector('[data-profile-field="city"]')?.value || '').trim();
+  const district = String(grid.querySelector('[data-profile-field="district"]')?.value || '').trim();
+  const bloodGroup = String(grid.querySelector('[data-profile-field="bloodGroup"]')?.value || '').trim();
+  const isAvailableRaw = grid.querySelector('[data-profile-field="isAvailable"]')?.value;
+  const profilePictureFile = grid.querySelector('[data-profile-field="profilePicture"]')?.files?.[0];
+  let profileImageName = null;
+  let profileImageData = null;
+
+  if(profilePictureFile){
+    profileImageName = profilePictureFile.name;
+    profileImageData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+      reader.readAsDataURL(profilePictureFile);
+    });
+  }
+
+  try{
+    const response = await fetch('/api/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: user.email,
+        fullName,
+        phone,
+        city,
+        district,
+        bloodGroup,
+        isAvailable: isAvailableRaw,
+        profileImageName,
+        profileImageData,
+      }),
+    });
+
+    const payload = await response.json();
+    if(!response.ok){
+      alert(payload.message || 'Unable to update profile.');
+      return;
+    }
+
+    saveStoredUser(payload.user);
+    profileEditing = false;
+    profileDraft = null;
+    renderAuthArea(payload.user);
+    openProfileModal();
+  }catch(error){
+    alert('Unable to save profile changes. Make sure the backend is running.');
+  }
+}
+
+async function hydrateUser(user){
+  if(!user || !user.email){
+    return user;
+  }
+
+  try{
+    const response = await fetch(`/api/me?email=${encodeURIComponent(user.email)}`);
+    if(!response.ok){
+      return user;
+    }
+    const payload = await response.json();
+    return payload.user || user;
+  }catch(error){
+    return user;
+  }
+}
+
+async function restoreAuthState(){
+  const stored = getStoredUser();
+  if(!stored){
+    renderAuthArea(null);
+    return;
+  }
+
+  const hydrated = await hydrateUser(stored);
+  saveStoredUser(hydrated);
+  renderAuthArea(hydrated);
+}
 
 function renderEvents(list){
   const g=document.getElementById("eventsGrid");
@@ -266,7 +752,7 @@ function renderEvents(list){
         <div class="card-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${e.location} &nbsp;<span style="color:#D62B2B;font-weight:500">${e.dist}</span></div>
         <div class="card-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>${e.spots} spots available out of ${e.total}</div>
       </div>
-      <button class="btn-register" onclick="location.href='login.html'">Login to Register</button>
+        <button class="btn-register" onclick="${getStoredUser() ? "openProfileModal()" : "location.href='login.html'"}">${getStoredUser() ? 'View Details' : 'Login to Register'}</button>
     </div>
   </div>`).join("")
 }
@@ -311,6 +797,25 @@ async function loadStats(){
 
 loadEvents();
 loadStats();
+restoreAuthState();
+
+document.addEventListener('click', (event) => {
+  const authArea = document.getElementById('navAuth');
+  const menu = document.getElementById('profileMenu');
+  const registerMenu = document.getElementById('registerMenu');
+  if(authArea && menu && !authArea.contains(event.target)){
+    closeProfileMenu();
+  }
+  if(authArea && registerMenu && !authArea.contains(event.target)){
+    closeRegisterMenu();
+  }
+});
+
+document.getElementById('profileBackdrop')?.addEventListener('click', (event) => {
+  if(event.target.id === 'profileBackdrop'){
+    closeProfileModal();
+  }
+});
 </script>
 </body>
 </html>

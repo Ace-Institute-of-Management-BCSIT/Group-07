@@ -25,10 +25,21 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 .toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--soft);display:flex;align-items:center;padding:0}
 .btn-full{width:100%;background:var(--red);color:var(--white);border:none;font:600 .95rem var(--ff-body);padding:13px;border-radius:8px;cursor:pointer;transition:background .2s;margin-top:4px}
 .btn-full:hover{background:var(--red-dark)}
+.helper-text{font-size:.78rem;color:var(--soft);margin-top:6px;line-height:1.4}
+.field-note{font-size:.78rem;color:var(--soft);margin-top:4px;line-height:1.4}
+.file-input{padding:10px 12px;background:#fff}
 .card-footer{text-align:center;font-size:.85rem;color:var(--mid);margin-top:16px}
 .card-footer a{color:var(--red);font-weight:600;text-decoration:none}
 .card-footer a:hover{text-decoration:underline}
 .error-msg{background:#fdecea;border:1px solid #f5c6c6;color:var(--red);font-size:.82rem;padding:10px 14px;border-radius:6px;margin-bottom:14px;display:none}
+.hidden{display:none !important}
+.success-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+.success-backdrop.open{display:flex}
+.success-card{width:100%;max-width:420px;background:var(--white);border-radius:18px;padding:28px;box-shadow:0 26px 70px rgba(0,0,0,.22);text-align:center;border:1px solid var(--border)}
+.success-card h3{font-family:var(--ff-head);font-size:1.6rem;margin-bottom:8px}
+.success-card p{color:var(--mid);font-size:.95rem;line-height:1.5}
+.success-check{width:68px;height:68px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,var(--red),var(--red-dark));display:flex;align-items:center;justify-content:center;color:#fff}
+.success-card .btn-full{margin-top:18px}
 </style>
 </head>
 <body>
@@ -44,84 +55,300 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 
   <div class="error-msg" id="errMsg"></div>
 
-  <div class="form-group">
-    <label>Full Name <span class="req">*</span></label>
-    <input type="text" id="fullname" placeholder="Enter your full name"/>
-  </div>
-  <div class="form-group">
-    <label>Email <span class="req">*</span></label>
-    <input type="email" id="reg-email" placeholder="Enter your email"/>
-  </div>
-  <div class="form-group">
-    <label>Phone Number</label>
-    <input type="tel" id="phone" placeholder="Enter your phone number"/>
-  </div>
-  <div class="form-group">
-    <label>Blood Type</label>
-    <select id="blood">
-      <option value="">Select your blood type</option>
-      <option>A+</option><option>A-</option>
-      <option>B+</option><option>B-</option>
-      <option>AB+</option><option>AB-</option>
-      <option>O+</option><option>O-</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label>Password <span class="req">*</span></label>
-    <div class="input-wrap">
-      <input type="password" id="reg-pw" placeholder="Create a password (6+ characters)"/>
-      <button class="toggle-pw" onclick="togglePw('reg-pw')" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-    </div>
-  </div>
-  <div class="form-group">
-    <label>Confirm Password <span class="req">*</span></label>
-    <div class="input-wrap">
-      <input type="password" id="reg-pw2" placeholder="Confirm your password"/>
-      <button class="toggle-pw" onclick="togglePw('reg-pw2')" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-    </div>
-  </div>
+  <div class="helper-text" id="modeHelper"></div>
 
-  <button class="btn-full" onclick="handleRegister()" type="button">Create Account</button>
-  <p class="card-footer">Already have an account? <a href="login.html">Sign in here</a></p>
+  <form id="registerForm">
+    <div id="dynamicFields"></div>
+    <button class="btn-full" type="submit" id="submitButton">Create Account</button>
+  </form>
+
+  <p class="card-footer" id="footerLink">Already have an account? <a href="login.html">Sign in here</a></p>
+</div>
+
+<div class="success-backdrop" id="successBackdrop" aria-hidden="true">
+  <div class="success-card" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+    <div class="success-check">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <h3 id="successTitle">Verified Successfully</h3>
+    <p id="successMessage">Your account has been created successfully.</p>
+    <button class="btn-full" type="button" onclick="closeSuccessPopup()">Continue</button>
+  </div>
 </div>
 
 <script>
+const DEFAULT_ORG_PHOTO_LABEL = 'buildingPhoto';
+const AUTH_KEY = 'saveabeatUser';
+
+const role = new URLSearchParams(location.search).get('role') || 'donor';
+const dynamicFields = document.getElementById('dynamicFields');
+const modeHelper = document.getElementById('modeHelper');
+const registerForm = document.getElementById('registerForm');
+const footerLink = document.getElementById('footerLink');
+const submitButton = document.getElementById('submitButton');
+
 function togglePw(id){const i=document.getElementById(id);i.type=i.type==="password"?"text":"password"}
-async function handleRegister(){
-  const err=document.getElementById("errMsg");
-  const name=document.getElementById("fullname").value.trim();
-  const email=document.getElementById("reg-email").value.trim();
-  const phone=document.getElementById("phone").value.trim();
-  const bloodGroup=document.getElementById("blood").value;
-  const pw=document.getElementById("reg-pw").value;
-  const pw2=document.getElementById("reg-pw2").value;
-  if(!name||!email||!pw||!pw2){err.textContent="Please fill in all required fields.";err.style.display="block";return}
-  if(pw.length<6){err.textContent="Password must be at least 6 characters.";err.style.display="block";return}
-  if(pw!==pw2){err.textContent="Passwords do not match.";err.style.display="block";return}
+
+function escapeHtml(value){return String(value).replace(/[&<>\"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
+
+function renderRegisterForm(){
+  if(role === 'admin'){
+    location.href = 'login.html?role=admin';
+    return;
+  }
+
+  if(role === 'org'){
+    document.title = 'SaveABeat — Organization Register';
+    document.querySelector('.card h2').textContent = 'Organization Registration';
+    document.querySelector('.card .sub').textContent = 'Create your organization account, upload verification files, and continue to login.';
+    modeHelper.textContent = 'Organization accounts need verification documents and a building photo.';
+    footerLink.innerHTML = 'Already have an account? <a href="login.html?role=org">Sign in here</a>';
+    submitButton.textContent = 'Submit & Continue';
+    dynamicFields.innerHTML = `
+      <div class="form-group">
+        <label>Organization Name <span class="req">*</span></label>
+        <input type="text" id="orgName" placeholder="Enter organization name"/>
+      </div>
+      <div class="form-group">
+        <label>Address <span class="req">*</span></label>
+        <input type="text" id="address" placeholder="Enter organization address"/>
+      </div>
+      <div class="form-group">
+        <label>Email <span class="req">*</span></label>
+        <input type="email" id="reg-email" placeholder="Enter organization email"/>
+      </div>
+      <div class="form-group">
+        <label>Contact <span class="req">*</span></label>
+        <input type="tel" id="phone" placeholder="Enter contact number"/>
+      </div>
+      <div class="form-group">
+        <label>Verification Documents <span class="req">*</span></label>
+        <input class="file-input" type="file" id="orgDocuments" accept=".pdf,image/*"/>
+        <div class="field-note">Upload your verification document as PDF or image.</div>
+      </div>
+      <div class="form-group">
+        <label>Building Photo <span class="req">*</span></label>
+        <input class="file-input" type="file" id="orgPhoto" accept="image/*"/>
+        <div class="field-note">Upload a clear business building or surrounding photo.</div>
+      </div>
+      <div class="form-group">
+        <label>Password <span class="req">*</span></label>
+        <div class="input-wrap">
+          <input type="password" id="reg-pw" placeholder="Create a password (6+ characters)"/>
+          <button class="toggle-pw" onclick="togglePw('reg-pw')" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password <span class="req">*</span></label>
+        <div class="input-wrap">
+          <input type="password" id="reg-pw2" placeholder="Confirm your password"/>
+          <button class="toggle-pw" onclick="togglePw('reg-pw2')" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  document.title = 'SaveABeat — Create Account';
+  document.querySelector('.card h2').textContent = 'Join SaveABeat';
+  document.querySelector('.card .sub').textContent = 'Create your account and start making a difference in people\'s lives';
+  modeHelper.textContent = 'Donor accounts need a profile picture, blood group, city, and district.';
+  footerLink.innerHTML = 'Already have an account? <a href="login.html?role=donor">Sign in here</a>';
+  submitButton.textContent = 'Create Account';
+  dynamicFields.innerHTML = `
+    <div class="form-group">
+      <label>Full Name <span class="req">*</span></label>
+      <input type="text" id="fullname" placeholder="Enter your full name"/>
+    </div>
+    <div class="form-group">
+      <label>Email <span class="req">*</span></label>
+      <input type="email" id="reg-email" placeholder="Enter your email"/>
+    </div>
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="tel" id="phone" placeholder="Enter your phone number"/>
+    </div>
+    <div class="form-group">
+      <label>Role <span class="req">*</span></label>
+      <select id="role" disabled>
+        <option value="donor" selected>Donor</option>
+      </select>
+      <div class="helper-text">This account is for donors only.</div>
+    </div>
+    <div class="form-group">
+      <label>Blood Type</label>
+      <select id="blood">
+        <option value="">Select your blood type</option>
+        <option>A+</option><option>A-</option>
+        <option>B+</option><option>B-</option>
+        <option>AB+</option><option>AB-</option>
+        <option>O+</option><option>O-</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>City <span class="req">*</span></label>
+      <input type="text" id="city" placeholder="Enter your city"/>
+    </div>
+    <div class="form-group">
+      <label>District <span class="req">*</span></label>
+      <input type="text" id="district" placeholder="Enter your district"/>
+    </div>
+    <div class="form-group">
+      <label>Profile Picture <span class="req">*</span></label>
+      <input class="file-input" type="file" id="profilePicture" accept="image/*"/>
+      <div class="field-note">This picture will replace the initial in your profile icon.</div>
+    </div>
+    <div class="form-group">
+      <label>Total Donations <span style="color:var(--soft)">(optional)</span></label>
+      <input type="number" id="totalDonations" min="0" step="1" placeholder="0" value="0"/>
+      <div class="helper-text">You can leave this as 0 if you do not want to reveal it yet.</div>
+    </div>
+    <div class="form-group">
+      <label>Password <span class="req">*</span></label>
+      <div class="input-wrap">
+        <input type="password" id="reg-pw" placeholder="Create a password (6+ characters)"/>
+        <button class="toggle-pw" onclick="togglePw('reg-pw')" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Confirm Password <span class="req">*</span></label>
+      <div class="input-wrap">
+        <input type="password" id="reg-pw2" placeholder="Confirm your password"/>
+        <button class="toggle-pw" onclick="togglePw('reg-pw2')" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function showSuccessPopup(message){
+  const backdrop = document.getElementById('successBackdrop');
+  const messageNode = document.getElementById('successMessage');
+  if(messageNode){
+    messageNode.textContent = message;
+  }
+  if(backdrop){
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeSuccessPopup(){
+  const backdrop = document.getElementById('successBackdrop');
+  if(backdrop){
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+}
+
+async function handleRegister(event){
+  event?.preventDefault();
+  const err=document.getElementById('errMsg');
+  err.style.display='none';
+
   try{
-    const response=await fetch('/api/register',{
+    if(role === 'org'){
+      const orgName=document.getElementById('orgName').value.trim();
+      const address=document.getElementById('address').value.trim();
+      const email=document.getElementById('reg-email').value.trim();
+      const phone=document.getElementById('phone').value.trim();
+      const pw=document.getElementById('reg-pw').value;
+      const pw2=document.getElementById('reg-pw2').value;
+      const docs=document.getElementById('orgDocuments').files[0];
+      const photo=document.getElementById('orgPhoto').files[0];
+      if(!orgName||!address||!email||!phone||!pw||!pw2||!docs||!photo){
+        throw new Error('Please fill in all required fields and upload both files.');
+      }
+      if(pw.length<6){throw new Error('Password must be at least 6 characters.');}
+      if(pw!==pw2){throw new Error('Passwords do not match.');}
+      const response=await fetch('/api/auth/register', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          role:'org',
+          orgName,
+          fullName: orgName,
+          address,
+          email,
+          phone,
+          orgDocumentsName: docs.name,
+          orgDocumentsData: await fileToDataUrl(docs),
+          orgPhotoName: photo.name,
+          orgPhotoData: await fileToDataUrl(photo),
+          password: pw
+        })
+      });
+      const payload=await response.json();
+      if(!response.ok){
+        throw new Error(payload.message || 'Unable to create account.');
+      }
+      showSuccessPopup(payload.message || 'Verified Successfully');
+      setTimeout(() => location.href = 'login.html?role=org', 1400);
+      return;
+    }
+
+    const name=document.getElementById('fullname').value.trim();
+    const email=document.getElementById('reg-email').value.trim();
+    const phone=document.getElementById('phone').value.trim();
+    const bloodGroup=document.getElementById('blood').value;
+    const city=document.getElementById('city').value.trim();
+    const district=document.getElementById('district').value.trim();
+    const totalDonations=document.getElementById('totalDonations').value;
+    const profilePicture=document.getElementById('profilePicture').files[0];
+    const pw=document.getElementById('reg-pw').value;
+    const pw2=document.getElementById('reg-pw2').value;
+    if(!name||!email||!city||!district||!pw||!pw2||!profilePicture){
+      throw new Error('Please fill in all required fields and upload your profile picture.');
+    }
+    if(pw.length<6){throw new Error('Password must be at least 6 characters.');}
+    if(pw!==pw2){throw new Error('Passwords do not match.');}
+    const response=await fetch('/api/auth/register', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fullName:name,email,phone,bloodGroup,password:pw})
+      body:JSON.stringify({
+        fullName: name,
+        email,
+        phone,
+        role: 'donor',
+        bloodGroup,
+        city,
+        district,
+        totalDonations,
+        profileImageName: profilePicture.name,
+        profileImageData: await fileToDataUrl(profilePicture),
+        password: pw
+      })
     });
     const payload=await response.json();
     if(!response.ok){
-      err.textContent=payload.message||'Unable to create account.';
-      err.style.display='block';
-      return;
+      throw new Error(payload.message || 'Unable to create account.');
     }
-    err.style.display='none';
-    alert(payload.message||'Account created successfully!');
-    location.href='login.html';
+    sessionStorage.setItem('saveabeatUser', JSON.stringify(payload.user));
+    location.href='login.html?role=donor';
   }catch(error){
-    err.textContent='Unable to reach the server. Make sure the backend is running.';
+    err.textContent=error.message || 'Unable to reach the server. Make sure the backend is running.';
     err.style.display='block';
   }
 }
+
+renderRegisterForm();
+registerForm.addEventListener('submit', handleRegister);
 </script>
 </body>
 </html>

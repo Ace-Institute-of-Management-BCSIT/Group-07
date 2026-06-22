@@ -38,8 +38,8 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
       SaveABeat
     </a>
   </div>
-  <h2>Welcome Back</h2>
-  <p class="sub">Sign in to your SaveABeat account to continue helping save lives</p>
+  <h2 id="loginTitle">Welcome Back</h2>
+  <p class="sub" id="loginSubtitle">Sign in to your SaveABeat account to continue helping save lives</p>
 
   <div class="error-msg" id="errorMsg">Invalid email or password. Please try again.</div>
 
@@ -62,15 +62,42 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 
   <button class="btn-full" onclick="handleLogin()" type="button">Sign In</button>
 
-  <p class="card-footer">Don't have an account? <a href="register.html">Sign up here</a></p>
+  <p class="card-footer" id="loginFooter">Don't have an account? <a href="register.html">Sign up here</a></p>
   <p class="demo-note">Demo: Use any email and password (6+ characters)</p>
 </div>
 
 <script>
+const loginRole = new URLSearchParams(location.search).get('role') || 'donor';
+
 function togglePw(id,btn){
   const input=document.getElementById(id);
   input.type=input.type==="password"?"text":"password";
 }
+
+function applyLoginRole(){
+  const title=document.getElementById('loginTitle');
+  const subtitle=document.getElementById('loginSubtitle');
+  const footer=document.getElementById('loginFooter');
+
+  if(loginRole === 'admin'){
+    title.textContent='Admin Login';
+    subtitle.textContent='Use the seeded admin credentials to sign in.';
+    footer.textContent='Admin accounts are pre-created.';
+    return;
+  }
+
+  if(loginRole === 'org'){
+    title.textContent='Organization Login';
+    subtitle.textContent='Sign in with your organization email and password.';
+    footer.innerHTML="Don't have an account? <a href=\"register.html?role=org\">Sign up here</a>";
+    return;
+  }
+
+  title.textContent='Donor Login';
+  subtitle.textContent='Sign in to your donor account to continue helping save lives.';
+  footer.innerHTML="Don't have an account? <a href=\"register.html?role=donor\">Sign up here</a>";
+}
+
 async function handleLogin(){
   const email=document.getElementById("email").value;
   const pw=document.getElementById("password").value;
@@ -78,7 +105,7 @@ async function handleLogin(){
   if(!email||!pw){err.textContent="Please fill in all fields.";err.style.display="block";return}
   if(pw.length<6){err.textContent="Password must be at least 6 characters.";err.style.display="block";return}
   try{
-    const response=await fetch('/api/login',{
+    const response=await fetch('/api/auth/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({email,password:pw})
@@ -90,6 +117,16 @@ async function handleLogin(){
       return;
     }
     err.style.display='none';
+    if(loginRole !== 'donor' && loginRole !== 'org' && loginRole !== 'admin'){
+      throw new Error('Unsupported login role.');
+    }
+    if(loginRole !== 'admin' && payload.user.role !== loginRole){
+      throw new Error('Please use the correct account type for this login page.');
+    }
+    sessionStorage.setItem('saveabeatUser', JSON.stringify({
+      ...payload.user,
+      email: payload.user.email || email
+    }));
     alert(payload.message||'Login successful!');
     location.href='index.html';
   }catch(error){
@@ -98,6 +135,8 @@ async function handleLogin(){
   }
 }
 document.addEventListener("keydown",e=>{if(e.key==="Enter")handleLogin()});
+document.getElementById('loginFooter')?.querySelector('a')?.setAttribute('href', loginRole === 'org' ? 'register.html?role=org' : 'register.html?role=donor');
+applyLoginRole();
 </script>
 </body>
 </html>
