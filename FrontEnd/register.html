@@ -22,17 +22,31 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 .form-group input,.form-group select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font:400 .92rem var(--ff-body);background:#f5f5f5;outline:none;transition:border-color .2s,background .2s;color:var(--ink);appearance:none}
 .form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-color:#f5f5f5}
 .form-group input:focus,.form-group select:focus{border-color:var(--red);background:var(--white)}
+.form-group input.invalid,.form-group select.invalid{border-color:var(--red);background:#fff7f7}
+.field-error{display:none;color:var(--red);font-size:.78rem;line-height:1.35;margin-top:5px}
+.field-error.show{display:block}
+.password-status{font-size:.78rem;line-height:1.35;margin-top:5px;color:var(--red)}
+.password-status.strong{color:#227038}
 .toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--soft);display:flex;align-items:center;padding:0}
 .btn-full{width:100%;background:var(--red);color:var(--white);border:none;font:600 .95rem var(--ff-body);padding:13px;border-radius:8px;cursor:pointer;transition:background .2s;margin-top:4px}
 .btn-full:hover{background:var(--red-dark)}
+.btn-ghost{width:100%;background:var(--white);color:var(--red);border:1px solid var(--red);font:600 .95rem var(--ff-body);padding:12px;border-radius:8px;cursor:pointer;transition:background .2s;margin-top:10px}
+.btn-ghost:hover{background:#fff7f7}
 .helper-text{font-size:.78rem;color:var(--soft);margin-top:6px;line-height:1.4}
 .field-note{font-size:.78rem;color:var(--soft);margin-top:4px;line-height:1.4}
+.verification-view{display:none}
+.verification-view.open{display:block}
+.verification-copy{text-align:center;color:var(--mid);font-size:.9rem;line-height:1.5;margin-bottom:18px}
+.signup-fields.hidden{display:none}
+.success-msg{background:#edf8ef;border:1px solid #bfe6c7;color:#227038;font-size:.82rem;padding:10px 14px;border-radius:6px;margin-bottom:14px;display:none}
 .file-input{padding:10px 12px;background:#fff}
 .card-footer{text-align:center;font-size:.85rem;color:var(--mid);margin-top:16px}
 .card-footer a{color:var(--red);font-weight:600;text-decoration:none}
 .card-footer a:hover{text-decoration:underline}
 .error-msg{background:#fdecea;border:1px solid #f5c6c6;color:var(--red);font-size:.82rem;padding:10px 14px;border-radius:6px;margin-bottom:14px;display:none}
 .hidden{display:none !important}
+.services-checks{display:flex;flex-direction:column;gap:8px;font-size:.88rem;color:var(--mid)}
+.services-checks label{display:flex;align-items:center;gap:8px}
 .success-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
 .success-backdrop.open{display:flex}
 .success-card{width:100%;max-width:420px;background:var(--white);border-radius:18px;padding:28px;box-shadow:0 26px 70px rgba(0,0,0,.22);text-align:center;border:1px solid var(--border)}
@@ -54,12 +68,25 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
   <p class="sub">Create your account and start making a difference in people's lives</p>
 
   <div class="error-msg" id="errMsg"></div>
+  <div class="success-msg" id="infoMsg"></div>
 
   <div class="helper-text" id="modeHelper"></div>
 
   <form id="registerForm">
-    <div id="dynamicFields"></div>
-    <button class="btn-full" type="submit" id="submitButton">Create Account</button>
+    <div class="signup-fields" id="signupFields">
+      <div id="dynamicFields"></div>
+      <button class="btn-full" type="submit" id="submitButton">Create Account</button>
+    </div>
+    <div class="verification-view" id="verificationView" aria-live="polite">
+      <p class="verification-copy" id="verificationCopy">Enter the 6-digit code sent to your email.</p>
+      <div class="form-group">
+        <label>Email Verification Code <span class="req">*</span></label>
+        <input type="text" id="emailCode" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code"/>
+        <div class="field-error" data-error-for="emailCode"></div>
+      </div>
+      <button class="btn-full" type="submit" id="verifyButton">Verify Code & Create Account</button>
+      <button class="btn-ghost" type="button" onclick="backToSignup()">Back to signup details</button>
+    </div>
   </form>
 
   <p class="card-footer" id="footerLink">Already have an account? <a href="login.html">Sign in here</a></p>
@@ -86,10 +113,280 @@ const modeHelper = document.getElementById('modeHelper');
 const registerForm = document.getElementById('registerForm');
 const footerLink = document.getElementById('footerLink');
 const submitButton = document.getElementById('submitButton');
+const signupFields = document.getElementById('signupFields');
+const verificationView = document.getElementById('verificationView');
+const verifyButton = document.getElementById('verifyButton');
+let verificationCodeSent = false;
+let verificationEmail = '';
+let verificationRole = '';
+
+const NEPAL_DISTRICTS = [
+  'Achham','Arghakhanchi','Baglung','Baitadi','Bajhang','Bajura','Banke','Bara','Bardiya','Bhaktapur','Bhojpur','Chitwan','Dadeldhura','Dailekh','Dang','Darchula','Dhading','Dhankuta','Dhanusha','Dholakha','Dolpa','Doti','Eastern Rukum','Gorkha','Gulmi','Humla','Ilam','Jajarkot','Jhapa','Jumla','Kailali','Kalikot','Kanchanpur','Kapilvastu','Kaski','Kathmandu','Kavrepalanchok','Khotang','Lalitpur','Lamjung','Mahottari','Makwanpur','Manang','Morang','Mugu','Mustang','Myagdi','Nawalpur','Nuwakot','Okhaldhunga','Palpa','Panchthar','Parasi','Parbat','Parsa','Pyuthan','Ramechhap','Rasuwa','Rautahat','Rolpa','Rupandehi','Salyan','Sankhuwasabha','Saptari','Sarlahi','Sindhuli','Sindhupalchok','Siraha','Solukhumbu','Sunsari','Surkhet','Syangja','Tanahun','Taplejung','Tehrathum','Udayapur','Western Rukum'
+];
+
+const DISTRICT_CITIES = {
+  Achham:['Mangalsen Municipality','Sanphebagar Municipality','Kamalbazar Municipality','Panchadewal Binayak Municipality'],
+  Arghakhanchi:['Sandhikharka Municipality','Shitganga Municipality','Bhumikasthan Municipality'],
+  Baglung:['Baglung Municipality','Galkot Municipality','Jaimini Municipality','Dhorpatan Municipality'],
+  Baitadi:['Dasharathchand Municipality','Patan Municipality','Melauli Municipality','Purchaudi Municipality'],
+  Bajhang:['Jayaprithvi Municipality','Bungal Municipality'],
+  Bajura:['Badimalika Municipality','Budhiganga Municipality','Tribeni Municipality','Budhinanda Municipality'],
+  Banke:['Nepalgunj Sub-Metropolitan City','Kohalpur Municipality'],
+  Bara:['Kalaiya Sub-Metropolitan City','Jeetpur Simara Sub-Metropolitan City','Nijgadh Municipality','Kolhabi Municipality','Mahagadhimai Municipality','Simraungadh Municipality'],
+  Bardiya:['Gulariya Municipality','Madhuwan Municipality','Rajapur Municipality','Thakurbaba Municipality','Bansgadhi Municipality'],
+  Bhaktapur:['Bhaktapur Municipality','Madhyapur Thimi Municipality','Suryabinayak Municipality','Changunarayan Municipality'],
+  Bhojpur:['Bhojpur Municipality','Shadanand Municipality'],
+  Chitwan:['Bharatpur Metropolitan City','Ratnanagar Municipality','Khairahani Municipality','Rapti Municipality','Kalika Municipality','Madi Municipality'],
+  Dadeldhura:['Amargadhi Municipality','Parashuram Municipality'],
+  Dailekh:['Narayan Municipality','Dullu Municipality','Aathabis Municipality','Chamunda Bindrasaini Municipality'],
+  Dang:['Ghorahi Sub-Metropolitan City','Tulsipur Sub-Metropolitan City','Lamahi Municipality'],
+  Darchula:['Mahakali Municipality','Shailyashikhar Municipality'],
+  Dhading:['Nilkantha Municipality','Dhunibesi Municipality'],
+  Dhankuta:['Dhankuta Municipality','Pakhribas Municipality','Mahalaxmi Municipality'],
+  Dhanusha:['Janakpurdham Sub-Metropolitan City','Mithila Municipality','Ganeshman Charnath Municipality','Dhanushadham Municipality','Sabaila Municipality','Kamala Municipality','Nagarain Municipality','Bideha Municipality','Sahidnagar Municipality','Hansapur Municipality','Mithila Bihari Municipality'],
+  Dholakha:['Bhimeshwar Municipality','Jiri Municipality'],
+  Dolpa:['Thuli Bheri Municipality','Tripurasundari Municipality'],
+  Doti:['Dipayal Silgadhi Municipality','Shikhar Municipality'],
+  'Eastern Rukum':['Rukumkot','Putha Uttarganga Rural Municipality','Bhume Rural Municipality','Sisne Rural Municipality'],
+  Gorkha:['Gorkha Municipality','Palungtar Municipality'],
+  Gulmi:['Resunga Municipality','Musikot Municipality'],
+  Humla:['Simkot Rural Municipality'],
+  Ilam:['Ilam Municipality','Deumai Municipality','Mai Municipality','Suryodaya Municipality'],
+  Jajarkot:['Bheri Municipality','Chhedagad Municipality','Nalgad Municipality'],
+  Jhapa:['Bhadrapur Municipality','Mechinagar Municipality','Damak Municipality','Birtamod Municipality','Arjundhara Municipality','Kankai Municipality','Shivasatakshi Municipality','Gauradaha Municipality'],
+  Jumla:['Chandannath Municipality'],
+  Kailali:['Dhangadhi Sub-Metropolitan City','Tikapur Municipality','Ghodaghodi Municipality','Lamkichuha Municipality','Godawari Municipality','Bhajani Municipality'],
+  Kalikot:['Khandachakra Municipality','Raskot Municipality','Tilagupha Municipality'],
+  Kanchanpur:['Bhimdatta Municipality','Bedkot Municipality','Shuklaphanta Municipality','Mahakali Municipality','Punarbas Municipality','Krishnapur Municipality'],
+  Kapilvastu:['Kapilvastu Municipality','Banganga Municipality','Buddhabhumi Municipality','Shivaraj Municipality','Krishnanagar Municipality','Maharajgunj Municipality'],
+  Kaski:['Pokhara Metropolitan City','Annapurna Rural Municipality','Machhapuchchhre Rural Municipality','Madi Rural Municipality','Rupa Rural Municipality'],
+  Kathmandu:['Kathmandu Metropolitan City','Kageshwari Manohara Municipality','Kirtipur Municipality','Gokarneshwar Municipality','Chandragiri Municipality','Tokha Municipality','Nagarjun Municipality','Budhanilkantha Municipality','Tarakeshwar Municipality','Dakshinkali Municipality','Shankharapur Municipality'],
+  Kavrepalanchok:['Dhulikhel Municipality','Banepa Municipality','Panauti Municipality','Panchkhal Municipality','Namobuddha Municipality','Mandandeupur Municipality'],
+  Khotang:['Diktel Rupakot Majhuwagadhi Municipality','Halesi Tuwachung Municipality'],
+  Lalitpur:['Lalitpur Metropolitan City','Godawari Municipality','Mahalaxmi Municipality'],
+  Lamjung:['Besisahar Municipality','Sundarbazar Municipality','Rainas Municipality','Madhya Nepal Municipality'],
+  Mahottari:['Jaleshwar Municipality','Bardibas Municipality','Gaushala Municipality','Matihani Municipality','Manara Shiswa Municipality','Ramgopalpur Municipality','Aurahi Municipality','Balawa Municipality','Loharpatti Municipality','Bhangaha Municipality'],
+  Makwanpur:['Hetauda Sub-Metropolitan City','Thaha Municipality'],
+  Manang:['Chame Rural Municipality'],
+  Morang:['Biratnagar Metropolitan City','Belbari Municipality','Urlabari Municipality','Rangeli Municipality','Sundarharaicha Municipality','Pathari Sanischare Municipality','Letang Municipality','Ratuwamai Municipality'],
+  Mugu:['Chhayanath Rara Municipality'],
+  Mustang:['Gharpajhong Rural Municipality'],
+  Myagdi:['Beni Municipality'],
+  Nawalpur:['Kawasoti Municipality','Gaindakot Municipality','Devchuli Municipality','Madhyabindu Municipality'],
+  Nuwakot:['Bidur Municipality','Belkotgadhi Municipality'],
+  Okhaldhunga:['Siddhicharan Municipality'],
+  Palpa:['Tansen Municipality','Rampur Municipality'],
+  Panchthar:['Phidim Municipality'],
+  Parasi:['Ramgram Municipality','Sunwal Municipality','Bardaghat Municipality'],
+  Parbat:['Kushma Municipality','Phalebas Municipality'],
+  Parsa:['Birgunj Metropolitan City','Pokhariya Municipality','Bahudarmai Municipality','Parsagadhi Municipality'],
+  Pyuthan:['Pyuthan Municipality','Swargadwari Municipality'],
+  Ramechhap:['Manthali Municipality','Ramechhap Municipality'],
+  Rasuwa:['Dhunche','Kalika Rural Municipality'],
+  Rautahat:['Gaur Municipality','Chandrapur Municipality','Garuda Municipality','Rajpur Municipality','Ishanath Municipality','Katahariya Municipality','Brindaban Municipality','Dewahi Gonahi Municipality','Madhav Narayan Municipality','Maulapur Municipality','Gujara Municipality','Baudhimai Municipality','Phatuwa Bijayapur Municipality','Paroha Municipality','Yamunamai Rural Municipality'],
+  Rolpa:['Rolpa Municipality'],
+  Rupandehi:['Butwal Sub-Metropolitan City','Siddharthanagar Municipality','Tilottama Municipality','Devdaha Municipality','Lumbini Sanskritik Municipality','Sainamaina Municipality'],
+  Salyan:['Sharada Municipality','Bagchaur Municipality','Bangad Kupinde Municipality'],
+  Sankhuwasabha:['Khandbari Municipality','Chainpur Municipality','Madi Municipality','Dharmadevi Municipality','Panchkhapan Municipality'],
+  Saptari:['Rajbiraj Municipality','Kanchanrup Municipality','Dakneshwori Municipality','Bode Barsain Municipality','Khadak Municipality','Shambhunath Municipality','Surunga Municipality','Hanumannagar Kankalini Municipality','Saptakoshi Municipality'],
+  Sarlahi:['Malangwa Municipality','Lalbandi Municipality','Hariwan Municipality','Haripur Municipality','Barahathawa Municipality','Ishworpur Municipality','Bagmati Municipality','Godaita Municipality','Balara Municipality','Kabilasi Municipality','Chakraghatta Rural Municipality'],
+  Sindhuli:['Kamalamai Municipality','Dudhauli Municipality'],
+  Sindhupalchok:['Chautara Sangachokgadhi Municipality','Barhabise Municipality','Melamchi Municipality'],
+  Siraha:['Siraha Municipality','Lahan Municipality','Dhangadhimai Municipality','Golbazar Municipality','Mirchaiya Municipality','Kalyanpur Municipality','Karjanha Municipality'],
+  Solukhumbu:['Solu Dudhkunda Municipality'],
+  Sunsari:['Itahari Sub-Metropolitan City','Dharan Sub-Metropolitan City','Inaruwa Municipality','Duhabi Municipality','Ramdhuni Municipality','Barahakshetra Municipality'],
+  Surkhet:['Birendranagar Municipality','Bheriganga Municipality','Gurbhakot Municipality','Panchapuri Municipality','Lekbeshi Municipality'],
+  Syangja:['Putalibazar Municipality','Waling Municipality','Galyang Municipality','Chapakot Municipality','Bhirkot Municipality'],
+  Tanahun:['Byas Municipality','Shuklagandaki Municipality','Bhanu Municipality','Bhimad Municipality'],
+  Taplejung:['Phungling Municipality'],
+  Tehrathum:['Myanglung Municipality','Laligurans Municipality'],
+  Udayapur:['Triyuga Municipality','Katari Municipality','Chaudandigadhi Municipality','Belaka Municipality'],
+  'Western Rukum':['Musikot Municipality','Chaurjahari Municipality','Aathbiskot Municipality']
+};
 
 function togglePw(id){const i=document.getElementById(id);i.type=i.type==="password"?"text":"password"}
 
 function escapeHtml(value){return String(value).replace(/[&<>\"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));}
+
+function renderOptions(values, placeholder){
+  return `<option value="">${escapeHtml(placeholder)}</option>` + values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+}
+
+function fieldErrorHtml(field){
+  return `<div class="field-error" data-error-for="${field}"></div>`;
+}
+
+function setFieldError(field, message){
+  const errorNode=document.querySelector(`[data-error-for="${field}"]`);
+  const input=document.getElementById(field);
+  if(errorNode){
+    errorNode.textContent=message || '';
+    errorNode.classList.toggle('show', Boolean(message));
+  }
+  if(input){
+    input.classList.toggle('invalid', Boolean(message));
+  }
+}
+
+function clearFieldErrors(){
+  document.querySelectorAll('.field-error').forEach((node) => {
+    node.textContent='';
+    node.classList.remove('show');
+  });
+  document.querySelectorAll('.invalid').forEach((node) => node.classList.remove('invalid'));
+}
+
+function showFieldError(field, message){
+  setFieldError(field, message);
+  return false;
+}
+
+function isValidEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+function getPasswordError(password){
+  if(password.length < 8){return 'Password must be at least 8 characters.';}
+  if(!/[a-z]/.test(password)){return 'Password must include a lowercase letter.';}
+  if(!/[A-Z]/.test(password)){return 'Password must include an uppercase letter.';}
+  if(!/\d/.test(password)){return 'Password must include a number.';}
+  if(!/[^A-Za-z0-9]/.test(password)){return 'Password must include a special character.';}
+  return '';
+}
+
+function showInfo(message){
+  const info=document.getElementById('infoMsg');
+  info.textContent=message;
+  info.style.display='block';
+}
+
+function hideInfo(){
+  const info=document.getElementById('infoMsg');
+  info.textContent='';
+  info.style.display='none';
+}
+
+function updateCityOptions(){
+  const district=document.getElementById('district')?.value || '';
+  const citySelect=document.getElementById('city');
+  if(!citySelect){return;}
+  const cities=DISTRICT_CITIES[district] || [];
+  citySelect.innerHTML=renderOptions(cities, district ? 'Select city / municipality' : 'Select district first');
+  citySelect.disabled=!district;
+}
+
+function updatePasswordStatus(){
+  const password=document.getElementById('reg-pw')?.value || '';
+  const status=document.getElementById('passwordStatus');
+  if(!status){return;}
+  if(!password){
+    status.textContent='Put a strong password.';
+    status.classList.remove('strong');
+    return;
+  }
+  const passwordError=getPasswordError(password);
+  status.textContent=passwordError ? 'Put a strong password.' : 'Strong password';
+  status.classList.toggle('strong', !passwordError);
+  if(!passwordError){setFieldError('reg-pw', '');}
+}
+
+function updateConfirmPasswordStatus(){
+  const password=document.getElementById('reg-pw')?.value || '';
+  const confirm=document.getElementById('reg-pw2')?.value || '';
+  if(confirm && password !== confirm){
+    setFieldError('reg-pw2', 'Password does not match.');
+    return;
+  }
+  if(confirm){setFieldError('reg-pw2', '');}
+}
+
+function bindLiveValidation(){
+  document.getElementById('district')?.addEventListener('change', () => {
+    setFieldError('district', '');
+    updateCityOptions();
+  });
+  document.getElementById('city')?.addEventListener('change', () => setFieldError('city', ''));
+  document.getElementById('reg-email')?.addEventListener('input', (event) => {
+    setFieldError('reg-email', '');
+    if(verificationEmail && event.target.value.trim().toLowerCase() !== verificationEmail){
+      verificationCodeSent=false;
+      verificationEmail='';
+      verificationRole='';
+      hideInfo();
+    }
+  });
+  document.getElementById('reg-pw')?.addEventListener('input', () => {
+    setFieldError('reg-pw', '');
+    updatePasswordStatus();
+    updateConfirmPasswordStatus();
+  });
+  document.getElementById('reg-pw2')?.addEventListener('input', updateConfirmPasswordStatus);
+  ['profilePicture','orgDocuments','orgPhoto'].forEach((field) => {
+    document.getElementById(field)?.addEventListener('change', () => setFieldError(field, ''));
+  });
+  document.getElementById('emailCode')?.addEventListener('input', () => setFieldError('emailCode', ''));
+  updateCityOptions();
+  updatePasswordStatus();
+}
+
+function openVerificationView(){
+  signupFields.classList.add('hidden');
+  verificationView.classList.add('open');
+  modeHelper.textContent='Enter the verification code to finish creating your account.';
+  document.getElementById('verificationCopy').textContent=`Enter the 6-digit code sent to ${verificationEmail}.`;
+  const codeInput=document.getElementById('emailCode');
+  if(codeInput){codeInput.focus();}
+}
+
+function backToSignup(){
+  verificationView.classList.remove('open');
+  signupFields.classList.remove('hidden');
+  modeHelper.textContent = role === 'org'
+    ? 'Organization accounts need verification documents and a building photo.'
+    : 'Donor accounts need a profile picture, blood group, city, and district.';
+  setFieldError('emailCode', '');
+}
+
+async function readJsonResponse(response){
+  const contentType=response.headers.get('content-type') || '';
+  if(contentType.includes('application/json')){
+    return response.json();
+  }
+  const text=await response.text();
+  if(response.status === 413){
+    throw new Error('Uploaded files are too large. Please use smaller images or PDFs under 10 MB each.');
+  }
+  if(text.trimStart().startsWith('<!DOCTYPE') || text.trimStart().startsWith('<html')){
+    throw new Error('Server returned a page instead of data. Start the backend with npm start in BackEnd, then open http://localhost:3000/register.html?role=org');
+  }
+  throw new Error('Unexpected server response. Make sure the backend is running.');
+}
+
+async function sendVerificationCode(email, selectedRole){
+  const response=await fetch('/api/auth/send-verification-code', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email, role:selectedRole})
+  });
+  const payload=await readJsonResponse(response);
+  if(!response.ok){
+    throw new Error(payload.message || 'Unable to send verification code.');
+  }
+  verificationCodeSent=true;
+  verificationEmail=email.toLowerCase();
+  verificationRole=selectedRole;
+  openVerificationView();
+  showInfo(payload.devCode ? `${payload.message} Code: ${payload.devCode}` : payload.message);
+}
+
+function validateEmailAndPassword(email, pw, pw2){
+  let valid=true;
+  if(!isValidEmail(email)){valid=showFieldError('reg-email', 'Please enter a valid email address.');}
+  const passwordError=getPasswordError(pw);
+  if(passwordError){valid=showFieldError('reg-pw', passwordError);}
+  if(pw!==pw2){valid=showFieldError('reg-pw2', 'Password does not match.');}
+  return valid;
+}
 
 function renderRegisterForm(){
   if(role === 'admin'){
@@ -103,42 +400,81 @@ function renderRegisterForm(){
     document.querySelector('.card .sub').textContent = 'Create your organization account, upload verification files, and continue to login.';
     modeHelper.textContent = 'Organization accounts need verification documents and a building photo.';
     footerLink.innerHTML = 'Already have an account? <a href="login.html?role=org">Sign in here</a>';
-    submitButton.textContent = 'Submit & Continue';
+    submitButton.textContent = 'Send Verification Code';
     dynamicFields.innerHTML = `
       <div class="form-group">
         <label>Organization Name <span class="req">*</span></label>
         <input type="text" id="orgName" placeholder="Enter organization name"/>
+        ${fieldErrorHtml('orgName')}
       </div>
       <div class="form-group">
         <label>Address <span class="req">*</span></label>
         <input type="text" id="address" placeholder="Enter organization address"/>
+        ${fieldErrorHtml('address')}
+      </div>
+      <div class="form-group">
+        <label>District <span class="req">*</span></label>
+        <select id="district">
+          ${renderOptions(NEPAL_DISTRICTS, 'Select organization district')}
+        </select>
+        ${fieldErrorHtml('district')}
+      </div>
+      <div class="form-group">
+        <label>City / Municipality <span class="req">*</span></label>
+        <select id="city" disabled>
+          <option value="">Select district first</option>
+        </select>
+        ${fieldErrorHtml('city')}
       </div>
       <div class="form-group">
         <label>Email <span class="req">*</span></label>
-        <input type="email" id="reg-email" placeholder="Enter organization email"/>
+        <input type="email" id="reg-email" placeholder="Enter organization email" autocomplete="email" required/>
+        ${fieldErrorHtml('reg-email')}
       </div>
       <div class="form-group">
         <label>Contact <span class="req">*</span></label>
         <input type="tel" id="phone" placeholder="Enter contact number"/>
+        ${fieldErrorHtml('phone')}
+      </div>
+      <div class="form-group">
+        <label>Operating Hours <span class="req">*</span></label>
+        <input type="text" id="operatingHours" placeholder="Mon-Fri: 8AM-6PM, Sat: 9AM-3PM"/>
+        <div class="field-note">Enter when your center is open for donations.</div>
+        ${fieldErrorHtml('operatingHours')}
+      </div>
+      <div class="form-group">
+        <label>Services Offered <span class="req">*</span></label>
+        <div class="services-checks">
+          <label><input type="checkbox" name="orgServices" value="Whole Blood" checked/> Whole Blood</label>
+          <label><input type="checkbox" name="orgServices" value="Platelets" checked/> Platelets</label>
+          <label><input type="checkbox" name="orgServices" value="Plasma" checked/> Plasma</label>
+          <label><input type="checkbox" name="orgServices" value="Power Red"/> Power Red</label>
+          <label><input type="checkbox" name="orgServices" value="Emergency Collection"/> Emergency Collection</label>
+        </div>
+        ${fieldErrorHtml('orgServices')}
       </div>
       <div class="form-group">
         <label>Verification Documents <span class="req">*</span></label>
         <input class="file-input" type="file" id="orgDocuments" accept=".pdf,image/*"/>
         <div class="field-note">Upload your verification document as PDF or image.</div>
+        ${fieldErrorHtml('orgDocuments')}
       </div>
       <div class="form-group">
         <label>Building Photo <span class="req">*</span></label>
         <input class="file-input" type="file" id="orgPhoto" accept="image/*"/>
         <div class="field-note">Upload a clear business building or surrounding photo.</div>
+        ${fieldErrorHtml('orgPhoto')}
       </div>
       <div class="form-group">
         <label>Password <span class="req">*</span></label>
         <div class="input-wrap">
-          <input type="password" id="reg-pw" placeholder="Create a password (6+ characters)"/>
+          <input type="password" id="reg-pw" placeholder="8+ chars, upper, lower, number, symbol" autocomplete="new-password"/>
           <button class="toggle-pw" onclick="togglePw('reg-pw')" type="button">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
+        <div class="password-status" id="passwordStatus">Put a strong password.</div>
+        ${fieldErrorHtml('reg-pw')}
       </div>
       <div class="form-group">
         <label>Confirm Password <span class="req">*</span></label>
@@ -148,8 +484,10 @@ function renderRegisterForm(){
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
+        ${fieldErrorHtml('reg-pw2')}
       </div>
     `;
+    bindLiveValidation();
     return;
   }
 
@@ -158,26 +496,26 @@ function renderRegisterForm(){
   document.querySelector('.card .sub').textContent = 'Create your account and start making a difference in people\'s lives';
   modeHelper.textContent = 'Donor accounts need a profile picture, blood group, city, and district.';
   footerLink.innerHTML = 'Already have an account? <a href="login.html?role=donor">Sign in here</a>';
-  submitButton.textContent = 'Create Account';
+  submitButton.textContent = 'Send Verification Code';
   dynamicFields.innerHTML = `
     <div class="form-group">
       <label>Full Name <span class="req">*</span></label>
       <input type="text" id="fullname" placeholder="Enter your full name"/>
+      ${fieldErrorHtml('fullname')}
     </div>
     <div class="form-group">
       <label>Email <span class="req">*</span></label>
-      <input type="email" id="reg-email" placeholder="Enter your email"/>
+      <input type="email" id="reg-email" placeholder="Enter your email" autocomplete="email" required/>
+      ${fieldErrorHtml('reg-email')}
     </div>
     <div class="form-group">
       <label>Phone Number</label>
       <input type="tel" id="phone" placeholder="Enter your phone number"/>
     </div>
     <div class="form-group">
-      <label>Role <span class="req">*</span></label>
-      <select id="role" disabled>
-        <option value="donor" selected>Donor</option>
-      </select>
-      <div class="helper-text">This account is for donors only.</div>
+      <label>Address <span class="req">*</span></label>
+      <input type="text" id="address" placeholder="Enter your address"/>
+      ${fieldErrorHtml('address')}
     </div>
     <div class="form-group">
       <label>Blood Type</label>
@@ -190,17 +528,24 @@ function renderRegisterForm(){
       </select>
     </div>
     <div class="form-group">
-      <label>City <span class="req">*</span></label>
-      <input type="text" id="city" placeholder="Enter your city"/>
+      <label>District <span class="req">*</span></label>
+      <select id="district">
+        ${renderOptions(NEPAL_DISTRICTS, 'Select your district')}
+      </select>
+      ${fieldErrorHtml('district')}
     </div>
     <div class="form-group">
-      <label>District <span class="req">*</span></label>
-      <input type="text" id="district" placeholder="Enter your district"/>
+      <label>City / Municipality <span class="req">*</span></label>
+      <select id="city" disabled>
+        <option value="">Select district first</option>
+      </select>
+      ${fieldErrorHtml('city')}
     </div>
     <div class="form-group">
       <label>Profile Picture <span class="req">*</span></label>
       <input class="file-input" type="file" id="profilePicture" accept="image/*"/>
       <div class="field-note">This picture will replace the initial in your profile icon.</div>
+      ${fieldErrorHtml('profilePicture')}
     </div>
     <div class="form-group">
       <label>Total Donations <span style="color:var(--soft)">(optional)</span></label>
@@ -210,11 +555,13 @@ function renderRegisterForm(){
     <div class="form-group">
       <label>Password <span class="req">*</span></label>
       <div class="input-wrap">
-        <input type="password" id="reg-pw" placeholder="Create a password (6+ characters)"/>
+        <input type="password" id="reg-pw" placeholder="8+ chars, upper, lower, number, symbol" autocomplete="new-password"/>
         <button class="toggle-pw" onclick="togglePw('reg-pw')" type="button">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
+      <div class="password-status" id="passwordStatus">Put a strong password.</div>
+      ${fieldErrorHtml('reg-pw')}
     </div>
     <div class="form-group">
       <label>Confirm Password <span class="req">*</span></label>
@@ -224,8 +571,10 @@ function renderRegisterForm(){
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
+      ${fieldErrorHtml('reg-pw2')}
     </div>
   `;
+  bindLiveValidation();
 }
 
 function fileToDataUrl(file){
@@ -261,22 +610,49 @@ async function handleRegister(event){
   event?.preventDefault();
   const err=document.getElementById('errMsg');
   err.style.display='none';
+  clearFieldErrors();
+  if(!verificationCodeSent){hideInfo();}
 
   try{
     if(role === 'org'){
       const orgName=document.getElementById('orgName').value.trim();
       const address=document.getElementById('address').value.trim();
-      const email=document.getElementById('reg-email').value.trim();
+      const district=document.getElementById('district').value.trim();
+      const city=document.getElementById('city').value.trim();
+      const email=document.getElementById('reg-email').value.trim().toLowerCase();
       const phone=document.getElementById('phone').value.trim();
+      const operatingHours=document.getElementById('operatingHours').value.trim();
+      const services=[...document.querySelectorAll('input[name="orgServices"]:checked')].map((node)=>node.value);
       const pw=document.getElementById('reg-pw').value;
       const pw2=document.getElementById('reg-pw2').value;
       const docs=document.getElementById('orgDocuments').files[0];
       const photo=document.getElementById('orgPhoto').files[0];
-      if(!orgName||!address||!email||!phone||!pw||!pw2||!docs||!photo){
-        throw new Error('Please fill in all required fields and upload both files.');
+      let valid=true;
+      if(!orgName){valid=showFieldError('orgName', 'Organization name is required.');}
+      if(!address){valid=showFieldError('address', 'Address is required.');}
+      if(!district){valid=showFieldError('district', 'Please select organization district.');}
+      if(!city){valid=showFieldError('city', 'Please select organization city or municipality.');}
+      if(!phone){valid=showFieldError('phone', 'Contact number is required.');}
+      if(!operatingHours){valid=showFieldError('operatingHours', 'Operating hours are required.');}
+      if(!services.length){valid=showFieldError('orgServices', 'Select at least one service.');}
+      if(!docs){valid=showFieldError('orgDocuments', 'Verification document is required.');}
+      if(!photo){valid=showFieldError('orgPhoto', 'Building photo is required.');}
+      if(!validateEmailAndPassword(email, pw, pw2)){valid=false;}
+      if(!valid){return;}
+      if(!verificationCodeSent){
+        await sendVerificationCode(email, 'org');
+        return;
       }
-      if(pw.length<6){throw new Error('Password must be at least 6 characters.');}
-      if(pw!==pw2){throw new Error('Passwords do not match.');}
+      if(email.toLowerCase() !== verificationEmail || verificationRole !== 'org'){
+        backToSignup();
+        showFieldError('reg-email', 'Email changed after code request. Please request a new verification code.');
+        return;
+      }
+      const emailVerificationCode=document.getElementById('emailCode')?.value.trim();
+      if(!emailVerificationCode){
+        showFieldError('emailCode', 'Please enter the email verification code.');
+        return;
+      }
       const response=await fetch('/api/auth/register', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -285,18 +661,28 @@ async function handleRegister(event){
           orgName,
           fullName: orgName,
           address,
+          district,
+          city,
           email,
           phone,
+          operatingHours,
+          services:services.join('|'),
           orgDocumentsName: docs.name,
           orgDocumentsData: await fileToDataUrl(docs),
           orgPhotoName: photo.name,
           orgPhotoData: await fileToDataUrl(photo),
+          emailVerificationCode,
           password: pw
         })
       });
-      const payload=await response.json();
+      const payload=await readJsonResponse(response);
       if(!response.ok){
-        throw new Error(payload.message || 'Unable to create account.');
+        const message=payload.message || 'Unable to create account.';
+        if(message.toLowerCase().includes('code') || message.toLowerCase().includes('verification')){
+          showFieldError('emailCode', message);
+          return;
+        }
+        throw new Error(message);
       }
       showSuccessPopup(payload.message || 'Verified Successfully');
       setTimeout(() => location.href = 'login.html?role=org', 1400);
@@ -304,8 +690,9 @@ async function handleRegister(event){
     }
 
     const name=document.getElementById('fullname').value.trim();
-    const email=document.getElementById('reg-email').value.trim();
+    const email=document.getElementById('reg-email').value.trim().toLowerCase();
     const phone=document.getElementById('phone').value.trim();
+    const address=document.getElementById('address').value.trim();
     const bloodGroup=document.getElementById('blood').value;
     const city=document.getElementById('city').value.trim();
     const district=document.getElementById('district').value.trim();
@@ -313,11 +700,28 @@ async function handleRegister(event){
     const profilePicture=document.getElementById('profilePicture').files[0];
     const pw=document.getElementById('reg-pw').value;
     const pw2=document.getElementById('reg-pw2').value;
-    if(!name||!email||!city||!district||!pw||!pw2||!profilePicture){
-      throw new Error('Please fill in all required fields and upload your profile picture.');
+    let valid=true;
+    if(!name){valid=showFieldError('fullname', 'Full name is required.');}
+    if(!address){valid=showFieldError('address', 'Address is required.');}
+    if(!district){valid=showFieldError('district', 'Please select your district first.');}
+    if(!city){valid=showFieldError('city', 'Please select your city or municipality.');}
+    if(!profilePicture){valid=showFieldError('profilePicture', 'Profile picture is required.');}
+    if(!validateEmailAndPassword(email, pw, pw2)){valid=false;}
+    if(!valid){return;}
+    if(!verificationCodeSent){
+      await sendVerificationCode(email, 'donor');
+      return;
     }
-    if(pw.length<6){throw new Error('Password must be at least 6 characters.');}
-    if(pw!==pw2){throw new Error('Passwords do not match.');}
+    if(email.toLowerCase() !== verificationEmail || verificationRole !== 'donor'){
+      backToSignup();
+      showFieldError('reg-email', 'Email changed after code request. Please request a new verification code.');
+      return;
+    }
+    const emailVerificationCode=document.getElementById('emailCode')?.value.trim();
+    if(!emailVerificationCode){
+      showFieldError('emailCode', 'Please enter the email verification code.');
+      return;
+    }
     const response=await fetch('/api/auth/register', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -325,6 +729,7 @@ async function handleRegister(event){
         fullName: name,
         email,
         phone,
+        address,
         role: 'donor',
         bloodGroup,
         city,
@@ -332,17 +737,35 @@ async function handleRegister(event){
         totalDonations,
         profileImageName: profilePicture.name,
         profileImageData: await fileToDataUrl(profilePicture),
+        emailVerificationCode,
         password: pw
       })
     });
-    const payload=await response.json();
+    const payload=await readJsonResponse(response);
     if(!response.ok){
-      throw new Error(payload.message || 'Unable to create account.');
+      const message=payload.message || 'Unable to create account.';
+      if(message.toLowerCase().includes('code') || message.toLowerCase().includes('verification')){
+        showFieldError('emailCode', message);
+        return;
+      }
+      throw new Error(message);
     }
-    sessionStorage.setItem('saveabeatUser', JSON.stringify(payload.user));
+    sessionStorage.removeItem('saveabeatUser');
     location.href='login.html?role=donor';
   }catch(error){
-    err.textContent=error.message || 'Unable to reach the server. Make sure the backend is running.';
+    const message=error.message || 'Unable to reach the server. Make sure the backend is running.';
+    const lowerMessage=message.toLowerCase();
+    if(!verificationView.classList.contains('open')){
+      if(lowerMessage.includes('email')){
+        showFieldError('reg-email', message);
+        return;
+      }
+      if(lowerMessage.includes('password')){
+        showFieldError('reg-pw', message);
+        return;
+      }
+    }
+    err.textContent=message;
     err.style.display='block';
   }
 }

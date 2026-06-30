@@ -63,7 +63,7 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
   <button class="btn-full" onclick="handleLogin()" type="button">Sign In</button>
 
   <p class="card-footer" id="loginFooter">Don't have an account? <a href="register.html">Sign up here</a></p>
-  <p class="demo-note">Demo: Use any email and password (6+ characters)</p>
+  <p class="demo-note">Use your registered email and password.</p>
 </div>
 
 <script>
@@ -98,39 +98,59 @@ function applyLoginRole(){
   footer.innerHTML="Don't have an account? <a href=\"register.html?role=donor\">Sign up here</a>";
 }
 
+async function readJsonResponse(response){
+  const contentType=response.headers.get('content-type') || '';
+  if(contentType.includes('application/json')){
+    return response.json();
+  }
+  const text=await response.text();
+  if(text.trimStart().startsWith('<!DOCTYPE') || text.trimStart().startsWith('<html')){
+    throw new Error('Server returned a page instead of data. Start the backend with npm start in BackEnd, then open http://localhost:3000/login.html');
+  }
+  throw new Error('Unexpected server response. Make sure the backend is running.');
+}
+
 async function handleLogin(){
-  const email=document.getElementById("email").value;
+  const email=document.getElementById("email").value.trim().toLowerCase();
   const pw=document.getElementById("password").value;
   const err=document.getElementById("errorMsg");
   if(!email||!pw){err.textContent="Please fill in all fields.";err.style.display="block";return}
-  if(pw.length<6){err.textContent="Password must be at least 6 characters.";err.style.display="block";return}
   try{
     const response=await fetch('/api/auth/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({email,password:pw})
     });
-    const payload=await response.json();
+    const payload=await readJsonResponse(response);
     if(!response.ok){
       err.textContent=payload.message||'Invalid email or password.';
       err.style.display='block';
       return;
     }
-    err.style.display='none';
-    if(loginRole !== 'donor' && loginRole !== 'org' && loginRole !== 'admin'){
-      throw new Error('Unsupported login role.');
-    }
     if(loginRole !== 'admin' && payload.user.role !== loginRole){
-      throw new Error('Please use the correct account type for this login page.');
+      if(loginRole === 'org'){
+        err.textContent='This account is not an organization account. Use the donor login page or register as an organization.';
+      }else if(loginRole === 'donor'){
+        err.textContent='This account is not a donor account. Use the organization login page or register as a donor.';
+      }else{
+        err.textContent='Please use the correct account type for this login page.';
+      }
+      err.style.display='block';
+      return;
     }
-    sessionStorage.setItem('saveabeatUser', JSON.stringify({
-      ...payload.user,
-      email: payload.user.email || email
-    }));
-    alert(payload.message||'Login successful!');
-    location.href='index.html';
+    err.style.display='none';
+    let storedUser=payload.user;
+    try{
+      const meResponse=await fetch(`/api/me?email=${encodeURIComponent(storedUser.email)}`);
+      const mePayload=await readJsonResponse(meResponse);
+      if(meResponse.ok && mePayload.user){
+        storedUser=mePayload.user;
+      }
+    }catch(_error){}
+    sessionStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
+    location.href = storedUser.role === 'org' ? 'org-dashboard.html' : 'index.html';
   }catch(error){
-    err.textContent='Unable to reach the server. Make sure the backend is running.';
+    err.textContent=error.message||'Unable to reach the server. Make sure the backend is running.';
     err.style.display='block';
   }
 }
