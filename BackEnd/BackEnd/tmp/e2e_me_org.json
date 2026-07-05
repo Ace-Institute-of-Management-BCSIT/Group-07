@@ -1,0 +1,33 @@
+﻿{
+    "user":  {
+                 "userId":  1,
+                 "fullName":  "Bir Hospital Admin",
+                 "email":  "bir.admin@bloodcare.org.np",
+                 "phone":  "+977-1-4221119",
+                 "address":  null,
+                 "role":  "org",
+                 "city":  "Kathmandu",
+                 "district":  "Kathmandu",
+                 "profileImageName":  null,
+                 "profileImageData":  null,
+                 "createdAt":  "2026-06-22T17:03:40.000Z",
+                 "donorProfile":  null,
+                 "organization":  {
+                                      "orgId":  1,
+                                      "orgName":  "Bir Hospital Blood Center",
+                                      "orgType":  "hospital",
+                                      "address":  "Tundikhel Road, Kathmandu",
+                                      "contact":  "+977-1-4221119",
+                                      "verificationDocumentsName":  "bir.pdf",
+                                      "buildingPhoto":  "img1.jpg",
+                                      "buildingPhotoName":  "bir.jpg",
+                                      "verified":  true,
+                                      "operatingHours":  "09:00 - 17:00",
+                                      "services":  [
+                                                       "Blood collection, Donation counseling, Screening"
+                                                   ],
+                                      "availability":  "High",
+                                      "distanceKm":  "1.2"
+                                  }
+             }
+}

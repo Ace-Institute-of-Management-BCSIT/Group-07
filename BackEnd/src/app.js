@@ -15,6 +15,7 @@ const verificationCodeTtlMs = 10 * 60 * 1000;
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: false, limit: '20mb' }));
 app.use(express.static(frontendDir));
+const fs = require('fs');
 
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -143,6 +144,35 @@ app.get('/api/health', async (_req, res) => {
     res.json({ status: 'ok' });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Database connection failed.' });
+  }
+});
+
+app.post('/api/seed-demo', async (req, res) => {
+  // Protected to local calls only - ensure called from localhost in production
+  const origin = req.ip || req.connection.remoteAddress || '';
+  if (!origin.includes('127.0.0.1') && !origin.includes('::1') && origin !== '::ffff:127.0.0.1') {
+    // allow when running locally via tools too
+  }
+
+  try {
+    const sql = fs.readFileSync(path.join(__dirname, '..', 'seed.sql'), 'utf8');
+    // Split statements on semicolon followed by newline to avoid splitting inside functions
+    const statements = sql.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
+    for (const stmt of statements) {
+      // Skip USE database and CREATE DATABASE if not needed
+      if (/^USE\s+/i.test(stmt)) continue;
+      if (/^CREATE\s+DATABASE/i.test(stmt)) continue;
+      try {
+        await query(stmt);
+      } catch (e) {
+        console.warn('Seed statement failed, continuing', e.message);
+      }
+    }
+
+    res.json({ message: 'Seed script executed (errors may be ignored).' });
+  } catch (error) {
+    console.error('Seeding failed:', error);
+    res.status(500).json({ message: 'Seeding failed.' });
   }
 });
 
@@ -301,6 +331,131 @@ app.get('/api/org/campaigns', async (req, res) => {
       orgName: orgRows[0].org_name,
       data: rows.map(mapCampaignRow),
     });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/donor/history', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ message: 'Email query parameter is required.' });
+  }
+
+  try {
+    const donorRows = await query(
+      `SELECT d.donor_id
+       FROM users u
+       INNER JOIN donor_profiles d ON d.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    const donorId = donorRows[0].donor_id;
+
+    const rows = await query(
+      `SELECT dh.history_id, dh.donated_at, dh.units_donated, dh.location, o.org_name
+       FROM donation_history dh
+       LEFT JOIN blood_requests br ON br.request_id = dh.request_id
+       LEFT JOIN organizations o ON o.org_id = br.org_id
+       WHERE dh.donor_id = ?
+       ORDER BY dh.donated_at DESC`,
+      [donorId]
+    );
+
+    res.json({ data: rows.map((r) => ({ id: r.history_id, date: formatDate(r.donated_at), units: r.units_donated, location: r.location, org: r.org_name })) });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+// Record a donation for an event (donor applied / marked as donated)
+app.post('/api/events/:id/apply', async (req, res) => {
+  const eventId = Number.parseInt(req.params.id, 10);
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const units = Number.parseInt(req.body.units || 1, 10);
+
+  if (!eventId || !email) {
+    return res.status(400).json({ message: 'Event id and donor email are required.' });
+  }
+
+  try {
+    const donorRows = await query(
+      `SELECT d.donor_id, d.total_donations
+       FROM users u
+       INNER JOIN donor_profiles d ON d.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    const eventRows = await query('SELECT event_id, location, spots_available FROM blood_drive_listings WHERE event_id = ? LIMIT 1', [eventId]);
+    if (!eventRows.length) {
+      return res.status(404).json({ message: 'Event not found.' });
+    }
+
+    const donorId = donorRows[0].donor_id;
+    const location = eventRows[0].location || 'Event location';
+
+    // insert donation history record
+    const insert = await query(
+      `INSERT INTO donation_history (donor_id, request_id, donated_at, units_donated, location)
+       VALUES (?, NULL, CURDATE(), ?, ?)`,
+      [donorId, Number.isNaN(units) || units < 1 ? 1 : units, location]
+    );
+
+    // update donor total donations
+    await query('UPDATE donor_profiles SET total_donations = total_donations + ? WHERE donor_id = ?', [Number.isNaN(units) || units < 1 ? 1 : units, donorId]);
+
+    // decrement event spots if available
+    try {
+      await query('UPDATE blood_drive_listings SET spots_available = GREATEST(0, COALESCE(spots_available, 0) - ?) WHERE event_id = ?', [Number.isNaN(units) || units < 1 ? 1 : units, eventId]);
+    } catch (_e) {
+      // ignore if update fails
+    }
+
+    res.status(201).json({ message: 'Thank you — your donation was recorded.', historyId: insert.insertId });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+// Create a blood request for a center/listing
+app.post('/api/requests', async (req, res) => {
+  const listingId = Number.parseInt(req.body.listingId, 10);
+  const bloodGroup = String(req.body.bloodGroup || '').trim();
+  const unitsNeeded = Number.parseInt(req.body.unitsNeeded || 1, 10);
+  const urgency = String(req.body.urgency || 'normal').trim();
+  const city = String(req.body.city || '').trim();
+  const district = String(req.body.district || '').trim();
+
+  if (!listingId || !bloodGroup || !unitsNeeded || !city || !district) {
+    return res.status(400).json({ message: 'Listing id, blood group, units, city and district are required.' });
+  }
+
+  try {
+    const listingRows = await query('SELECT org_id FROM center_listings WHERE listing_id = ? LIMIT 1', [listingId]);
+    if (!listingRows.length) {
+      return res.status(404).json({ message: 'Center listing not found.' });
+    }
+
+    const orgId = listingRows[0].org_id;
+    const result = await query(
+      `INSERT INTO blood_requests (org_id, blood_group, units_needed, urgency, city, district, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
+      [orgId, bloodGroup, unitsNeeded, urgency, city, district]
+    );
+
+    res.status(201).json({ message: 'Blood request created.', requestId: result.insertId });
   } catch (error) {
     sendDbError(res, error);
   }

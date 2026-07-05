@@ -1,0 +1,33 @@
+﻿{
+    "orgName":  "Bir Hospital Blood Center",
+    "data":  [
+                 {
+                     "id":  2,
+                     "title":  "Bir Hospital Blood Center Emergency Camp",
+                     "org":  "Organized by Bir Hospital Blood Center",
+                     "orgName":  "Bir Hospital Blood Center",
+                     "date":  "2026-07-17",
+                     "time":  "10:00 - 15:00",
+                     "location":  "Main Hall, Bir Hospital Blood Center",
+                     "dist":  "2.5km away",
+                     "spots":  100,
+                     "total":  100,
+                     "type":  "Camp",
+                     "img":  "https://via.placeholder.com/600x300.png?text=Drive"
+                 },
+                 {
+                     "id":  1,
+                     "title":  "Bir Hospital Blood Center Community Drive",
+                     "org":  "Organized by Bir Hospital Blood Center",
+                     "orgName":  "Bir Hospital Blood Center",
+                     "date":  "2026-07-12",
+                     "time":  "10:00 - 15:00",
+                     "location":  "Main Hall, Bir Hospital Blood Center",
+                     "dist":  "2.5km away",
+                     "spots":  100,
+                     "total":  100,
+                     "type":  "Drive",
+                     "img":  "https://via.placeholder.com/600x300.png?text=Drive"
+                 }
+             ]
+}

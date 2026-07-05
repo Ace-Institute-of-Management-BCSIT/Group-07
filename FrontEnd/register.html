@@ -442,17 +442,7 @@ function renderRegisterForm(){
         <div class="field-note">Enter when your center is open for donations.</div>
         ${fieldErrorHtml('operatingHours')}
       </div>
-      <div class="form-group">
-        <label>Services Offered <span class="req">*</span></label>
-        <div class="services-checks">
-          <label><input type="checkbox" name="orgServices" value="Whole Blood" checked/> Whole Blood</label>
-          <label><input type="checkbox" name="orgServices" value="Platelets" checked/> Platelets</label>
-          <label><input type="checkbox" name="orgServices" value="Plasma" checked/> Plasma</label>
-          <label><input type="checkbox" name="orgServices" value="Power Red"/> Power Red</label>
-          <label><input type="checkbox" name="orgServices" value="Emergency Collection"/> Emergency Collection</label>
-        </div>
-        ${fieldErrorHtml('orgServices')}
-      </div>
+      
       <div class="form-group">
         <label>Verification Documents <span class="req">*</span></label>
         <input class="file-input" type="file" id="orgDocuments" accept=".pdf,image/*"/>
@@ -622,7 +612,6 @@ async function handleRegister(event){
       const email=document.getElementById('reg-email').value.trim().toLowerCase();
       const phone=document.getElementById('phone').value.trim();
       const operatingHours=document.getElementById('operatingHours').value.trim();
-      const services=[...document.querySelectorAll('input[name="orgServices"]:checked')].map((node)=>node.value);
       const pw=document.getElementById('reg-pw').value;
       const pw2=document.getElementById('reg-pw2').value;
       const docs=document.getElementById('orgDocuments').files[0];
@@ -634,7 +623,6 @@ async function handleRegister(event){
       if(!city){valid=showFieldError('city', 'Please select organization city or municipality.');}
       if(!phone){valid=showFieldError('phone', 'Contact number is required.');}
       if(!operatingHours){valid=showFieldError('operatingHours', 'Operating hours are required.');}
-      if(!services.length){valid=showFieldError('orgServices', 'Select at least one service.');}
       if(!docs){valid=showFieldError('orgDocuments', 'Verification document is required.');}
       if(!photo){valid=showFieldError('orgPhoto', 'Building photo is required.');}
       if(!validateEmailAndPassword(email, pw, pw2)){valid=false;}
@@ -666,7 +654,7 @@ async function handleRegister(event){
           email,
           phone,
           operatingHours,
-          services:services.join('|'),
+          
           orgDocumentsName: docs.name,
           orgDocumentsData: await fileToDataUrl(docs),
           orgPhotoName: photo.name,
