@@ -1,0 +1,9 @@
+﻿{
+    "message":  "Login successful.",
+    "user":  {
+                 "userId":  36,
+                 "fullName":  "Rajesh Kumar",
+                 "email":  "rajesh.donor@bloodcare.org.np",
+                 "role":  "donor"
+             }
+}

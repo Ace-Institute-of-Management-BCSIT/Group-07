@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Organization Dashboard — SaveABeat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --red:#D62B2B;
+      --red-dark:#a81e1e;
+      --red-light:#fdecea;
+      --bg:#fafafa;
+      --white:#fff;
+      --ink:#1a1a1a;
+      --mid:#555;
+      --soft:#888;
+      --border:#e8e8e8;
+      --ff-head:'Playfair Display',serif;
+      --ff-body:'DM Sans',sans-serif;
+      --shadow:0 8px 30px rgba(0,0,0,.06);
+      --r:14px;
+    }
+    body{font-family:var(--ff-body);background:linear-gradient(180deg,#fff6f6 0%,#fafafa 34%,#f8f9fb 100%);min-height:100vh;color:var(--ink);font-size:15px;line-height:1.6}
+    a{color:inherit}
+    button,input,select{font:inherit}
+
+    nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.25rem;font-weight:700;color:var(--ink);text-decoration:none;white-space:nowrap}
+    .logo svg{color:var(--red);flex-shrink:0}
+    .nav-links{display:flex;align-items:center;gap:32px}
+    .nav-links a{text-decoration:none;color:var(--mid);font-size:.9rem;font-weight:500;display:flex;align-items:center;gap:6px;transition:color .2s;position:relative;padding:4px 0}
+    .nav-links a:hover,.nav-links a.active{color:var(--ink)}
+    .nav-links a.active::after{content:'';position:absolute;left:0;right:0;bottom:-20px;height:3px;background:var(--red);border-radius:999px}
+    .nav-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+    .profile-shell{position:relative;min-width:250px}
+    .profile-trigger{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s}
+    .profile-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
+    .profile-trigger-left{display:flex;align-items:center;gap:10px;min-width:0}
+    .profile-initial{width:30px;height:30px;border-radius:50%;background:var(--red);color:var(--white);display:inline-flex;align-items:center;justify-content:center;font:700 .95rem var(--ff-body);flex-shrink:0}
+    .profile-name{font:600 .92rem var(--ff-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .profile-arrow{display:inline-flex;align-items:center;justify-content:center;color:var(--mid);transition:transform .2s}
+    .profile-shell.open .profile-arrow{transform:rotate(180deg)}
+    .profile-menu{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.12);padding:6px;display:none;z-index:120}
+    .profile-menu.open{display:block}
+    .profile-menu button{width:100%;border:none;background:none;border-radius:10px;padding:11px 12px;text-align:left;font:500 .9rem var(--ff-body);color:var(--ink);cursor:pointer;transition:background .2s}
+    .profile-menu button:hover{background:#f7f7f7}
+    .profile-menu .menu-sep{height:1px;background:var(--border);margin:6px 0}
+
+    .wrap{max-width:1200px;margin:0 auto;padding:32px 24px 56px}
+    .panel{background:var(--white);border-radius:18px;box-shadow:var(--shadow);border:1px solid var(--border)}
+    .btn-red,.btn-outline,.btn-soft{border:none;cursor:pointer;border-radius:10px;padding:11px 18px;font:700 .92rem var(--ff-body);display:inline-flex;align-items:center;gap:8px;transition:transform .2s,background .2s,border-color .2s,box-shadow .2s;text-decoration:none}
+    .btn-red{background:var(--red);color:var(--white);box-shadow:0 10px 24px rgba(214,43,43,.18)}
+    .btn-red:hover{background:var(--red-dark);transform:translateY(-1px)}
+    .btn-outline{background:var(--white);color:var(--ink);border:1.5px solid var(--border)}
+    .btn-outline:hover{border-color:var(--ink);transform:translateY(-1px)}
+    .btn-soft{background:#fff5f5;color:var(--red-dark);border:1px solid #f4d2d2}
+    .btn-soft:hover{background:#fff0f0;transform:translateY(-1px)}
+    .org-status{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:8px 12px;border-radius:999px;background:#f8f8f8;font-size:.84rem;font-weight:700;color:var(--mid)}
+    .org-status.verified{background:#effaf1;color:#1f7a3d}
+
+    .panel{padding:28px}
+    .section-header{margin-bottom:22px}
+    .section-header h2{font-family:var(--ff-head);font-size:1.8rem;margin-bottom:8px}
+    .section-header p{color:var(--mid);max-width:760px}
+    .filters{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:24px}
+    .search-box{flex:1;min-width:250px;position:relative}
+    .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--soft);width:16px;height:16px}
+    .search-box input,.filter-select{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--border);border-radius:10px;font:400 .92rem var(--ff-body);background:var(--white);outline:none;transition:border-color .2s;color:var(--ink)}
+    .search-box input:focus,.filter-select:focus{border-color:var(--red)}
+    .filter-select{padding:11px 36px 11px 14px;min-width:160px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+    .campaign-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
+    .campaign-card{background:var(--white);border-radius:16px;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;transition:transform .25s,box-shadow .25s}
+    .campaign-card:hover{transform:translateY(-3px);box-shadow:0 14px 38px rgba(0,0,0,.08)}
+    .campaign-card .card-img{position:relative;height:180px;overflow:hidden}
+    .campaign-card .card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+    .campaign-card:hover .card-img img{transform:scale(1.04)}
+    .badge{position:absolute;top:14px;left:14px;padding:6px 10px;border-radius:999px;font-size:.75rem;font-weight:800;letter-spacing:.01em;color:var(--white);background:var(--red)}
+    .badge.completed{background:#166534}
+    .badge.secondary{background:#6b7280}
+    .campaign-card .body{padding:18px}
+    .campaign-card .body h3{font-family:var(--ff-head);font-size:1.18rem;margin-bottom:6px}
+    .meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--soft);margin-top:10px}
+    .meta-row span{display:inline-flex;align-items:center;gap:6px}
+    .campaign-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
+    .campaign-stat{padding:10px 12px;border-radius:12px;background:#fafafa;border:1px solid var(--border)}
+    .campaign-stat strong{display:block;font-size:.95rem;margin-bottom:3px}
+    .campaign-stat span{font-size:.76rem;color:var(--soft)}
+    .empty-state{padding:28px 18px;border:1px dashed #d9d9d9;border-radius:14px;background:#fcfcfc;color:var(--mid);text-align:center}
+
+    .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+    .metric-card{padding:18px;border-radius:16px;background:linear-gradient(180deg,#fff,#fff8f8);border:1px solid var(--border)}
+    .metric-card strong{display:block;font-family:var(--ff-head);font-size:1.55rem;color:var(--red);margin-bottom:4px}
+    .metric-card span{font-size:.84rem;color:var(--soft)}
+    .overview-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:18px;align-items:start}
+    .request-grid,.activity-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .request-card,.activity-card{padding:16px;border-radius:16px;background:#fff;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.03)}
+    .request-card h4,.activity-card h4{font-size:1rem;margin-bottom:6px}
+    .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:.75rem;font-weight:800;background:#f3f4f6;color:#374151}
+    .pill.red{background:#fff1f1;color:#b42323}
+    .pill.green{background:#ecfdf3;color:#027a48}
+    .pill.amber{background:#fff8e1;color:#b26a00}
+    .info-card{padding:18px;border-radius:16px;background:#fff;border:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.03)}
+    .info-card .row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px dashed #ececec;font-size:.92rem}
+    .info-card .row:last-child{border-bottom:none;padding-bottom:0}
+    .info-card .row span:first-child{color:var(--soft)}
+    .hidden{display:none}
+    .loading{padding:18px 0;color:var(--mid)}
+    .section-header-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .section-header-actions .section-copy{max-width:760px}
+    .start-campaign-btn{border:none;cursor:pointer;border-radius:10px;padding:11px 18px;font:700 .92rem var(--ff-body);display:inline-flex;align-items:center;gap:8px;transition:transform .2s,background .2s,border-color .2s,box-shadow .2s;text-decoration:none;background:var(--red);color:var(--white);box-shadow:0 10px 24px rgba(214,43,43,.18)}
+    .start-campaign-btn:hover{background:var(--red-dark);transform:translateY(-1px)}
+    .campaign-backdrop{position:fixed;inset:0;background:rgba(10,10,15,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:220}
+    .campaign-backdrop.open{display:flex}
+    .campaign-modal-card{width:100%;max-width:760px;max-height:calc(100vh - 36px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .campaign-modal-header{padding:24px 28px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fff7f7 0%,#fff 100%)}
+    .campaign-modal-header h3{font-family:var(--ff-head);font-size:1.4rem;margin-bottom:6px}
+    .campaign-modal-header p{color:var(--soft);font-size:.92rem}
+    .campaign-modal-body{padding:24px 28px;overflow:auto}
+    .campaign-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .campaign-form-grid .form-group{margin-bottom:0}
+    .campaign-form-grid .full-width{grid-column:1/-1}
+    .campaign-form-grid label{display:block;font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:6px}
+    .campaign-form-grid input,.campaign-form-grid select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font:400 .92rem var(--ff-body);background:var(--white);outline:none;transition:border-color .2s,color .2s}
+    .campaign-form-grid input:focus,.campaign-form-grid select:focus{border-color:var(--red)}
+    .campaign-modal-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 28px;border-top:1px solid var(--border);background:#fcfcfc}
+    .campaign-modal-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+    .campaign-modal-actions-right .btn-outline,.campaign-modal-actions-right .btn-red{min-width:140px;justify-content:center}
+    .field-note{font-size:.78rem;color:var(--soft);margin-top:4px;line-height:1.4}
+
+    .campaign-detail-backdrop{position:fixed;inset:0;background:rgba(10,10,15,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:230}
+    .campaign-detail-backdrop.open{display:flex}
+    .campaign-detail-card{width:100%;max-width:760px;max-height:calc(100vh - 36px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .campaign-detail-header{display:flex;align-items:center;gap:16px;padding:24px 28px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fff7f7 0%,#fff 100%)}
+    .campaign-detail-avatar{width:64px;height:64px;border-radius:18px;background:var(--red);display:flex;align-items:center;justify-content:center;color:var(--white);font-family:var(--ff-head);font-size:1.8rem;font-weight:900;flex-shrink:0}
+    .campaign-detail-title h3{font-family:var(--ff-head);font-size:1.4rem}
+    .campaign-detail-title p{color:var(--soft);font-size:.9rem}
+    .campaign-detail-body{padding:24px 28px;overflow:auto}
+    .campaign-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .campaign-detail-item{padding:14px;border-radius:14px;background:#fafafa;border:1px solid var(--border)}
+    .campaign-detail-item .label{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin-bottom:6px}
+    .campaign-detail-item .value{font-size:.95rem;color:var(--ink);word-break:break-word}
+    .campaign-detail-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 28px;border-top:1px solid var(--border);background:#fcfcfc}
+    .campaign-detail-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+    .campaign-detail-actions-right .btn-outline,.campaign-detail-actions-right .btn-red{min-width:140px;justify-content:center}
+
+    .profile-backdrop{position:fixed;inset:0;background:rgba(10,10,15,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:200}
+    .profile-backdrop.open{display:flex}
+    .profile-card{width:100%;max-width:760px;max-height:calc(100vh - 36px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .profile-card-header{display:flex;align-items:center;gap:16px;padding:24px 28px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fff7f7 0%,#fff 100%)}
+    .profile-avatar{width:64px;height:64px;border-radius:18px;background:var(--red);display:flex;align-items:center;justify-content:center;color:var(--white);font-family:var(--ff-head);font-size:1.8rem;font-weight:900;flex-shrink:0}
+    .profile-title h3{font-family:var(--ff-head);font-size:1.4rem}
+    .profile-title p{color:var(--soft);font-size:.9rem}
+    .profile-card-body{padding:24px 28px;overflow:auto}
+    .profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .profile-item{padding:14px;border-radius:14px;background:#fafafa;border:1px solid var(--border)}
+    .profile-item .label{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin-bottom:6px}
+    .profile-item .value{font-size:.95rem;color:var(--ink);word-break:break-word}
+    .profile-card-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 28px;border-top:1px solid var(--border);background:#fcfcfc}
+    .profile-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+
+    @media (max-width: 1024px){
+      nav{padding:0 20px}
+      .overview-grid{grid-template-columns:1fr}
+      .profile-grid{grid-template-columns:1fr}
+    }
+    @media (max-width: 720px){
+      nav{height:auto;min-height:72px;padding:14px 16px;flex-wrap:wrap}
+      .nav-links{gap:18px;flex-wrap:wrap}
+      .nav-links a.active::after{bottom:-12px}
+      .profile-shell{min-width:unset;width:100%}
+      .nav-right{width:100%}
+      .wrap{padding:18px 14px 38px}
+      .campaign-stats,.metrics-grid{grid-template-columns:1fr}
+      .panel{padding:20px}
+      .filters{flex-direction:column;align-items:stretch}
+      .search-box,.filter-select{width:100%}
+      .profile-card-actions{flex-direction:column;align-items:stretch}
+      .profile-actions-right{justify-content:stretch}
+      .profile-actions-right .btn-outline,.profile-actions-right .btn-red,.profile-actions-right .btn-soft{width:100%;justify-content:center}
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="logo" href="#panel-upcoming" onclick="setActiveTab('upcoming')">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+      SaveABeat
+    </a>
+
+    <div class="nav-links" role="tablist" aria-label="Organization sections">
+      <a class="nav-tab active" href="#panel-upcoming" data-tab="upcoming" role="tab" aria-selected="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Upcoming Campaigns
+      </a>
+      <a class="nav-tab" href="#panel-completed" data-tab="completed" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        Completed Campaigns
+      </a>
+      <a class="nav-tab" href="#panel-overview" data-tab="overview" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M7 7h10M7 12h10M7 17h6"/></svg>
+        Org Details
+      </a>
+    </div>
+
+    <div class="nav-right">
+      <div class="profile-shell" id="profileShell">
+        <button class="profile-trigger" id="profileTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="profile-trigger-left">
+            <span class="profile-initial" id="profileInitial">O</span>
+            <span class="profile-name" id="orgNameDisplay">Organization</span>
+          </span>
+          <span class="profile-arrow" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-label="Profile menu">
+          <button type="button" id="profileSummaryBtn" role="menuitem">View Summary</button>
+          <div class="menu-sep"></div>
+          <button type="button" id="logoutBtn" role="menuitem">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <main id="dashboardRoot">
+      <section class="panel tab-panel" id="panel-upcoming" data-panel="upcoming">
+        <div class="section-header">
+          <h2>Upcoming Campaigns</h2>
+          <p>Use the same event-card layout as the donor dashboard to browse campaigns that are scheduled but not yet completed.</p>
+        </div>
+
+        <div class="filters">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input id="upcomingSearch" type="text" placeholder="Search upcoming campaigns by title or location..." />
+          </div>
+          <select class="filter-select" id="upcomingType">
+            <option value="">All types</option>
+            <option value="Drive">Drive</option>
+            <option value="Camp">Camp</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </div>
+
+        <div class="campaign-grid" id="upcomingGrid">
+          <div class="loading">Loading upcoming campaigns...</div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel hidden" id="panel-completed" data-panel="completed">
+        <div class="section-header">
+          <h2>Completed Campaigns</h2>
+          <p>These are the campaigns that already happened, shown with the same card layout so the dashboard feels consistent.</p>
+        </div>
+
+        <div class="filters">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input id="completedSearch" type="text" placeholder="Search completed campaigns by title or location..." />
+          </div>
+          <select class="filter-select" id="completedType">
+            <option value="">All types</option>
+            <option value="Drive">Drive</option>
+            <option value="Camp">Camp</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </div>
+
+        <div class="campaign-grid" id="completedGrid">
+          <div class="loading">Loading completed campaigns...</div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel hidden" id="panel-overview" data-panel="overview">
+        <div class="section-header section-header-actions">
+          <div class="section-copy">
+            <h2>Org Details</h2>
+            <p>This tab groups the operational details you requested: total blood units collected, request totals, sold units, and supporting organization data.</p>
+          </div>
+          <button class="start-campaign-btn" type="button" id="startCampaignBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Start Campaign
+          </button>
+        </div>
+
+        <div class="org-status" id="orgStatusBadge">Checking account status...</div>
+
+        <div class="metrics-grid">
+          <div class="metric-card"><strong id="metricCollected">0 Units</strong><span>Total Blood Units Collected</span></div>
+          <div class="metric-card"><strong id="metricRequests">0</strong><span>Request for Blood Units</span></div>
+          <div class="metric-card"><strong id="metricSold">0 Units</strong><span>Total Sold Blood Units</span></div>
+          <div class="metric-card"><strong id="metricUpcoming">0</strong><span>Upcoming Campaigns</span></div>
+          <div class="metric-card"><strong id="metricCompleted">0</strong><span>Completed Campaigns</span></div>
+          <div class="metric-card"><strong id="metricOpen">0</strong><span>Open Requests</span></div>
+        </div>
+
+        <div class="overview-grid">
+          <div>
+            <div class="panel" style="padding:22px;margin-bottom:18px">
+              <div class="section-header" style="margin-bottom:16px">
+                <h2 style="font-size:1.25rem">Blood Requests</h2>
+                <p>Each request card shows the needed units, urgency, status, and location.</p>
+              </div>
+              <div class="request-grid" id="requestGrid">
+                <div class="loading">Loading request details...</div>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:22px">
+              <div class="section-header" style="margin-bottom:16px">
+                <h2 style="font-size:1.25rem">Recent Activity</h2>
+                <p>Latest donation records linked to your requests.</p>
+              </div>
+              <div class="activity-list" id="activityList">
+                <div class="loading">Loading recent activity...</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="info-card" style="margin-bottom:18px">
+              <div class="section-header" style="margin-bottom:14px">
+                <h2 style="font-size:1.25rem">Organization Details</h2>
+                <p>Account and contact information pulled from your signed-in organization profile.</p>
+              </div>
+              <div class="row"><span>Organization</span><strong id="infoOrgName">-</strong></div>
+              <div class="row"><span>Manager</span><strong id="infoManager">-</strong></div>
+              <div class="row"><span>Email</span><strong id="infoEmail">-</strong></div>
+              <div class="row"><span>Phone</span><strong id="infoPhone">-</strong></div>
+              <div class="row"><span>Address</span><strong id="infoAddress">-</strong></div>
+              <div class="row"><span>Verified</span><strong id="infoVerified">-</strong></div>
+            </div>
+
+            <div class="info-card">
+              <div class="section-header" style="margin-bottom:14px">
+                <h2 style="font-size:1.25rem">Campaign Totals</h2>
+                <p>Useful campaign capacity summary.</p>
+              </div>
+              <div class="row"><span>Total Campaigns</span><strong id="infoTotalCampaigns">0</strong></div>
+              <div class="row"><span>Total Campaign Spots</span><strong id="infoTotalSpots">0</strong></div>
+              <div class="row"><span>Available Campaign Spots</span><strong id="infoAvailableSpots">0</strong></div>
+              <div class="row"><span>Fulfilled Requests</span><strong id="infoFulfilled">0</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="profile-backdrop" id="profileBackdrop" aria-hidden="true">
+    <div class="profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <div class="profile-card-header">
+        <div class="profile-avatar" id="profileAvatar">O</div>
+        <div class="profile-title">
+          <h3 id="profileTitle">Organization Summary</h3>
+          <p id="profileSubtitle">Signed-in account details</p>
+        </div>
+      </div>
+      <div class="profile-card-body">
+        <div class="profile-grid" id="profileGrid"></div>
+      </div>
+      <div class="profile-card-actions">
+        <div class="profile-actions-left">
+          <button class="btn-outline" type="button" id="profileCloseBtn">Close</button>
+        </div>
+        <div class="profile-actions-right">
+          <button class="btn-soft" type="button" id="profileSummaryCloseBtn">Back to dashboard</button>
+          <button class="btn-red" type="button" id="profileLogoutBtn">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-backdrop" id="campaignBackdrop" aria-hidden="true">
+    <div class="campaign-modal-card" role="dialog" aria-modal="true" aria-labelledby="campaignTitle">
+      <div class="campaign-modal-header">
+        <h3 id="campaignTitle">Start a Campaign</h3>
+        <p id="campaignSubtitle">Fill in the same event details that appear in the donor dashboard and homepage.</p>
+      </div>
+      <div class="campaign-modal-body">
+        <form id="campaignForm">
+          <div class="campaign-form-grid">
+            <div class="form-group full-width">
+              <label for="campaignName">Campaign Title <span style="color:var(--red)">*</span></label>
+              <input id="campaignName" type="text" placeholder="e.g. Bir Hospital Blood Drive" />
+            </div>
+            <div class="form-group">
+              <label for="campaignType">Campaign Type <span style="color:var(--red)">*</span></label>
+              <select id="campaignType">
+                <option value="">Select type</option>
+                <option value="Drive">Drive</option>
+                <option value="Camp">Camp</option>
+                <option value="Emergency">Emergency</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="campaignDate">Event Date <span style="color:var(--red)">*</span></label>
+              <input id="campaignDate" type="date" />
+            </div>
+            <div class="form-group">
+              <label for="campaignTime">Time Range <span style="color:var(--red)">*</span></label>
+              <input id="campaignTime" type="text" placeholder="9:00 AM - 5:00 PM" />
+            </div>
+            <div class="form-group">
+              <label for="campaignLocation">Location <span style="color:var(--red)">*</span></label>
+              <input id="campaignLocation" type="text" placeholder="Event location" />
+            </div>
+            <div class="form-group">
+              <label for="campaignDistance">Distance (km) <span style="color:var(--red)">*</span></label>
+              <input id="campaignDistance" type="number" min="0" step="0.1" placeholder="5.0" />
+            </div>
+            <div class="form-group">
+              <label for="campaignSpots">Total Spots <span style="color:var(--red)">*</span></label>
+              <input id="campaignSpots" type="number" min="1" step="1" placeholder="100" />
+            </div>
+            <div class="form-group full-width">
+              <label for="campaignImage">Campaign Image <span style="color:var(--red)">*</span></label>
+              <input id="campaignImage" type="file" accept="image/*" />
+              <div class="field-note">Upload an image that will be shown in the homepage and donor event cards.</div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="campaign-modal-actions">
+        <div class="campaign-actions-left">
+          <button class="btn-outline" type="button" id="campaignCloseBtn">Cancel</button>
+        </div>
+        <div class="campaign-modal-actions-right">
+          <button class="btn-red" type="button" id="campaignSubmitBtn">Publish Campaign</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-detail-backdrop" id="campaignDetailBackdrop" aria-hidden="true">
+    <div class="campaign-detail-card" role="dialog" aria-modal="true" aria-labelledby="campaignDetailTitle">
+      <div class="campaign-detail-header">
+        <div class="campaign-detail-avatar" id="campaignDetailAvatar">C</div>
+        <div class="campaign-detail-title">
+          <h3 id="campaignDetailTitle">Campaign Details</h3>
+          <p id="campaignDetailSubtitle">View campaign information and manage the campaign.</p>
+        </div>
+      </div>
+      <div class="campaign-detail-body">
+        <div class="campaign-detail-grid" id="campaignDetailGrid"></div>
+      </div>
+      <div class="campaign-detail-actions">
+        <div class="campaign-detail-actions-left">
+          <button class="btn-outline" type="button" id="campaignDetailCloseBtn">Close</button>
+        </div>
+        <div class="campaign-detail-actions-right">
+          <button class="btn-outline" type="button" id="campaignDetailStopBtn">Stop Campaign</button>
+          <button class="btn-red" type="button" id="campaignDetailDeleteBtn">Delete Campaign</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const AUTH_STORAGE_KEY = 'saveabeatUser';
+    const dashboardState = {
+      org: null,
+      metrics: null,
+      campaigns: { upcoming: [], completed: [] },
+      requests: [],
+      recentActivity: [],
+    };
+
+    function getStoredUser(){
+      try {
+        return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    async function readJsonResponse(response){
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        return response.json();
+      }
+      const text = await response.text();
+      if (text.trimStart().startsWith('<!DOCTYPE') || text.trimStart().startsWith('<html')) {
+        throw new Error('Server returned a page instead of data. Start the backend with npm start in BackEnd, then reopen the dashboard.');
+      }
+      throw new Error('Unexpected server response. Make sure the backend is running.');
+    }
+
+    function escapeHtml(value){
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function readFileAsDataUrl(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function initialForName(name){
+      const text = String(name || 'O').trim();
+      return text ? text.charAt(0).toUpperCase() : 'O';
+    }
+
+    function encodeDetailData(value){
+      return escapeHtml(encodeURIComponent(JSON.stringify(value)));
+    }
+
+    function decodeDetailData(value){
+      try{
+        return JSON.parse(decodeURIComponent(String(value || '')));
+      }catch(_error){
+        return null;
+      }
+    }
+
+    function formatNumber(value){
+      return Number(value || 0).toLocaleString();
+    }
+
+    function setActiveTab(tabName){
+      document.querySelectorAll('.nav-tab').forEach((link) => {
+        const isActive = link.dataset.tab === tabName;
+        link.classList.toggle('active', isActive);
+        link.setAttribute('aria-selected', String(isActive));
+      });
+      document.querySelectorAll('.tab-panel').forEach((panel) => {
+        panel.classList.toggle('hidden', panel.dataset.panel !== tabName);
+      });
+    }
+
+    let currentCampaignDetail = null;
+
+    function openCampaignDetailModal(campaign){
+      const backdrop = document.getElementById('campaignDetailBackdrop');
+      const title = document.getElementById('campaignDetailTitle');
+      const subtitle = document.getElementById('campaignDetailSubtitle');
+      const avatar = document.getElementById('campaignDetailAvatar');
+      const grid = document.getElementById('campaignDetailGrid');
+      const stopBtn = document.getElementById('campaignDetailStopBtn');
+      const deleteBtn = document.getElementById('campaignDetailDeleteBtn');
+
+      if(!backdrop || !title || !subtitle || !avatar || !grid || !stopBtn || !deleteBtn){
+        return;
+      }
+
+      currentCampaignDetail = campaign;
+      title.textContent = campaign.title || 'Campaign Details';
+      subtitle.textContent = campaign.org || campaign.orgName || 'Campaign information';
+      avatar.textContent = initialForName(campaign.title);
+      grid.innerHTML = [
+        ['Campaign', campaign.title || '-'],
+        ['Organization', campaign.org || campaign.orgName || '-'],
+        ['Type', campaign.type || '-'],
+        ['Date', campaign.date || '-'],
+        ['Time', campaign.time || '-'],
+        ['Location', campaign.location || '-'],
+        ['Distance', campaign.dist || '-'],
+        ['Spots', `${campaign.spots ?? '-'} / ${campaign.total ?? '-'}`],
+      ].map(([label, value]) => `
+        <div class="campaign-detail-item">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+        </div>
+      `).join('');
+
+      const isUpcoming = campaign.state !== 'completed';
+      stopBtn.style.display = isUpcoming ? 'inline-flex' : 'none';
+      deleteBtn.textContent = 'Delete Campaign';
+
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeCampaignDetailModal(){
+      const backdrop = document.getElementById('campaignDetailBackdrop');
+      if(!backdrop){
+        return;
+      }
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      currentCampaignDetail = null;
+    }
+
+    async function modifyCampaign(action){
+      const user = getStoredUser();
+      const campaign = currentCampaignDetail;
+      if(!user || !campaign){
+        return;
+      }
+
+      try{
+        const endpoint = action === 'stop'
+          ? `/api/org/campaigns/${campaign.id}/stop`
+          : `/api/org/campaigns/${campaign.id}`;
+        const response = await fetch(endpoint, {
+          method: action === 'stop' ? 'POST' : 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, role: user.role }),
+        });
+        const payload = await readJsonResponse(response);
+        if(!response.ok){
+          alert(payload.message || `Unable to ${action} campaign.`);
+          return;
+        }
+
+        closeCampaignDetailModal();
+        await loadDashboard();
+        const actionLabel = action === 'stop' ? 'stopped' : 'deleted';
+        alert(payload.message || `Campaign ${actionLabel} successfully.`);
+      }catch(error){
+        alert(error.message || `Unable to ${action} campaign.`);
+      }
+    }
+
+    function openCampaignModal(){
+      const backdrop = document.getElementById('campaignBackdrop');
+      const form = document.getElementById('campaignForm');
+      if (!backdrop || !form) {
+        return;
+      }
+
+      form.reset();
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeCampaignModal(){
+      const backdrop = document.getElementById('campaignBackdrop');
+      if (!backdrop) {
+        return;
+      }
+
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    async function publishCampaign(){
+      const user = getStoredUser();
+      if (!user || user.role !== 'org') {
+        location.href = 'login.html?role=org';
+        return;
+      }
+
+      const title = String(document.getElementById('campaignName')?.value || '').trim();
+      const eventType = String(document.getElementById('campaignType')?.value || '').trim();
+      const eventDate = String(document.getElementById('campaignDate')?.value || '').trim();
+      const timeRange = String(document.getElementById('campaignTime')?.value || '').trim();
+      const locationValue = String(document.getElementById('campaignLocation')?.value || '').trim();
+      const distanceKm = String(document.getElementById('campaignDistance')?.value || '').trim();
+      const spotsTotal = String(document.getElementById('campaignSpots')?.value || '').trim();
+      const imageFile = document.getElementById('campaignImage')?.files?.[0];
+
+      if (!title || !eventType || !eventDate || !timeRange || !locationValue || !distanceKm || !spotsTotal || !imageFile) {
+        alert('Please fill in all campaign fields and upload an image.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/org/campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            title,
+            eventType,
+            eventDate,
+            timeRange,
+            location: locationValue,
+            distanceKm,
+            spotsTotal,
+            imageData: await readFileAsDataUrl(imageFile),
+          }),
+        });
+        const payload = await readJsonResponse(response);
+        if (!response.ok) {
+          alert(payload.message || 'Unable to create campaign.');
+          return;
+        }
+
+        closeCampaignModal();
+        await loadDashboard();
+        setActiveTab('upcoming');
+        document.getElementById('panel-upcoming')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        alert(payload.message || 'Campaign created successfully.');
+      } catch (error) {
+        alert(error.message || 'Unable to create campaign.');
+      }
+    }
+
+    function campaignCardMarkup(campaign, variant){
+      const remaining = Number(campaign.spots ?? 0);
+      const total = Number(campaign.total ?? 0);
+      const filled = Math.max(total - remaining, 0);
+      const badgeClass = variant === 'completed' ? 'completed' : 'secondary';
+      const badgeLabel = variant === 'completed' ? 'Completed' : campaign.type || 'Upcoming';
+      const firstMetricLabel = variant === 'completed' ? 'Spots used' : 'Open spots';
+      const firstMetricValue = variant === 'completed' ? `${filled} / ${total}` : `${remaining} left`;
+      const secondMetricLabel = variant === 'completed' ? 'Collection rate' : 'Total spots';
+      const secondMetricValue = total > 0 ? `${Math.round((filled / total) * 100)}%` : '0%';
+
+      return `
+        <article class="campaign-card">
+          <div class="card-img">
+            <img src="${escapeHtml(campaign.img || 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=900&auto=format&fit=crop&q=70')}" alt="${escapeHtml(campaign.title)}" />
+            <span class="badge ${badgeClass}">${escapeHtml(badgeLabel)}</span>
+          </div>
+          <div class="body">
+            <h3>${escapeHtml(campaign.title)}</h3>
+            <p style="color:var(--mid);font-size:.93rem">${escapeHtml(campaign.org || campaign.orgName || '')}</p>
+            <div class="meta-row">
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>${escapeHtml(campaign.date || '-')}</span>
+              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-7 7c0 4.2 4.3 8.7 6.3 10.5.4.4 1 .4 1.4 0C14.7 17.7 19 13.2 19 9a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(campaign.location || '-')}</span>
+            </div>
+            <div class="campaign-stats">
+              <div class="campaign-stat"><strong>${escapeHtml(firstMetricValue)}</strong><span>${escapeHtml(firstMetricLabel)}</span></div>
+              <div class="campaign-stat"><strong>${escapeHtml(secondMetricValue)}</strong><span>${escapeHtml(secondMetricLabel)}</span></div>
+              <div class="campaign-stat"><strong>${escapeHtml(campaign.time || '-')}</strong><span>Time range</span></div>
+              <div class="campaign-stat"><strong>${escapeHtml(campaign.dist || '-')}</strong><span>Distance</span></div>
+            </div>
+            <button class="btn-red" type="button" data-detail-kind="campaign" data-detail-data="${encodeDetailData({ ...campaign, state: variant })}">View Details</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function requestCardMarkup(request){
+      const urgencyClass = request.urgency === 'critical' ? 'red' : request.urgency === 'urgent' ? 'amber' : 'green';
+      const statusClass = request.status === 'fulfilled' ? 'green' : request.status === 'open' ? 'amber' : 'red';
+      return `
+        <article class="request-card">
+          <h4>${escapeHtml(request.bloodGroup)} <span style="color:var(--soft);font-weight:600">${escapeHtml(request.unitsNeeded)} units needed</span></h4>
+          <p style="color:var(--mid);font-size:.9rem">${escapeHtml(request.city)}, ${escapeHtml(request.district)}</p>
+          <div class="pill-row">
+            <span class="pill ${urgencyClass}">${escapeHtml(request.urgency)}</span>
+            <span class="pill ${statusClass}">${escapeHtml(request.status)}</span>
+          </div>
+          <div style="margin-top:12px;font-size:.84rem;color:var(--soft)">Created: ${escapeHtml(request.createdAt || '-')}<br/>Expires: ${escapeHtml(request.expiresAt || '-')}</div>
+        </article>
+      `;
+    }
+
+    function activityMarkup(activity){
+      const requestStatus = String(activity.requestStatus || '').toLowerCase();
+      const statusClass = requestStatus === 'fulfilled' ? 'green' : requestStatus === 'open' ? 'amber' : 'red';
+      return `
+        <article class="activity-card">
+          <h4>${escapeHtml(activity.units)} units recorded</h4>
+          <p style="color:var(--mid);font-size:.9rem">${escapeHtml(activity.location || 'Donation location')}</p>
+          <div class="pill-row">
+            <span class="pill ${statusClass}">${escapeHtml(activity.requestStatus || 'linked request')}</span>
+            <span class="pill">${escapeHtml(activity.date || '-')}</span>
+          </div>
+        </article>
+      `;
+    }
+
+    function getFilteredCampaigns(kind){
+      const campaigns = dashboardState.campaigns[kind] || [];
+      const searchEl = document.getElementById(`${kind}Search`);
+      const typeEl = document.getElementById(`${kind}Type`);
+      const search = String(searchEl?.value || '').trim().toLowerCase();
+      const type = String(typeEl?.value || '').trim();
+
+      return campaigns.filter((campaign) => {
+        const matchesSearch = !search || [campaign.title, campaign.location, campaign.org, campaign.date, campaign.time].some((field) => String(field || '').toLowerCase().includes(search));
+        const matchesType = !type || String(campaign.type || '') === type;
+        return matchesSearch && matchesType;
+      });
+    }
+
+    function renderCampaignList(kind){
+      const grid = document.getElementById(`${kind}Grid`);
+      const items = getFilteredCampaigns(kind);
+      if (!items.length) {
+        grid.innerHTML = `<div class="empty-state">No ${kind} campaigns match the current filters.</div>`;
+        return;
+      }
+      grid.innerHTML = items.map((campaign) => campaignCardMarkup(campaign, kind)).join('');
+    }
+
+    function renderOverview(){
+      const metrics = dashboardState.metrics || {};
+      const org = dashboardState.org || {};
+
+      document.getElementById('metricCollected').textContent = `${formatNumber(metrics.totalBloodUnitsCollected)} Units`;
+      document.getElementById('metricRequests').textContent = formatNumber(metrics.requestForBloodUnits);
+      document.getElementById('metricSold').textContent = `${formatNumber(metrics.totalSoldBloodUnits)} Units`;
+      document.getElementById('metricUpcoming').textContent = formatNumber(metrics.upcomingCampaigns);
+      document.getElementById('metricCompleted').textContent = formatNumber(metrics.completedCampaigns);
+      document.getElementById('metricOpen').textContent = formatNumber(metrics.openRequests);
+
+      document.getElementById('infoOrgName').textContent = org.orgName || '-';
+      document.getElementById('infoManager').textContent = org.managerName || '-';
+      document.getElementById('infoEmail').textContent = org.email || '-';
+      document.getElementById('infoPhone').textContent = org.phone || org.contact || '-';
+      document.getElementById('infoAddress').textContent = org.address || '-';
+      document.getElementById('infoVerified').textContent = org.verified ? 'Verified' : 'Pending verification';
+      document.getElementById('infoTotalCampaigns').textContent = formatNumber(metrics.totalCampaigns);
+      document.getElementById('infoTotalSpots').textContent = formatNumber(metrics.totalCampaignSpots);
+      document.getElementById('infoAvailableSpots').textContent = formatNumber(metrics.availableCampaignSpots);
+      document.getElementById('infoFulfilled').textContent = formatNumber(metrics.fulfilledRequests);
+
+      const statusBadge = document.getElementById('orgStatusBadge');
+      statusBadge.textContent = org.verified ? 'Verified organization account' : 'Organization account pending verification';
+      statusBadge.classList.toggle('verified', Boolean(org.verified));
+
+      const profileGrid = document.getElementById('profileGrid');
+      profileGrid.innerHTML = [
+        ['Organization', org.orgName || '-'],
+        ['Manager', org.managerName || '-'],
+        ['Email', org.email || '-'],
+        ['Phone', org.phone || org.contact || '-'],
+        ['Address', org.address || '-'],
+        ['Type', org.orgType || '-'],
+        ['Verification', org.verified ? 'Verified' : 'Pending'],
+        ['District', org.district || '-'],
+      ].map(([label, value]) => `
+        <div class="profile-item">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+        </div>
+      `).join('');
+
+      const requests = dashboardState.requests || [];
+      const activities = dashboardState.recentActivity || [];
+      const requestGrid = document.getElementById('requestGrid');
+      const activityList = document.getElementById('activityList');
+      requestGrid.innerHTML = requests.length ? requests.map(requestCardMarkup).join('') : '<div class="empty-state">No blood requests were found for this organization.</div>';
+      activityList.innerHTML = activities.length ? activities.map(activityMarkup).join('') : '<div class="empty-state">No recent donation activity is available yet.</div>';
+
+      const profileInitial = initialForName(org.orgName || org.managerName || 'O');
+      document.getElementById('profileInitial').textContent = profileInitial;
+      document.getElementById('profileAvatar').textContent = profileInitial;
+      document.getElementById('orgNameDisplay').textContent = org.orgName || org.managerName || 'Organization';
+      document.getElementById('profileSubtitle').textContent = org.orgName ? `${org.orgName} account details` : 'Signed-in account details';
+    }
+
+    async function loadDashboard(){
+      const storedUser = getStoredUser();
+      if (!storedUser || storedUser.role !== 'org') {
+        location.href = 'login.html?role=org';
+        return;
+      }
+
+      document.getElementById('orgNameDisplay').textContent = storedUser.orgName || storedUser.fullName || 'Organization';
+      document.getElementById('profileInitial').textContent = initialForName(storedUser.orgName || storedUser.fullName || 'O');
+      document.getElementById('profileAvatar').textContent = initialForName(storedUser.orgName || storedUser.fullName || 'O');
+      document.getElementById('profileSubtitle').textContent = storedUser.orgName ? `${storedUser.orgName} account details` : 'Signed-in account details';
+
+      try {
+        const response = await fetch(`/api/org/dashboard?email=${encodeURIComponent(storedUser.email)}`);
+        const payload = await readJsonResponse(response);
+
+        if (!response.ok) {
+          throw new Error(payload.message || 'Unable to load organization dashboard.');
+        }
+
+        dashboardState.org = payload.org || {};
+        dashboardState.metrics = payload.metrics || {};
+        dashboardState.campaigns = {
+          upcoming: (payload.campaigns?.upcoming || []).map((campaign) => ({ ...campaign, state: 'upcoming' })),
+          completed: (payload.campaigns?.completed || []).map((campaign) => ({ ...campaign, state: 'completed' })),
+        };
+        dashboardState.requests = payload.requests || [];
+        dashboardState.recentActivity = payload.recentActivity || [];
+
+        renderOverview();
+        renderCampaignList('upcoming');
+        renderCampaignList('completed');
+      } catch (error) {
+        document.getElementById('upcomingGrid').innerHTML = `<div class="empty-state">${escapeHtml(error.message || 'Unable to load dashboard data.')}</div>`;
+        document.getElementById('completedGrid').innerHTML = `<div class="empty-state">${escapeHtml(error.message || 'Unable to load dashboard data.')}</div>`;
+        document.getElementById('requestGrid').innerHTML = `<div class="empty-state">${escapeHtml(error.message || 'Unable to load dashboard data.')}</div>`;
+        document.getElementById('activityList').innerHTML = `<div class="empty-state">${escapeHtml(error.message || 'Unable to load dashboard data.')}</div>`;
+      }
+    }
+
+    function bindEvents(){
+      document.querySelectorAll('.nav-tab, [data-go-tab]').forEach((element) => {
+        element.addEventListener('click', (event) => {
+          const targetTab = element.dataset.tab || element.dataset.goTab;
+          if (!targetTab) {
+            return;
+          }
+          if (element.classList.contains('nav-tab')) {
+            event.preventDefault();
+          }
+          setActiveTab(targetTab);
+          document.getElementById(`panel-${targetTab}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (targetTab === 'upcoming') {
+            document.getElementById('upcomingSearch')?.focus();
+          }
+          if (targetTab === 'completed') {
+            document.getElementById('completedSearch')?.focus();
+          }
+        });
+      });
+
+      ['upcomingSearch', 'upcomingType', 'completedSearch', 'completedType'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('input', () => renderCampaignList(id.startsWith('upcoming') ? 'upcoming' : 'completed'));
+        document.getElementById(id)?.addEventListener('change', () => renderCampaignList(id.startsWith('upcoming') ? 'upcoming' : 'completed'));
+      });
+
+      const profileShell = document.getElementById('profileShell');
+      const profileMenu = document.getElementById('profileMenu');
+      const profileTrigger = document.getElementById('profileTrigger');
+      const profileBackdrop = document.getElementById('profileBackdrop');
+      const profileCloseBtn = document.getElementById('profileCloseBtn');
+      const profileSummaryBtn = document.getElementById('profileSummaryBtn');
+      const profileSummaryCloseBtn = document.getElementById('profileSummaryCloseBtn');
+      const profileLogoutBtn = document.getElementById('profileLogoutBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const startCampaignBtn = document.getElementById('startCampaignBtn');
+      const campaignBackdrop = document.getElementById('campaignBackdrop');
+      const campaignCloseBtn = document.getElementById('campaignCloseBtn');
+      const campaignSubmitBtn = document.getElementById('campaignSubmitBtn');
+      const campaignDetailBackdrop = document.getElementById('campaignDetailBackdrop');
+      const campaignDetailCloseBtn = document.getElementById('campaignDetailCloseBtn');
+      const campaignDetailStopBtn = document.getElementById('campaignDetailStopBtn');
+      const campaignDetailDeleteBtn = document.getElementById('campaignDetailDeleteBtn');
+
+      function closeProfileMenu(){
+        profileShell.classList.remove('open');
+        profileMenu.classList.remove('open');
+        profileTrigger.setAttribute('aria-expanded', 'false');
+      }
+
+      profileTrigger.addEventListener('click', () => {
+        const isOpen = profileMenu.classList.toggle('open');
+        profileShell.classList.toggle('open', isOpen);
+        profileTrigger.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!profileShell.contains(event.target)) {
+          closeProfileMenu();
+        }
+      });
+
+      function goToOrgDetails(){
+        closeProfileMenu();
+        setActiveTab('overview');
+        document.getElementById('panel-overview')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+
+      function doLogout(){
+        closeProfileMenu();
+        sessionStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        location.replace('index.html');
+      }
+
+      profileSummaryBtn.addEventListener('click', (event) => { event.preventDefault(); goToOrgDetails(); });
+      profileCloseBtn.addEventListener('click', (event) => { event.preventDefault(); closeProfileMenu(); });
+      profileSummaryCloseBtn.addEventListener('click', (event) => { event.preventDefault(); goToOrgDetails(); });
+      profileBackdrop.addEventListener('click', (event) => {
+        if (event.target === profileBackdrop) {
+          closeProfileMenu();
+        }
+      });
+
+      logoutBtn.addEventListener('click', (event) => { event.preventDefault(); doLogout(); });
+      profileLogoutBtn.addEventListener('click', (event) => { event.preventDefault(); doLogout(); });
+
+      startCampaignBtn?.addEventListener('click', openCampaignModal);
+      document.getElementById('campaignForm')?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        publishCampaign();
+      });
+      campaignCloseBtn?.addEventListener('click', closeCampaignModal);
+      campaignSubmitBtn?.addEventListener('click', publishCampaign);
+      campaignBackdrop?.addEventListener('click', (event) => {
+        if (event.target === campaignBackdrop) {
+          closeCampaignModal();
+        }
+      });
+      campaignDetailCloseBtn?.addEventListener('click', closeCampaignDetailModal);
+      campaignDetailStopBtn?.addEventListener('click', () => modifyCampaign('stop'));
+      campaignDetailDeleteBtn?.addEventListener('click', () => {
+        const campaign = currentCampaignDetail;
+        if(!campaign) return;
+        if(window.confirm('Delete this campaign? This action cannot be undone.')){
+          modifyCampaign('delete');
+        }
+      });
+      campaignDetailBackdrop?.addEventListener('click', (event) => {
+        if(event.target === campaignDetailBackdrop){
+          closeCampaignDetailModal();
+        }
+      });
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-detail-kind="campaign"][data-detail-data]');
+        if(trigger){
+          event.preventDefault();
+          const campaign = decodeDetailData(trigger.dataset.detailData);
+          if(campaign){
+            openCampaignDetailModal(campaign);
+          }
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeProfileMenu();
+          closeCampaignModal();
+          closeCampaignDetailModal();
+        }
+      });
+
+      profileTrigger.addEventListener('blur', () => {
+        if (!profileShell.contains(document.activeElement)) {
+          closeProfileMenu();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        const detailTrigger = event.target.closest('[data-detail-kind="campaign"][data-detail-data]');
+        if(detailTrigger){
+          event.preventDefault();
+          const campaign = decodeDetailData(detailTrigger.dataset.detailData);
+          if(campaign){
+            openCampaignDetailModal(campaign);
+          }
+        }
+      });
+    }
+
+    bindEvents();
+    setActiveTab('upcoming');
+    loadDashboard();
+  </script>
+</body>
+</html>

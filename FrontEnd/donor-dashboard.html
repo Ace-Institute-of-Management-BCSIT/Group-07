@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Donor Dashboard — SaveABeat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --red:#D62B2B;
+      --red-dark:#a81e1e;
+      --red-light:#fdecea;
+      --bg:#fafafa;
+      --white:#fff;
+      --ink:#1a1a1a;
+      --mid:#555;
+      --soft:#888;
+      --border:#e8e8e8;
+      --ff-head:'Playfair Display',serif;
+      --ff-body:'DM Sans',sans-serif;
+      --shadow:0 8px 30px rgba(0,0,0,.06);
+      --r:12px;
+    }
+    body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;color:var(--ink);font-size:15px;line-height:1.6}
+    
+    /* NAV */
+    nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.25rem;font-weight:700;color:var(--ink);text-decoration:none}
+    .logo svg{color:var(--red)}
+    .nav-links{display:flex;align-items:center;gap:32px}
+    .nav-links button{text-decoration:none;color:var(--mid);font-size:.9rem;font-weight:500;display:flex;align-items:center;gap:6px;transition:color .2s;background:none;border:none;cursor:pointer;font-family:var(--ff-body);padding:0}
+    .nav-links button:hover,.nav-links button.active{color:var(--ink)}
+    .nav-right{display:flex;align-items:center;gap:12px}
+    .btn-ghost{background:none;border:none;font:500 .9rem var(--ff-body);color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;transition:background .2s}
+    .btn-ghost:hover{background:#f0f0f0}
+    .btn-red{background:var(--red);color:var(--white);border:none;font:600 .9rem var(--ff-body);padding:9px 22px;border-radius:6px;cursor:pointer;transition:background .2s}
+    .btn-red:hover{background:var(--red-dark)}
+    .nav-auth{position:relative;display:flex;align-items:center}
+    .profile-shell{position:relative;min-width:248px}
+    .profile-trigger{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s}
+    .profile-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
+    .profile-trigger-left{display:flex;align-items:center;gap:10px;min-width:0}
+    .profile-initial{width:30px;height:30px;border-radius:50%;background:var(--red);color:var(--white);display:inline-flex;align-items:center;justify-content:center;font:700 .95rem var(--ff-body);flex-shrink:0}
+    .profile-avatar-photo{width:30px;height:30px;border-radius:50%;background-size:cover;background-position:center;background-repeat:no-repeat;flex-shrink:0;border:1px solid rgba(255,255,255,.6)}
+    .profile-name{font:600 .92rem var(--ff-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .profile-arrow{display:inline-flex;align-items:center;justify-content:center;color:var(--mid);transition:transform .2s}
+    .profile-shell.open .profile-arrow{transform:rotate(180deg)}
+    .profile-menu{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.12);padding:6px;display:none;z-index:120}
+    .profile-menu.open{display:block}
+    .profile-menu button{width:100%;border:none;background:none;border-radius:10px;padding:11px 12px;text-align:left;font:500 .9rem var(--ff-body);color:var(--ink);cursor:pointer;transition:background .2s}
+    .profile-menu button:hover{background:#f7f7f7}
+    .profile-menu .menu-sep{height:1px;background:var(--border);margin:6px 0}
+
+    /* Landing-page layout */
+    .hero{background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);padding:72px 48px 64px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+    .hero-text h1{font-family:var(--ff-head);font-size:3rem;font-weight:900;line-height:1.15;margin-bottom:16px}
+    .hero-text h1 span{color:var(--red)}
+    .hero-text p{color:var(--mid);font-size:1rem;max-width:420px;margin-bottom:28px}
+    .hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px}
+    .btn-outline{background:var(--white);border:1.5px solid var(--border);color:var(--ink);font:500 .9rem var(--ff-body);padding:9px 18px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:border-color .2s,box-shadow .2s}
+    .btn-outline:hover{border-color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .hero-stats{display:flex;gap:36px}
+    .stat strong{display:block;font-family:var(--ff-head);font-size:1.5rem;font-weight:700;color:var(--red)}
+    .stat span{font-size:.8rem;color:var(--soft)}
+    .hero-img{position:relative;border-radius:16px;overflow:hidden}
+    .hero-img img{width:100%;height:320px;object-fit:cover;border-radius:16px;display:block}
+    .next-drive{position:absolute;bottom:16px;right:16px;background:rgba(255,255,255,.96);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
+    .next-drive svg{color:var(--red)}
+    .next-drive strong{display:block;font-size:.82rem;font-weight:600}
+    .next-drive span{font-size:.75rem;color:var(--soft)}
+
+    .section{padding:64px 48px}
+    .section-header{text-align:center;margin-bottom:36px}
+    .section-header h2{font-family:var(--ff-head);font-size:2rem;font-weight:700;margin-bottom:8px}
+    .section-header p{color:var(--mid);max-width:480px;margin:0 auto;font-size:.95rem}
+
+    .donation-section{background:#fff}
+    .donation-section .section-header{margin-bottom:28px}
+    .donation-section .gauge-container{margin:0 auto 24px;max-width:820px;box-shadow:var(--shadow);border:1px solid var(--border)}
+    .donation-section .log-container{max-width:820px;margin:0 auto}
+
+    footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
+    .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:32px}
+    .footer-brand p{font-size:.85rem;color:#999;margin:12px 0 20px;line-height:1.7;max-width:240px}
+    .footer-brand .logo{color:#fff}
+    .footer-btns{display:flex;gap:10px}
+    .footer-btns .btn-red{font-size:.82rem;padding:8px 16px}
+    .footer-btns .btn-ghost{color:#ccc;font-size:.82rem}
+    .footer-col h4{font-size:.85rem;font-weight:600;color:#fff;margin-bottom:14px}
+    .footer-col a{display:block;font-size:.82rem;color:#999;text-decoration:none;margin-bottom:8px;transition:color .2s}
+    .footer-col a:hover{color:#fff}
+    .footer-col .contact-item{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#999;margin-bottom:8px}
+    .footer-bottom{border-top:1px solid #2a2a3e;padding-top:20px;display:flex;align-items:center;justify-content:space-between;font-size:.8rem;color:#666}
+    .footer-bottom-stats{display:flex;gap:24px}
+    .footer-bottom-stats span{display:flex;align-items:center;gap:6px}
+
+    /* Wrap & Layout */
+    .wrap{max-width:1100px;margin:40px auto;padding:0 24px}
+    .layout{display:block;width:100%}
+    .panel{background:var(--white);border-radius:var(--r);padding:32px 40px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:32px}
+    
+    /* Welcome Bar */
+    .welcome-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #fff5f5 0%, #fdecea 100%);
+      border: 1px solid #f5d3d3;
+      border-radius: var(--r);
+      padding: 24px 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(214, 43, 43, 0.04);
+    }
+    .welcome-text h2 {
+      font-family: var(--ff-head);
+      font-size: 1.6rem;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .welcome-text p {
+      font-size: 0.92rem;
+      color: var(--mid);
+    }
+    .availability-toggle-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--white);
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .toggle-info {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    .toggle-info strong {
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+    .toggle-info span {
+      font-size: 0.76rem;
+      color: var(--soft);
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #ccc;
+      transition: .4s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+    }
+    input:checked + .slider {
+      background-color: var(--red);
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+    .slider.round {
+      border-radius: 22px;
+    }
+    .slider.round:before {
+      border-radius: 50%;
+    }
+
+    /* Tabs Navigation */
+    .top-tabs{display:flex;gap:32px;border-bottom:1.5px solid var(--border);padding-bottom:2px;margin-bottom:32px}
+    .top-tabs .tab{background:none;border:none;padding:12px 4px;font-weight:700;font-size:1rem;color:var(--soft);cursor:pointer;position:relative;transition:color 0.2s;font-family:var(--ff-body)}
+    .top-tabs .tab:hover{color:var(--ink)}
+    .top-tabs .tab.active{color:var(--red)}
+    .top-tabs .tab.active::after{content:'';height:3px;background:var(--red);width:100%;position:absolute;left:0;bottom:-3px;border-radius:3px}
+    
+    .hidden{display:none}
+    .section-panel.hidden{display:none}
+
+    /* Filters Style */
+    .filters{display:flex;gap:16px;margin-bottom:32px;align-items:center}
+    .search-box{flex:1;position:relative}
+    .search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--soft);width:16px;height:16px}
+    .search-box input{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--border);border-radius:8px;font:400 .9rem var(--ff-body);background:var(--white);outline:none;transition:border-color .2s;color:var(--ink)}
+    .search-box input:focus{border-color:var(--red)}
+    .filter-select{padding:11px 36px 11px 14px;border:1.5px solid var(--border);border-radius:8px;font:400 .9rem var(--ff-body);background:var(--white);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;outline:none;transition:border-color .2s;color:var(--ink)}
+    .filter-select:focus{border-color:var(--red)}
+
+    /* Dashboard headers */
+    .section-header-dashboard {
+      margin-bottom: 32px;
+    }
+    .section-header-dashboard h2 {
+      font-family: var(--ff-head);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .section-header-dashboard p {
+      font-size: 0.95rem;
+      color: var(--mid);
+    }
+
+    /* Event Cards (Tab 1) */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 32px;
+    }
+    .event-card {
+      background: var(--white);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: box-shadow .25s, transform .25s;
+      display: flex;
+      flex-direction: column;
+    }
+    .event-card:hover {
+      box-shadow: 0 12px 40px rgba(0,0,0,.08);
+      transform: translateY(-3px);
+    }
+    .card-img {
+      position: relative;
+      height: 180px;
+      overflow: hidden;
+    }
+    .card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .3s;
+    }
+    .event-card:hover .card-img img {
+      transform: scale(1.04);
+    }
+    .badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: .7rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .badge-drive { background: #e8f4fd; color: #1a6fa8; }
+    .badge-camp { background: #e8f5e9; color: #2e7d32; }
+    .badge-emergency { background: #fdecea; color: var(--red); }
+    .card-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .card-body h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .card-org {
+      font-size: .82rem;
+      color: var(--soft);
+      margin-bottom: 14px;
+    }
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex: 1;
+    }
+    .card-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .84rem;
+      color: var(--mid);
+    }
+    .card-meta-row svg {
+      color: var(--soft);
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+    .btn-register {
+      width: 100%;
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      font: 600 .9rem var(--ff-body);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-register:hover {
+      background: var(--red-dark);
+    }
+
+    /* Centers Layout (Tab 2) */
+    .centers-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    @media (min-width: 768px) {
+      .centers-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .center-card {
+      background: var(--white);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      overflow: hidden;
+      transition: box-shadow .25s, transform .25s;
+    }
+    .center-card:hover {
+      box-shadow: 0 12px 40px rgba(0,0,0,.08);
+      transform: translateY(-3px);
+    }
+    .center-card img {
+      width: 180px;
+      height: 100%;
+      min-height: 180px;
+      object-fit: cover;
+    }
+    .center-info {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .center-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .center-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .avail-badge {
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .avail-high { background: #e8f5e9; color: #2e7d32; }
+    .avail-med { background: #fff8e1; color: #f57f17; }
+    .avail-low { background: #fdecea; color: var(--red); }
+    .center-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .center-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .84rem;
+      color: var(--mid);
+    }
+    .center-meta-row svg {
+      color: var(--soft);
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+    }
+    .services {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .service-tag {
+      font-size: .72rem;
+      padding: 4px 10px;
+      background: #f3f3f3;
+      border-radius: 20px;
+      color: var(--mid);
+      font-weight: 500;
+    }
+    .center-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sm-red {
+      background: var(--red);
+      color: var(--white);
+      border: none;
+      font: 600 .85rem var(--ff-body);
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-sm-red:hover {
+      background: var(--red-dark);
+    }
+
+    /* History Layout (Tab 3) */
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 32px;
+      background: var(--white);
+      padding: 24px;
+      border-radius: var(--r);
+    }
+    .gauge-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 8px;
+      text-align: center;
+    }
+    .log-container {
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+      padding-top: 32px;
+    }
+    .log-header-badge {
+      display: inline-block;
+      background-color: #5C1D1D;
+      color: var(--white);
+      font-weight: 600;
+      font-size: 0.92rem;
+      padding: 8px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .donation-log {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .history-item-pink {
+      background-color: #F7D5D5;
+      border: 1px solid #EFAAAA;
+      border-radius: 12px;
+      padding: 16px 24px;
+      box-shadow: 0 2px 8px rgba(214, 43, 43, 0.03);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .history-item-pink:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(214, 43, 43, 0.08);
+    }
+    .history-date {
+      color: #6c757d;
+      font-size: 0.88rem;
+      margin-bottom: 4px;
+    }
+    .history-details {
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    #needle {
+      transform-origin: 140px 140px;
+      transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* PROFILE MODAL */
+    .profile-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+    .profile-backdrop.open{display:flex}
+    .profile-card{width:100%;max-width:620px;max-height:calc(100vh - 40px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .profile-card-header{padding:28px 24px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
+    .profile-photo-control{position:relative;width:104px;height:104px}
+    .profile-avatar{width:104px;height:104px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red-dark));color:var(--white);display:flex;align-items:center;justify-content:center;font:700 2rem var(--ff-body);box-shadow:0 12px 22px rgba(214, 43, 43,.25)}
+    .profile-avatar-photo-large{width:104px;height:104px;border-radius:50%;background-size:cover;background-position:center;background-repeat:no-repeat;box-shadow:0 12px 22px rgba(214, 43, 43,.25);border:3px solid rgba(255,255,255,.85);display:block}
+    .profile-photo-change{position:absolute;right:0;bottom:2px;width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:var(--red);color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+    .profile-photo-control.editing .profile-photo-change{display:flex}
+    .profile-photo-change input{display:none}
+    .profile-title h3{font-family:var(--ff-head);font-size:1.5rem;line-height:1.1;margin-bottom:4px}
+    .profile-title p{color:var(--mid);font-size:.88rem}
+    .profile-card-body{padding:24px;overflow:auto;flex:1}
+    .profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .profile-item{background:#fafafa;border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+    .profile-item span{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:6px}
+    .profile-item strong{font-size:.95rem;color:var(--ink);word-break:break-word}
+    .profile-item.readonly{background:#fff}
+    .profile-field{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body);color:var(--ink)}
+    .profile-card-actions{padding:18px 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
+    .profile-actions-left,.profile-card-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+
+    @media (max-width:768px){
+      nav{padding:0 18px}
+      .nav-links{display:none}
+      .profile-grid{grid-template-columns:1fr}
+      .events-grid { grid-template-columns: 1fr; }
+      .hero{grid-template-columns:1fr;padding:56px 18px 48px}
+      .section{padding:56px 18px}
+      .footer-grid{grid-template-columns:1fr}
+      .hero-stats{flex-direction:column;gap:16px}
+    }
+  </style>
+</head>
+<body>
+  <!-- NAV (Same design as landing index page) -->
+  <nav>
+    <a href="donor-dashboard.html" class="logo" aria-label="Donor dashboard home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+      SaveABeat
+    </a>
+    <div class="nav-links" id="donorNavTabs" role="tablist" aria-label="Donor navigation">
+      <button type="button" class="active" data-tab="browse" role="tab" aria-selected="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events &amp; Drives
+      </button>
+      <button type="button" data-tab="centers" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Find Centers
+      </button>
+      <button type="button" data-tab="donations" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+        My Donation
+      </button>
+    </div>
+    <div class="nav-right">
+      <div class="nav-auth" id="navAuth"></div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Save Lives Through<br><span>Blood Donation</span></h1>
+      <p>Connect with donation centers, join upcoming drives, and keep track of your donation history from one simple donor view.</p>
+      <div class="hero-btns">
+        <button class="btn-red" onclick="document.getElementById('events').scrollIntoView({behavior:'smooth'})">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+          Find Donation Events
+        </button>
+        <button class="btn-outline" onclick="document.getElementById('my-donation').scrollIntoView({behavior:'smooth'})">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          View My Donation
+        </button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><strong id="statDonors">15k+</strong><span>Donors Registered</span></div>
+        <div class="stat"><strong id="statCenters">200+</strong><span>Active Centers</span></div>
+        <div class="stat"><strong id="statEvents">24/7</strong><span>Support</span></div>
+      </div>
+    </div>
+    <div class="hero-img">
+      <img src="https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=900&auto=format&fit=crop&q=80" alt="Blood donation in progress"/>
+      <div class="next-drive">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+        <div><strong>Next Drive</strong><span>Tomorrow, 9 AM</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-panel" id="events" data-panel="browse">
+    <div class="section-header">
+      <h2>Blood Donation Events &amp; Drives</h2>
+      <p>Join upcoming blood donation events in your area. Find drives, camps, and emergency collections near you.</p>
+    </div>
+
+    <div class="filters">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search events by name or location..." id="eventSearch" oninput="filterDrives()"/>
+      </div>
+      <select class="filter-select" id="distFilter" onchange="filterDrives()">
+        <option value="">All distances</option>
+        <option value="2">Within 2 km</option>
+        <option value="5">Within 5 km</option>
+        <option value="10">Within 10 km</option>
+      </select>
+      <select class="filter-select" id="typeFilter" onchange="filterDrives()">
+        <option value="">All types</option>
+        <option value="Drive">Drive</option>
+        <option value="Camp">Camp</option>
+        <option value="Emergency">Emergency</option>
+      </select>
+    </div>
+
+    <div class="events-grid" id="eventsGrid">
+      <!-- Cards injected by JS -->
+    </div>
+  </section>
+
+  <section class="section section-panel hidden" id="centers" data-panel="centers">
+    <div class="section-header">
+      <h2>Find Donation Centers Near You</h2>
+      <p>Locate blood donation centers with real-time availability, contact information, and distance filtering to find the most convenient location for you.</p>
+    </div>
+
+    <div class="filters">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search centers, addresses, or services..." id="centerSearch" oninput="filterCenters()"/>
+      </div>
+      <select class="filter-select" id="centerDistFilter" onchange="filterCenters()">
+        <option value="">All Distances</option>
+        <option value="2">Within 2 km</option>
+        <option value="5">Within 5 km</option>
+        <option value="10">Within 10 km</option>
+      </select>
+      <select class="filter-select" id="centerAvailFilter" onchange="filterCenters()">
+        <option value="">All Centers</option>
+        <option value="High">High Availability</option>
+        <option value="Medium">Medium Availability</option>
+        <option value="Low">Low Availability</option>
+      </select>
+    </div>
+
+    <div class="centers-grid" id="centersList"></div>
+  </section>
+
+  <section class="section donation-section section-panel hidden" id="my-donation" data-panel="donations">
+    <div class="section-header">
+      <h2>My Donation</h2>
+      <p>Track your contributions and points. Every drop counts towards saving lives.</p>
+    </div>
+    <div class="gauge-container">
+      <svg width="280" height="180" viewBox="0 0 280 180" style="margin: 0 auto; display: block;">
+        <path d="M 50 140 A 90 90 0 0 1 76.36 76.36" stroke="#FD6585" stroke-width="30" fill="none" stroke-linecap="butt" />
+        <path d="M 76.36 76.36 A 90 90 0 0 1 140 50" stroke="#FFA048" stroke-width="30" fill="none" stroke-linecap="butt" />
+        <path d="M 140 50 A 90 90 0 0 1 203.64 76.36" stroke="#FFC845" stroke-width="30" fill="none" stroke-linecap="butt" />
+        <path d="M 203.64 76.36 A 90 90 0 0 1 230 140" stroke="#48C5C5" stroke-width="30" fill="none" stroke-linecap="butt" />
+        <text x="35" y="105" font-family="var(--ff-body)" font-size="16" font-weight="bold" fill="#000" text-anchor="middle">1</text>
+        <text x="82" y="32" font-family="var(--ff-body)" font-size="16" font-weight="bold" fill="#000" text-anchor="middle">2</text>
+        <text x="198" y="32" font-family="var(--ff-body)" font-size="16" font-weight="bold" fill="#000" text-anchor="middle">3</text>
+        <text x="245" y="105" font-family="var(--ff-body)" font-size="16" font-weight="bold" fill="#000" text-anchor="middle">4</text>
+        <g id="needleGroup">
+          <circle cx="140" cy="140" r="8" fill="#111" />
+          <polygon points="137,140 143,140 141,60 139,60" fill="#111" id="needle" />
+        </g>
+      </svg>
+      <div class="gauge-title" id="donationPointsText">Donation Points: 0 / 4</div>
+      <div style="font-size: 0.9rem; color: var(--soft); text-align: center; margin-top: 4px; font-weight: bold;">Donation Points Out of 4</div>
+    </div>
+    <div class="log-container">
+      <div class="log-header-badge">Donation Log</div>
+      <div class="donation-log" id="donationLog"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="donor-dashboard.html" class="logo" style="color:#fff" aria-label="Donor dashboard home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+          SaveABeat Nepal
+        </a>
+        <p>Connecting donors across Kathmandu Valley with those in need through technology and compassion. Every donation saves lives.</p>
+        <div class="footer-btns">
+          <button class="btn-ghost">Learn More</button>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <a href="#events">Blood Drives</a>
+        <a href="centers.html">Donation Centers</a>
+        <a href="#my-donation">My Donation</a>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <a href="#">Help Center</a>
+        <a href="#">Emergency Contacts</a>
+        <a href="#">Medical Guidelines</a>
+        <a href="#">Privacy Policy</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact Us</h4>
+        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Emergency: 102</div>
+        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>+977-1-4221119</div>
+        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>info@bloodcare.org.np</div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 SaveABeat Nepal. All rights reserved. Serving Kathmandu and beyond.</span>
+      <div class="footer-bottom-stats">
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>15,000+ Donors</span>
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>200+ Centers</span>
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>24/7 Support</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- PROFILE MODAL (Same design as landing index page) -->
+  <div class="profile-backdrop" id="profileBackdrop" aria-hidden="true">
+    <div class="profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <div class="profile-card-header">
+        <div id="profileAvatarLarge"></div>
+        <div class="profile-title">
+          <h3 id="profileTitle">My Profile</h3>
+          <p id="profileSubtitle">Signed-in account details</p>
+        </div>
+      </div>
+      <div class="profile-card-body">
+        <div class="profile-grid" id="profileGrid"></div>
+      </div>
+      <div class="profile-card-actions">
+        <div class="profile-actions-left">
+          <button class="btn-ghost" type="button" onclick="closeProfileModal()">Close</button>
+        </div>
+        <div class="profile-card-actions-right">
+          <button class="btn-ghost" type="button" id="profileEditButton" onclick="toggleProfileEditMode()">Edit</button>
+          <button class="btn-red" type="button" id="profileSaveButton" onclick="saveProfileChanges()" style="display:none">Save</button>
+          <button class="btn-ghost" type="button" id="profileCancelButton" onclick="cancelProfileEdit()" style="display:none">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const AUTH_STORAGE_KEY='saveabeatUser';
+
+    function getStoredUser(){
+      try{
+        return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+      }catch(error){
+        return null;
+      }
+    }
+
+    function saveStoredUser(user){
+      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    }
+
+    function clearStoredUser(){
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+
+    function getInitial(name){
+      const source = String(name || 'U').trim();
+      return source ? source.charAt(0).toUpperCase() : 'U';
+    }
+
+    function formatProfileValue(value, fallback='Not provided'){
+      if(value === null || value === undefined || value === ''){
+        return fallback;
+      }
+      return value;
+    }
+
+    // Bind event for file changes inside modern dynamic scope
+    document.addEventListener('change', async (event) => {
+      if (event.target && event.target.dataset.profileField === 'profilePictureHeader') {
+        const file = event.target.files?.[0];
+        if (file) {
+          try {
+            const base64Data = await readFileAsDataUrl(file);
+            const user = getStoredUser();
+            if (user) {
+              const profileAvatarLarge = document.getElementById('profileAvatarLarge');
+              const markup = `<span class="profile-avatar-photo-large" style="background-image:url('${base64Data}')"></span>`;
+              if (profileAvatarLarge) {
+                profileAvatarLarge.innerHTML = `<div class="profile-photo-control editing">${markup}<label class="profile-photo-change" title="Change photo"><input data-profile-field="profilePictureHeader" type="file" accept="image/*"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></label></div>`;
+              }
+            }
+          } catch(e) {
+            console.error(e);
+          }
+        }
+      }
+    });
+
+    function escapeHtml(value){
+      return String(value).replace(/[&<>\"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    }
+
+    function getAvatarData(user){
+      return user?.profileImageData || user?.donorProfile?.profilePicture || null;
+    }
+
+    function getAvatarMarkup(user, isLarge = false){
+      const avatarData = getAvatarData(user);
+      const initials = getInitial(user?.fullName || user?.email || 'U');
+      if(avatarData){
+        return `<span class="${isLarge ? 'profile-avatar-photo-large' : 'profile-avatar-photo'}" style="background-image:url('${avatarData}')"></span>`;
+      }
+      return `<span class="${isLarge ? 'profile-avatar' : 'profile-initial'}">${initials}</span>`;
+    }
+
+    function renderAuthArea(user){
+      const host=document.getElementById('navAuth');
+      if(!host || !user){
+        return;
+      }
+
+      host.innerHTML=`
+        <div class="profile-shell" id="profileShell">
+          <button class="profile-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleProfileMenu()">
+            <span class="profile-trigger-left">
+              ${getAvatarMarkup(user)}
+              <span class="profile-name">${user.fullName || 'My Profile'}</span>
+            </span>
+            <span class="profile-arrow" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
+          </button>
+          <div class="profile-menu" id="profileMenu" role="menu" aria-label="Account menu">
+            <button type="button" role="menuitem" onclick="openProfileModal()">My Profile</button>
+            <div class="menu-sep"></div>
+            <button type="button" role="menuitem" onclick="handleLogout()">Logout</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleProfileMenu(){
+      const menu=document.getElementById('profileMenu');
+      const shell=document.getElementById('profileShell');
+      if(!menu) return;
+      menu.classList.toggle('open');
+      shell?.classList.toggle('open', menu.classList.contains('open'));
+    }
+
+    function closeProfileMenu(){
+      const menu=document.getElementById('profileMenu');
+      const shell=document.getElementById('profileShell');
+      if(menu) menu.classList.remove('open');
+      shell?.classList.remove('open');
+    }
+
+    let profileEditing = false;
+
+    // Bind event for close profile modal when clicking backdrop
+    document.addEventListener('click', (event) => {
+      const backdrop = document.getElementById('profileBackdrop');
+      if (backdrop && event.target === backdrop) {
+        closeProfileModal();
+      }
+    });
+
+    function profileInput(field, value, type='text'){
+      return `<input class="profile-field" data-profile-field="${field}" type="${type}" value="${escapeHtml(value ?? '')}">`;
+    }
+
+    function profileFieldMarkup(field, label, value, options = {}){
+      const editable = profileEditing && !options.readonly;
+      const type = options.type || 'text';
+      const className = `profile-item${options.readonly ? ' readonly' : ''}`;
+
+      return `
+        <div class="${className}">
+          <span>${label}</span>
+          <strong>${editable ? profileInput(field, value, type) : formatProfileValue(value)}</strong>
+        </div>
+      `;
+    }
+
+    function buildProfileRows(user){
+      const donorProfile = user.donorProfile || {};
+      return [
+        { field: 'fullName', label: 'Full Name', value: user.fullName },
+        { field: 'email', label: 'Email', value: user.email, type: 'email' },
+        { field: 'phone', label: 'Contact', value: user.phone },
+        { field: 'role', label: 'Role', value: 'Donor', readonly: true },
+        { field: 'address', label: 'Address', value: user.address },
+        { field: 'district', label: 'District', value: user.district },
+        { field: 'city', label: 'City / Municipality', value: user.city },
+        { field: 'totalDonations', label: 'Total Donations', value: donorProfile.totalDonations, type: 'number' },
+      ];
+    }
+
+    function updateProfileHeader(user){
+      const avatar=document.getElementById('profileAvatarLarge');
+      if(!avatar) return;
+      avatar.innerHTML=`
+        <div class="profile-photo-control${profileEditing ? ' editing' : ''}">
+          ${getAvatarMarkup(user, true)}
+          <label class="profile-photo-change" title="Change photo">
+            <input data-profile-field="profilePictureHeader" type="file" accept="image/*">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </label>
+        </div>
+      `;
+    }
+
+    function renderProfileDetails(user){
+      const grid=document.getElementById('profileGrid');
+      if(!grid) return;
+      grid.innerHTML = buildProfileRows(user)
+        .map((row) => profileFieldMarkup(row.field, row.label, row.value, row))
+        .join('');
+      updateProfileHeader(user);
+    }
+
+    function openProfileModal(){
+      const user = getStoredUser();
+      if(!user) return;
+
+      const backdrop=document.getElementById('profileBackdrop');
+      const title=document.getElementById('profileTitle');
+      const subtitle=document.getElementById('profileSubtitle');
+
+      if(!backdrop || !title || !subtitle) return;
+
+      profileEditing = false;
+      title.textContent='My Profile';
+      subtitle.textContent=user.fullName || user.email || 'Signed-in account details';
+      renderProfileDetails(user);
+
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      closeProfileMenu();
+      updateProfileEditControls();
+    }
+
+    function closeProfileModal(){
+      const backdrop=document.getElementById('profileBackdrop');
+      if(!backdrop) return;
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      profileEditing = false;
+      updateProfileEditControls();
+    }
+
+    function handleLogout(){
+      clearStoredUser();
+      closeProfileMenu();
+      closeProfileModal();
+      location.href='index.html';
+    }
+
+    function updateProfileEditControls(){
+      const editButton=document.getElementById('profileEditButton');
+      const saveButton=document.getElementById('profileSaveButton');
+      const cancelButton=document.getElementById('profileCancelButton');
+      if(editButton) editButton.style.display = profileEditing ? 'none' : 'inline-flex';
+      if(saveButton) saveButton.style.display = profileEditing ? 'inline-flex' : 'none';
+      if(cancelButton) cancelButton.style.display = profileEditing ? 'inline-flex' : 'none';
+    }
+
+    function toggleProfileEditMode(){
+      const user = getStoredUser();
+      const grid=document.getElementById('profileGrid');
+      if(!user || !grid) return;
+
+      profileEditing = true;
+      renderProfileDetails(user);
+      updateProfileEditControls();
+    }
+
+    function cancelProfileEdit(){
+      profileEditing = false;
+      openProfileModal();
+    }
+
+    function readFileAsDataUrl(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function saveProfileChanges(){
+      const user = getStoredUser();
+      const grid=document.getElementById('profileGrid');
+      if(!user || !grid) return;
+
+      const fullName = String(grid.querySelector('[data-profile-field="fullName"]')?.value || '').trim();
+      const newEmail = String(grid.querySelector('[data-profile-field="email"]')?.value || user.email || '').trim();
+      const address = String(grid.querySelector('[data-profile-field="address"]')?.value || '').trim();
+      const phone = String(grid.querySelector('[data-profile-field="phone"]')?.value || '').trim();
+      const city = String(grid.querySelector('[data-profile-field="city"]')?.value || '').trim();
+      const district = String(grid.querySelector('[data-profile-field="district"]')?.value || '').trim();
+      const totalDonations = String(grid.querySelector('[data-profile-field="totalDonations"]')?.value || '').trim();
+      const profilePictureFile = document.querySelector('[data-profile-field="profilePictureHeader"]')?.files?.[0];
+      
+      let profileImageName = null;
+      let profileImageData = null;
+
+      if(profilePictureFile){
+        profileImageName = profilePictureFile.name;
+        profileImageData = await readFileAsDataUrl(profilePictureFile);
+      } else {
+        const largeAvatarImgNode = document.querySelector('#profileAvatarLarge .profile-avatar-photo-large');
+        if (largeAvatarImgNode && largeAvatarImgNode.style.backgroundImage) {
+          const bgImg = largeAvatarImgNode.style.backgroundImage;
+          if (bgImg.startsWith('url("data:')) {
+            profileImageData = bgImg.slice(5, -2);
+            profileImageName = 'avatar.png';
+          }
+        }
+      }
+
+      try{
+        const response = await fetch('/api/me', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            newEmail,
+            fullName,
+            address,
+            phone,
+            city,
+            district,
+            totalDonations,
+            profileImageName,
+            profileImageData,
+          }),
+        });
+
+        const payload = await response.json();
+        if(!response.ok){
+          alert(payload.message || 'Unable to update profile.');
+          return;
+        }
+
+        saveStoredUser(payload.user);
+        profileEditing = false;
+        renderAuthArea(payload.user);
+        renderDashboardWelcome(payload.user);
+        openProfileModal();
+      }catch(error){
+        alert('Unable to save profile changes. Make sure the backend is running.');
+      }
+    }
+
+    let EVENTS = [];
+    let CENTERS = [];
+
+    async function loadData(){
+      try{
+        const user = getStoredUser();
+        if(!user){location.href='login.html?role=donor'; return;}
+        const email = user.email;
+        const [eventsResp, centersResp, historyResp, meResp] = await Promise.all([
+          fetch('/api/events'),
+          fetch('/api/centers'),
+          email ? fetch(`/api/donor/history?email=${encodeURIComponent(email)}`) : Promise.resolve(new Response(JSON.stringify({data:[]}))),
+          email ? fetch(`/api/me?email=${encodeURIComponent(email)}`) : Promise.resolve(new Response(JSON.stringify({user:null})))
+        ]);
+
+        const eventsJson = eventsResp.ok ? await eventsResp.json() : { data: [] };
+        const centersJson = centersResp.ok ? await centersResp.json() : { data: [] };
+        const historyJson = historyResp.ok ? await historyResp.json() : { data: [] };
+        const meJson = meResp.ok ? await meResp.json() : { user: null };
+
+        EVENTS = eventsJson.data || [];
+        CENTERS = centersJson.data || [];
+
+        renderDrives(EVENTS);
+        renderCenters(CENTERS);
+        renderHistory(historyJson.data || [], meJson.user);
+        
+        if (meJson.user) {
+          saveStoredUser(meJson.user);
+          renderAuthArea(meJson.user);
+          renderDashboardWelcome(meJson.user);
+        }
+
+        setupTabs();
+      }catch(err){
+        console.error('Unable to load dashboard data', err);
+      }
+    }
+
+    async function loadStats(){
+      try{
+        const response=await fetch('/api/health');
+        if(!response.ok) return;
+        const statsResponse=await fetch('/api/stats');
+        if(!statsResponse.ok) return;
+        const stats=await statsResponse.json();
+        document.getElementById('statDonors').textContent=`${Number(stats.donors || 15000).toLocaleString()}+`;
+        document.getElementById('statCenters').textContent=`${Number(stats.centers || 200).toLocaleString()}+`;
+      }catch(error){
+        console.warn('Using default donor stats.', error);
+      }
+    }
+
+    function renderDashboardWelcome(user) {
+      const welcomeName = document.getElementById('welcomeName');
+      if (welcomeName) {
+        welcomeName.textContent = user.fullName || 'Donor';
+      }
+      const toggle = document.getElementById('availToggle');
+      if (toggle) {
+        toggle.checked = Boolean(user.donorProfile?.isAvailable);
+      }
+    }
+
+    async function toggleAvailability(checked) {
+      const user = getStoredUser();
+      if(!user) return;
+      try {
+        const response = await fetch('/api/me', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            isAvailable: checked
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          alert(payload.message || 'Unable to update availability status.');
+          document.getElementById('availToggle').checked = !checked;
+          return;
+        }
+        saveStoredUser(payload.user);
+        renderAuthArea(payload.user);
+        renderDashboardWelcome(payload.user);
+      } catch (err) {
+        console.error(err);
+        alert('Network error updating availability.');
+        document.getElementById('availToggle').checked = !checked;
+      }
+    }
+
+    function badgeClass(type) {
+      if (type === 'Drive') return 'badge-drive';
+      if (type === 'Camp') return 'badge-camp';
+      if (type === 'Emergency') return 'badge-emergency';
+      return 'badge-drive';
+    }
+
+    function renderDrives(list){
+      const drivesNode=document.getElementById('eventsGrid');
+      if (!drivesNode) {
+        return;
+      }
+      if (!list.length) {
+        drivesNode.innerHTML = `<p style="color:#888;grid-column:1/-1;text-align:center;padding:40px 0">No events found matching your filters.</p>`;
+        return;
+      }
+      
+      drivesNode.innerHTML = list.map(d=>`
+        <div class="event-card">
+          <div class="card-img">
+            <img src="${d.img || 'https://picsum.photos/600/400?random'}" alt="${d.title}" loading="lazy"/>
+            <span class="badge ${badgeClass(d.type)}">${d.type}</span>
+          </div>
+          <div class="card-body">
+            <h3>${d.title}</h3>
+            <p class="card-org">${d.org}</p>
+            <div class="card-meta">
+              <div class="card-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                ${d.date || 'Date not specified'}
+              </div>
+              <div class="card-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+                ${d.time || 'Time not specified'}
+              </div>
+              <div class="card-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                ${d.location || 'Location not specified'} &nbsp;<span style="color:#D62B2B;font-weight:600">${d.dist || ''}</span>
+              </div>
+              <div class="card-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                ${d.spots || 0} spots available out of ${d.total || 0}
+              </div>
+            </div>
+            <button class="btn-register" onclick="apply(${d.id})">Donate Now</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCenters(list){
+      const centersNode=document.getElementById('centersList');
+      if (!list.length) {
+        centersNode.innerHTML = `<p style="color:#888;grid-column:1/-1;text-align:center;padding:40px 0">No centers found matching your filters.</p>`;
+        return;
+      }
+      
+      centersNode.innerHTML = list.map(c=>{
+        const ac = c.avail === 'High' ? 'avail-high' : c.avail === 'Medium' ? 'avail-med' : 'avail-low';
+        return `
+          <div class="center-card">
+            <img src="${c.img || 'https://picsum.photos/400/300?random'}" alt="${c.name || c.display_name}" loading="lazy"/>
+            <div class="center-info">
+              <div class="center-header">
+                <h3>${c.name || c.display_name}</h3>
+                <span class="avail-badge ${ac}">${c.avail || 'Medium'} Availability</span>
+              </div>
+              <div class="center-meta">
+                <div class="center-meta-row">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${c.dist || 'N/A'}
+                </div>
+                <div class="center-meta-row">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${c.address || 'N/A'}
+                </div>
+                <div class="center-meta-row">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                  ${c.phone || 'N/A'}
+                </div>
+                <div class="center-meta-row">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+                  ${c.hours || 'N/A'}
+                </div>
+              </div>
+              <div class="services">
+                ${(c.services || []).map(s=>`<span class="service-tag">${s}</span>`).join('')}
+              </div>
+              <div class="center-btns">
+                <button class="btn-sm-red" onclick="request(${c.id})">Request Blood</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatDateString(str) {
+      if (!str) return '';
+      const date = new Date(str);
+      if (isNaN(date.getTime())) return str;
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    }
+
+    function renderHistory(entries, me){
+      const donations = entries || [];
+      const totalPoints = Math.min(4, donations.length);
+      
+      document.getElementById('donationPointsText').textContent = `Donation Points: ${totalPoints} / 4`;
+      
+      const angle = (totalPoints - 2) * 45;
+      const needle = document.getElementById('needle');
+      if (needle) {
+        needle.setAttribute('transform', `rotate(${angle}, 140, 140)`);
+      }
+      
+      const log=document.getElementById('donationLog');
+      if (!donations.length) {
+        log.innerHTML = `<p style="color:#888;text-align:center;padding:24px 0">No donation history recorded yet.</p>`;
+        return;
+      }
+      
+      log.innerHTML = donations.map(d=>`
+        <div class="history-item-pink">
+          <div class="history-date">Date: ${formatDateString(d.date)}</div>
+          <div class="history-details">${d.org || d.location || 'Donation'}: ${d.units || 1} Units</div>
+        </div>
+      `).join('');
+    }
+
+    function filterDrives() {
+      const q = document.getElementById("eventSearch").value.toLowerCase();
+      const dist = document.getElementById("distFilter").value;
+      const type = document.getElementById("typeFilter").value;
+      
+      const filtered = EVENTS.filter(e => {
+        const matchQ = !q || e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || e.org.toLowerCase().includes(q);
+        const matchType = !type || e.type === type;
+        const distVal = parseFloat(e.dist) || 999;
+        const matchDist = !dist || distVal <= parseFloat(dist);
+        return matchQ && matchType && matchDist;
+      });
+      renderDrives(filtered);
+    }
+
+    function filterCenters() {
+      const q = document.getElementById("centerSearch").value.toLowerCase();
+      const dist = document.getElementById("centerDistFilter").value;
+      const avail = document.getElementById("centerAvailFilter").value;
+      
+      const filtered = CENTERS.filter(c => {
+        const matchQ = !q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q) || c.services.some(s => s.toLowerCase().includes(q));
+        const distVal = parseFloat(c.dist) || 999;
+        const matchDist = !dist || distVal <= parseFloat(dist);
+        const matchAvail = !avail || c.avail === avail;
+        return matchQ && matchDist && matchAvail;
+      });
+      renderCenters(filtered);
+    }
+
+    async function apply(id){
+      const user = getStoredUser();
+      if(!user || !user.email){location.href='login.html?role=donor';return}
+      try{
+        const res = await fetch(`/api/events/${id}/apply`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email,units:1})});
+        const payload = await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
+        if(!res.ok){alert(payload?.message||'Unable to apply');return}
+        alert(payload?.message||'Applied — donation recorded');
+        await loadData();
+      }catch(e){console.error(e);alert('Unable to apply at the moment');}
+    }
+
+    async function request(listingId){
+      const user = getStoredUser();
+      if(!user){location.href='login.html?role=donor';return}
+      const bloodGroup = prompt('Enter blood group (e.g. A+, O-)');
+      if(!bloodGroup) return;
+      const units = prompt('How many units needed?', '1');
+      if(!units) return;
+      const urgency = prompt('Urgency (normal, urgent, critical)', 'normal');
+      if(!urgency) return;
+      const city = user.city || prompt('City');
+      const district = user.district || prompt('District');
+      try{
+        const res = await fetch('/api/requests', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listingId,bloodGroup,unitsNeeded:units,urgency,city,district})});
+        const payload = await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
+        if(!res.ok){alert(payload?.message||'Unable to create request');return}
+        alert(payload?.message||'Request created');
+      }catch(e){console.error(e);alert('Unable to create request');}
+    }
+
+    function setupTabs(){
+      const tabs = document.querySelectorAll('#donorNavTabs [data-tab]');
+      const panels = document.querySelectorAll('.section-panel[data-panel]');
+      function activate(name){
+        tabs.forEach(t=>{
+          const isActive = t.dataset.tab===name;
+          t.classList.toggle('active', isActive);
+          t.setAttribute('aria-selected', String(isActive));
+        });
+        panels.forEach(p=>p.classList.toggle('hidden', p.dataset.panel!==name));
+      }
+      tabs.forEach(t=>t.addEventListener('click', ()=>{
+        activate(t.dataset.tab);
+        const target=document.querySelector(`.section-panel[data-panel="${t.dataset.tab}"]`);
+        target?.scrollIntoView({behavior:'smooth', block:'start'});
+      }));
+      activate(document.querySelector('#donorNavTabs .active')?.dataset.tab || 'browse');
+    }
+
+    document.addEventListener('click', (event) => {
+      const authArea = document.getElementById('navAuth');
+      const menu = document.getElementById('profileMenu');
+      if(authArea && menu && !authArea.contains(event.target)){
+        closeProfileMenu();
+      }
+    });
+
+    loadData();
+    loadStats();
+  </script>
+</body>
+</html>

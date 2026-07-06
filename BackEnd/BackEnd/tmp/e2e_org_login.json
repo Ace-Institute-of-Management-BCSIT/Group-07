@@ -1,0 +1,9 @@
+﻿{
+    "message":  "Login successful.",
+    "user":  {
+                 "userId":  1,
+                 "fullName":  "Bir Hospital Admin",
+                 "email":  "bir.admin@bloodcare.org.np",
+                 "role":  "org"
+             }
+}

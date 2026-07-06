@@ -17,3 +17,6 @@
 !FrontEnd/**/*.jpg
 !FrontEnd/**/*.png
 !FrontEnd/**/*.svg
+
+# Environment Variables
+.env
