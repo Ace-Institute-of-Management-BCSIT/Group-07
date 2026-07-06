@@ -295,6 +295,46 @@ function mapCampaignRow(row) {
   };
 }
 
+async function resolveCampaignAccess(eventId, email, role) {
+  const campaignRows = await query(
+    `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
+            bl.time_range, bl.location, bl.distance_km, bl.spots_total,
+            bl.spots_available, bl.event_type, bl.image_url
+     FROM blood_drive_listings bl
+     INNER JOIN organizations o ON o.org_id = bl.org_id
+     WHERE bl.event_id = ?
+     LIMIT 1`,
+    [eventId]
+  );
+
+  if (!campaignRows.length) {
+    return null;
+  }
+
+  if (role === 'admin') {
+    return campaignRows[0];
+  }
+
+  if (!email) {
+    return null;
+  }
+
+  const orgRows = await query(
+    `SELECT o.org_id
+     FROM users u
+     INNER JOIN organizations o ON o.user_id = u.user_id
+     WHERE LOWER(u.email) = ? AND u.role = 'org'
+     LIMIT 1`,
+    [email]
+  );
+
+  if (!orgRows.length || Number(orgRows[0].org_id) !== Number(campaignRows[0].org_id)) {
+    return null;
+  }
+
+  return campaignRows[0];
+}
+
 app.get('/api/org/campaigns', async (req, res) => {
   const email = String(req.query.email || '').trim().toLowerCase();
 
@@ -650,6 +690,69 @@ app.post('/api/org/campaigns', async (req, res) => {
     });
   } catch (error) {
     console.error('Campaign creation failed:', error);
+    sendDbError(res, error);
+  }
+});
+
+app.post('/api/org/campaigns/:id/stop', async (req, res) => {
+  const eventId = Number.parseInt(req.params.id, 10);
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const role = String(req.body.role || 'org').trim().toLowerCase();
+
+  if (!eventId) {
+    return res.status(400).json({ message: 'Campaign id is required.' });
+  }
+
+  try {
+    const campaign = await resolveCampaignAccess(eventId, email, role);
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found or access denied.' });
+    }
+
+    await query(
+      'UPDATE blood_drive_listings SET event_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) WHERE event_id = ?',
+      [eventId]
+    );
+
+    const rows = await query(
+      `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
+              bl.time_range, bl.location, bl.distance_km, bl.spots_total,
+              bl.spots_available, bl.event_type, bl.image_url
+       FROM blood_drive_listings bl
+       INNER JOIN organizations o ON o.org_id = bl.org_id
+       WHERE bl.event_id = ?
+       LIMIT 1`,
+      [eventId]
+    );
+
+    res.json({
+      message: 'Campaign stopped and moved to completed campaigns.',
+      campaign: rows.length ? mapCampaignRow(rows[0]) : mapCampaignRow(campaign),
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.delete('/api/org/campaigns/:id', async (req, res) => {
+  const eventId = Number.parseInt(req.params.id, 10);
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const role = String(req.body.role || 'org').trim().toLowerCase();
+
+  if (!eventId) {
+    return res.status(400).json({ message: 'Campaign id is required.' });
+  }
+
+  try {
+    const campaign = await resolveCampaignAccess(eventId, email, role);
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found or access denied.' });
+    }
+
+    await query('DELETE FROM blood_drive_listings WHERE event_id = ?', [eventId]);
+
+    res.json({ message: 'Campaign deleted successfully.' });
+  } catch (error) {
     sendDbError(res, error);
   }
 });

@@ -389,45 +389,9 @@ function renderAuthArea(user){
     return;
   }
 
-  if(!user){
-    host.innerHTML=`
-      <div class="register-shell" id="registerShell">
-        <button class="register-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleRegisterMenu()">
-          <span class="register-trigger-left">
-            <span class="register-trigger-label">Register Now</span>
-          </span>
-          <span class="profile-arrow" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="register-menu" id="registerMenu" role="menu" aria-label="Register options">
-          <button type="button" role="menuitem" onclick="location.href='login.html?role=admin'">Admin Login</button>
-          <div class="menu-sep"></div>
-          <button type="button" role="menuitem" onclick="location.href='register.html?role=org'">Organization Register</button>
-          <button type="button" role="menuitem" onclick="location.href='register.html?role=donor'">Donor Register</button>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
   host.innerHTML=`
-    <div class="profile-shell" id="profileShell">
-      <button class="profile-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleProfileMenu()">
-        <span class="profile-trigger-left">
-          ${getAvatarMarkup(user)}
-          <span class="profile-name">${user.role === 'org' ? (user.organization?.orgName || user.fullName || 'My Profile') : (user.fullName || 'My Profile')}</span>
-        </span>
-        <span class="profile-arrow" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-        </span>
-      </button>
-    <div class="profile-menu" id="profileMenu" role="menu" aria-label="Account menu">
-      <button type="button" role="menuitem" onclick="openProfileModal()">My Profile</button>
-      <div class="menu-sep"></div>
-      <button type="button" role="menuitem" onclick="handleLogout()">Logout</button>
-    </div>
-    </div>
+    <button class="btn-ghost" type="button" onclick="location.href='login.html'">Login</button>
+    <button class="btn-red" type="button" onclick="location.href='register.html'">Sign Up</button>
   `;
 }
 
@@ -738,7 +702,7 @@ async function restoreAuthState(){
 
   const hydrated = await hydrateUser(stored);
   saveStoredUser(hydrated);
-  renderAuthArea(hydrated);
+  renderAuthArea(null);
 }
 
 function renderEvents(list){

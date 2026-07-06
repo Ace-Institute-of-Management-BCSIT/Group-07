@@ -54,6 +54,17 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 .success-card p{color:var(--mid);font-size:.95rem;line-height:1.5}
 .success-check{width:68px;height:68px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,var(--red),var(--red-dark));display:flex;align-items:center;justify-content:center;color:#fff}
 .success-card .btn-full{margin-top:18px}
+.role-gate{display:none;margin-bottom:18px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff7f7}
+.role-gate.open{display:block}
+.role-gate h3{font-family:var(--ff-head);font-size:1.05rem;margin-bottom:6px;color:var(--ink);text-align:center}
+.role-gate p{font-size:.84rem;color:var(--soft);text-align:center;line-height:1.5;margin-bottom:14px}
+.role-choice-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.role-choice{width:100%;border:1px solid var(--border);background:var(--white);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;transition:border-color .2s,transform .2s}
+.role-choice:hover{border-color:var(--red);transform:translateY(-1px)}
+.role-choice strong{display:block;font-size:.92rem;color:var(--ink);margin-bottom:2px}
+.role-choice span{display:block;font-size:.8rem;color:var(--soft);line-height:1.4}
+.back-link{display:none;width:100%;margin-top:12px;border:none;background:none;color:var(--red);font:600 .85rem var(--ff-body);cursor:pointer;text-align:center}
+.back-link.open{display:block}
 </style>
 </head>
 <body>
@@ -64,6 +75,26 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
       SaveABeat
     </a>
   </div>
+
+  <div class="role-gate open" id="roleGate">
+    <h3>Select account type</h3>
+    <p>Choose whether you want to register as a donor or an organization.</p>
+    <div class="role-choice-grid">
+      <button class="role-choice" type="button" onclick="location.href='register.html?role=donor'">
+        <strong>Donor</strong>
+        <span>Create a donor account.</span>
+      </button>
+      <button class="role-choice" type="button" onclick="location.href='register.html?role=org'">
+        <strong>Organization</strong>
+        <span>Create an organization account.</span>
+      </button>
+      <button class="role-choice" type="button" onclick="location.href='login.html?role=admin'">
+        <strong>Admin</strong>
+        <span>Admin accounts are pre-created. Use login instead.</span>
+      </button>
+    </div>
+  </div>
+
   <h2>Join SaveABeat</h2>
   <p class="sub">Create your account and start making a difference in people's lives</p>
 
@@ -90,6 +121,7 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
   </form>
 
   <p class="card-footer" id="footerLink">Already have an account? <a href="login.html">Sign in here</a></p>
+  <button class="back-link" id="backToRoles" type="button" onclick="location.href='register.html'">Change account type</button>
 </div>
 
 <div class="success-backdrop" id="successBackdrop" aria-hidden="true">
@@ -107,7 +139,7 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 const DEFAULT_ORG_PHOTO_LABEL = 'buildingPhoto';
 const AUTH_KEY = 'saveabeatUser';
 
-const role = new URLSearchParams(location.search).get('role') || 'donor';
+const role = new URLSearchParams(location.search).get('role');
 const dynamicFields = document.getElementById('dynamicFields');
 const modeHelper = document.getElementById('modeHelper');
 const registerForm = document.getElementById('registerForm');
@@ -389,6 +421,25 @@ function validateEmailAndPassword(email, pw, pw2){
 }
 
 function renderRegisterForm(){
+  const gate=document.getElementById('roleGate');
+  const backLink=document.getElementById('backToRoles');
+
+  if(!role){
+    gate?.classList.add('open');
+    backLink?.classList.remove('open');
+    document.querySelector('.card h2').textContent = 'Choose Sign Up Type';
+    document.querySelector('.card .sub').textContent = 'Pick the account type first, then continue to the matching sign up form.';
+    footerLink.innerHTML = 'Already have an account? <a href="login.html">Sign in here</a>';
+    dynamicFields.innerHTML = '';
+    signupFields.classList.add('hidden');
+    verificationView.classList.remove('open');
+    return;
+  }
+
+  gate?.classList.remove('open');
+  backLink?.classList.add('open');
+  signupFields.classList.remove('hidden');
+
   if(role === 'admin'){
     location.href = 'login.html?role=admin';
     return;

@@ -536,7 +536,7 @@
 <body>
   <!-- NAV (Same design as landing index page) -->
   <nav>
-    <a href="index.html" class="logo">
+    <a href="donor-dashboard.html" class="logo" aria-label="Donor dashboard home">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
       SaveABeat
     </a>
@@ -678,7 +678,7 @@
   <footer>
     <div class="footer-grid">
       <div class="footer-brand">
-        <a href="index.html" class="logo" style="color:#fff">
+        <a href="donor-dashboard.html" class="logo" style="color:#fff" aria-label="Donor dashboard home">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
           SaveABeat Nepal
         </a>
@@ -952,7 +952,7 @@
       clearStoredUser();
       closeProfileMenu();
       closeProfileModal();
-      location.href='login.html?role=donor';
+      location.href='index.html';
     }
 
     function updateProfileEditControls(){
@@ -1089,6 +1089,20 @@
         setupTabs();
       }catch(err){
         console.error('Unable to load dashboard data', err);
+      }
+    }
+
+    async function loadStats(){
+      try{
+        const response=await fetch('/api/health');
+        if(!response.ok) return;
+        const statsResponse=await fetch('/api/stats');
+        if(!statsResponse.ok) return;
+        const stats=await statsResponse.json();
+        document.getElementById('statDonors').textContent=`${Number(stats.donors || 15000).toLocaleString()}+`;
+        document.getElementById('statCenters').textContent=`${Number(stats.centers || 200).toLocaleString()}+`;
+      }catch(error){
+        console.warn('Using default donor stats.', error);
       }
     }
 
@@ -1351,6 +1365,7 @@
     });
 
     loadData();
+    loadStats();
   </script>
 </body>
 </html>

@@ -75,7 +75,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
   </div>
   <div class="nav-right">
     <button class="btn-ghost" onclick="location.href='login.html'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Login</button>
-    <button class="btn-red" onclick="location.href='register.html'">Donate Now</button>
+    <button class="btn-red" onclick="location.href='register.html'">Sign Up</button>
   </div>
 </nav>
 
@@ -109,7 +109,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
 
   <div class="map-note">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    <p><strong>Interactive Map View</strong><br/>For a better experience, use our interactive map to see all donation centers in your area, get real-time directions, and check current wait times. Click "Directions" above to open the location in your preferred map application.</p>
+    <p><strong>Interactive Map View</strong><br/>For a better experience, use our interactive map to see all donation centers in your area and check current wait times. Click "Request Blood" above to start a request for the selected center.</p>
   </div>
 </section>
 
@@ -133,6 +133,16 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
 </footer>
 
 <script>
+const AUTH_STORAGE_KEY='saveabeatUser';
+
+function getStoredUser(){
+  try{
+    return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+  }catch(error){
+    return null;
+  }
+}
+
 let CENTERS=[
   {name:"Bir Hospital Blood Center",dist:"2.3 km away",address:"Tundilkhel Road, Kathmandu",phone:"+977-1-4221119",hours:"Mon-Fri: 8AM-6PM, Sat: 9AM-3PM",avail:"High",services:["Whole Blood","Platelets","Plasma","Power Red"],
    img:"https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&auto=format&fit=crop&q=70"},
@@ -165,11 +175,32 @@ function renderCenters(list){
         </div>
         <div class="services">${c.services.map(s=>`<span class="service-tag">${s}</span>`).join("")}</div>
         <div class="center-btns">
-          <button class="btn-outline"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13"/></svg>Directions</button>
-          <button class="btn-sm-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</button>
+          <button class="btn-sm-red" onclick="request(${c.id})"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Request Blood</button>
         </div>
       </div>
     </div>`}).join("")
+}
+
+async function request(listingId){
+  const user=getStoredUser();
+  if(!user){location.href='login.html?role=donor';return}
+  const bloodGroup=prompt('Enter blood group (e.g. A+, O-)');
+  if(!bloodGroup) return;
+  const units=prompt('How many units needed?', '1');
+  if(!units) return;
+  const urgency=prompt('Urgency (normal, urgent, critical)', 'normal');
+  if(!urgency) return;
+  const city=user.city || prompt('City');
+  const district=user.district || prompt('District');
+  try{
+    const res=await fetch('/api/requests', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listingId,bloodGroup,unitsNeeded:units,urgency,city,district})});
+    const payload=await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
+    if(!res.ok){alert(payload?.message||'Unable to create request');return}
+    alert(payload?.message||'Request created');
+  }catch(error){
+    console.error(error);
+    alert('Unable to create request');
+  }
 }
 
 function filterCenters(q){
