@@ -148,7 +148,7 @@ async function handleLogin(){
       }
     }catch(_error){}
     sessionStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
-    location.href = storedUser.role === 'org' ? 'org-dashboard.html' : 'donor-dashboard.html';
+    location.href = storedUser.role === 'org' ? 'org-dashboard.html#panel-upcoming' : 'donor-dashboard.html';
   }catch(error){
     err.textContent=error.message||'Unable to reach the server. Make sure the backend is running.';
     err.style.display='block';
