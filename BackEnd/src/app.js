@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const express = require('express');
 const path = require('path');
+const nodemailer = require('nodemailer');
+
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
@@ -49,6 +51,16 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
+async function domainHasMailServer(email){
+  const domain = email.split('@')[1];
+  try{
+    const records = await dns.resolve(domain);
+    return records && records > 0;
+  }catch{
+    return false;
+  }
+}
+
 function getPasswordStrengthError(password) {
   if (password.length < 8) {
     return 'Password must be at least 8 characters.';
@@ -73,6 +85,49 @@ function getPasswordStrengthError(password) {
   return null;
 }
 
+function createMailTransport() {
+  const host = process.env.SMTP_HOST;
+  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : null;
+  const secure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !smtpPort || !user || !pass) {
+    console.warn('SMTP not fully configured — check SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in .env');
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port: smtpPort,
+    secure,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false }, 
+  });
+}
+async function sendVerificationEmail(email, role, code) {
+  const transport = createMailTransport();
+  const emailFrom = process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@saveabeat.local';
+  const subject = 'SaveABeat Email Verification';
+  const roleLabel = role === 'org' ? 'organization' : 'donor';
+  const text = `Your SaveABeat ${roleLabel} verification code is ${code}. It expires in 10 minutes.`;
+  const html = `<p>Your SaveABeat ${roleLabel} verification code is <strong>${code}</strong>.</p><p>It expires in 10 minutes.</p>`;
+
+  if (!transport) {
+    console.warn('SMTP not configured. Logging verification code instead.');
+    console.log(`Email verification code for ${email}: ${code}`);
+    return;
+  }
+
+  await transport.sendMail({
+    from: emailFrom,
+    to: email,
+    subject,
+    text,
+    html,
+  });
+}
+
 function createVerificationCode() {
   return String(crypto.randomInt(100000, 1000000));
 }
@@ -82,6 +137,7 @@ function getVerificationKey(email, role) {
 }
 
 function storeVerificationCode(email, role) {
+
   const code = createVerificationCode();
   verificationCodes.set(getVerificationKey(email, role), {
     codeHash: sha256(code),
@@ -295,46 +351,6 @@ function mapCampaignRow(row) {
   };
 }
 
-async function resolveCampaignAccess(eventId, email, role) {
-  const campaignRows = await query(
-    `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
-            bl.time_range, bl.location, bl.distance_km, bl.spots_total,
-            bl.spots_available, bl.event_type, bl.image_url
-     FROM blood_drive_listings bl
-     INNER JOIN organizations o ON o.org_id = bl.org_id
-     WHERE bl.event_id = ?
-     LIMIT 1`,
-    [eventId]
-  );
-
-  if (!campaignRows.length) {
-    return null;
-  }
-
-  if (role === 'admin') {
-    return campaignRows[0];
-  }
-
-  if (!email) {
-    return null;
-  }
-
-  const orgRows = await query(
-    `SELECT o.org_id
-     FROM users u
-     INNER JOIN organizations o ON o.user_id = u.user_id
-     WHERE LOWER(u.email) = ? AND u.role = 'org'
-     LIMIT 1`,
-    [email]
-  );
-
-  if (!orgRows.length || Number(orgRows[0].org_id) !== Number(campaignRows[0].org_id)) {
-    return null;
-  }
-
-  return campaignRows[0];
-}
-
 app.get('/api/org/campaigns', async (req, res) => {
   const email = String(req.query.email || '').trim().toLowerCase();
 
@@ -370,124 +386,6 @@ app.get('/api/org/campaigns', async (req, res) => {
     res.json({
       orgName: orgRows[0].org_name,
       data: rows.map(mapCampaignRow),
-    });
-  } catch (error) {
-    sendDbError(res, error);
-  }
-});
-
-app.get('/api/org/dashboard', async (req, res) => {
-  const email = String(req.query.email || '').trim().toLowerCase();
-
-  if (!email) {
-    return res.status(400).json({ message: 'Email query parameter is required.' });
-  }
-
-  try {
-    const orgRows = await query(
-      `SELECT o.org_id, o.org_name, o.org_type, o.address, o.contact, o.verified,
-              u.full_name, u.email, u.phone, u.city, u.district
-       FROM users u
-       INNER JOIN organizations o ON o.user_id = u.user_id
-       WHERE LOWER(u.email) = ? AND u.role = 'org'
-       LIMIT 1`,
-      [email]
-    );
-
-    if (!orgRows.length) {
-      return res.status(404).json({ message: 'Organization account not found.' });
-    }
-
-    const org = orgRows[0];
-    const [campaignRows, requestRows, donationRows] = await Promise.all([
-      query(
-        `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
-                bl.time_range, bl.location, bl.distance_km, bl.spots_total,
-                bl.spots_available, bl.event_type, bl.image_url
-         FROM blood_drive_listings bl
-         INNER JOIN organizations o ON o.org_id = bl.org_id
-         WHERE bl.org_id = ?
-         ORDER BY bl.event_date DESC, bl.event_id DESC`,
-        [org.org_id]
-      ),
-      query(
-        `SELECT request_id, blood_group, units_needed, urgency, status, city, district, created_at, expires_at
-         FROM blood_requests
-         WHERE org_id = ?
-         ORDER BY created_at DESC, request_id DESC`,
-        [org.org_id]
-      ),
-      query(
-        `SELECT dh.history_id, dh.units_donated, dh.donated_at, dh.location, br.request_id, br.status AS request_status
-         FROM donation_history dh
-         INNER JOIN blood_requests br ON br.request_id = dh.request_id
-         WHERE br.org_id = ?
-         ORDER BY dh.donated_at DESC, dh.history_id DESC`,
-        [org.org_id]
-      ),
-    ]);
-
-    const today = new Date().toISOString().slice(0, 10);
-    const upcomingCampaigns = campaignRows.filter((row) => String(row.event_date).slice(0, 10) >= today);
-    const completedCampaigns = campaignRows.filter((row) => String(row.event_date).slice(0, 10) < today);
-
-    const totalBloodUnitsCollected = donationRows.reduce((sum, row) => sum + Number(row.units_donated || 0), 0);
-    const totalSoldBloodUnits = donationRows
-      .filter((row) => String(row.request_status || '').toLowerCase() === 'fulfilled')
-      .reduce((sum, row) => sum + Number(row.units_donated || 0), 0);
-    const requestForBloodUnits = requestRows.reduce((sum, row) => sum + Number(row.units_needed || 0), 0);
-    const openRequests = requestRows.filter((row) => String(row.status || '').toLowerCase() === 'open').length;
-    const fulfilledRequests = requestRows.filter((row) => String(row.status || '').toLowerCase() === 'fulfilled').length;
-
-    res.json({
-      org: {
-        orgId: org.org_id,
-        orgName: org.org_name,
-        orgType: org.org_type,
-        address: org.address,
-        contact: org.contact,
-        verified: Boolean(org.verified),
-        managerName: org.full_name,
-        email: org.email,
-        phone: org.phone,
-        city: org.city,
-        district: org.district,
-      },
-      metrics: {
-        totalCampaigns: campaignRows.length,
-        upcomingCampaigns: upcomingCampaigns.length,
-        completedCampaigns: completedCampaigns.length,
-        totalBloodUnitsCollected,
-        requestForBloodUnits,
-        totalSoldBloodUnits,
-        openRequests,
-        fulfilledRequests,
-        totalCampaignSpots: campaignRows.reduce((sum, row) => sum + Number(row.spots_total || 0), 0),
-        availableCampaignSpots: campaignRows.reduce((sum, row) => sum + Number(row.spots_available || 0), 0),
-      },
-      campaigns: {
-        all: campaignRows.map(mapCampaignRow),
-        upcoming: upcomingCampaigns.map(mapCampaignRow),
-        completed: completedCampaigns.map(mapCampaignRow),
-      },
-      requests: requestRows.map((row) => ({
-        id: row.request_id,
-        bloodGroup: row.blood_group,
-        unitsNeeded: row.units_needed,
-        urgency: row.urgency,
-        status: row.status,
-        city: row.city,
-        district: row.district,
-        createdAt: formatDate(row.created_at),
-        expiresAt: formatDate(row.expires_at),
-      })),
-      recentActivity: donationRows.slice(0, 6).map((row) => ({
-        id: row.history_id,
-        units: row.units_donated,
-        date: formatDate(row.donated_at),
-        location: row.location,
-        requestStatus: row.request_status,
-      })),
     });
   } catch (error) {
     sendDbError(res, error);
@@ -694,99 +592,36 @@ app.post('/api/org/campaigns', async (req, res) => {
   }
 });
 
-app.post('/api/org/campaigns/:id/stop', async (req, res) => {
-  const eventId = Number.parseInt(req.params.id, 10);
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const role = String(req.body.role || 'org').trim().toLowerCase();
-
-  if (!eventId) {
-    return res.status(400).json({ message: 'Campaign id is required.' });
-  }
-
-  try {
-    const campaign = await resolveCampaignAccess(eventId, email, role);
-    if (!campaign) {
-      return res.status(404).json({ message: 'Campaign not found or access denied.' });
-    }
-
-    await query(
-      'UPDATE blood_drive_listings SET event_date = DATE_SUB(CURDATE(), INTERVAL 1 DAY) WHERE event_id = ?',
-      [eventId]
-    );
-
-    const rows = await query(
-      `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
-              bl.time_range, bl.location, bl.distance_km, bl.spots_total,
-              bl.spots_available, bl.event_type, bl.image_url
-       FROM blood_drive_listings bl
-       INNER JOIN organizations o ON o.org_id = bl.org_id
-       WHERE bl.event_id = ?
-       LIMIT 1`,
-      [eventId]
-    );
-
-    res.json({
-      message: 'Campaign stopped and moved to completed campaigns.',
-      campaign: rows.length ? mapCampaignRow(rows[0]) : mapCampaignRow(campaign),
-    });
-  } catch (error) {
-    sendDbError(res, error);
-  }
-});
-
-app.delete('/api/org/campaigns/:id', async (req, res) => {
-  const eventId = Number.parseInt(req.params.id, 10);
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const role = String(req.body.role || 'org').trim().toLowerCase();
-
-  if (!eventId) {
-    return res.status(400).json({ message: 'Campaign id is required.' });
-  }
-
-  try {
-    const campaign = await resolveCampaignAccess(eventId, email, role);
-    if (!campaign) {
-      return res.status(404).json({ message: 'Campaign not found or access denied.' });
-    }
-
-    await query('DELETE FROM blood_drive_listings WHERE event_id = ?', [eventId]);
-
-    res.json({ message: 'Campaign deleted successfully.' });
-  } catch (error) {
-    sendDbError(res, error);
-  }
-});
-
 app.post('/api/auth/send-verification-code', async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const role = String(req.body.role || 'donor').trim().toLowerCase();
-
   if (!email) {
     return res.status(400).json({ message: 'Email is required.' });
   }
-
   if (!isValidEmail(email)) {
     return res.status(400).json({ message: 'Please enter a valid email address.' });
   }
-
   if (!['donor', 'org'].includes(role)) {
     return res.status(400).json({ message: 'Only donor and organization accounts can request verification codes.' });
   }
-
   try {
     const existingUsers = await query('SELECT user_id FROM users WHERE email = ? LIMIT 1', [email]);
     if (existingUsers.length > 0) {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
-
     const code = storeVerificationCode(email, role);
-    console.log(`Email verification code for ${email}: ${code}`);
-
+    try {
+      await sendVerificationEmail(email, role, code);
+    } catch (error) {
+      verificationCodes.delete(getVerificationKey(email, role));
+      console.error('Email send failure:', error);
+      return res.status(500).json({ message: 'Unable to send verification code. Please try again later.' });
+    }
     res.json({
-      message: 'Verification code sent. Check the backend console for the code while email delivery is not configured.',
-      devCode: process.env.NODE_ENV === 'production' ? undefined : code,
+      message: 'Verification code sent. Please check your email.',
     });
   } catch (error) {
+    console.error('Verification code request failed:', error);
     res.status(500).json({ message: 'Unable to send verification code.' });
   }
 });
@@ -1246,9 +1081,35 @@ app.use((req, res) => {
 async function start() {
   try {
     await pool.query('SELECT 1');
-    app.listen(port, () => {
-      console.log(`SaveABeat backend running on http://localhost:${port}`);
-    });
+
+    const transport = createMailTransport();
+    if (transport) {
+      transport.verify((err) => {
+        if (err) console.error('SMTP connection failed:', err.message);
+        else console.log('SMTP ready to send emails');
+      });
+    }
+
+    function listen(portToTry) {
+      const server = app.listen(portToTry, () => {
+        console.log(`SaveABeat backend running on http://localhost:${portToTry}`);
+        if (portToTry !== port) {
+          console.warn(`Note: default port ${port} was busy. Update your frontend fetch calls if needed.`);
+        }
+      });
+
+      server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.warn(`Port ${portToTry} is in use, trying ${portToTry + 1}...`);
+          listen(portToTry + 1);
+        } else {
+          throw err;
+        }
+      });
+    }
+
+    listen(port);
+
   } catch (error) {
     console.error('Failed to connect to MySQL. Check BackEnd/.env and schema setup.');
     process.exitCode = 1;

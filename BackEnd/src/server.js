@@ -235,6 +235,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log(`SaveABeat server running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`SaveABeat server running on port ${port}`);
 });
