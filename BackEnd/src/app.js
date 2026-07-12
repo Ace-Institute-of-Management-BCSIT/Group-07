@@ -19,6 +19,16 @@ app.use(express.urlencoded({ extended: false, limit: '20mb' }));
 app.use(express.static(frontendDir));
 const fs = require('fs');
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
@@ -86,14 +96,28 @@ function getPasswordStrengthError(password) {
 }
 
 function createMailTransport() {
+  const service = String(process.env.SMTP_SERVICE || '').trim().toLowerCase();
   const host = process.env.SMTP_HOST;
   const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : null;
   const secure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  if (!host || !smtpPort || !user || !pass) {
-    console.warn('SMTP not fully configured — check SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in .env');
+  if (!user || !pass) {
+    console.warn('SMTP not fully configured — check SMTP_USER and SMTP_PASS in .env');
+    return null;
+  }
+
+  if (service) {
+    return nodemailer.createTransport({
+      service,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+    });
+  }
+
+  if (!host || !smtpPort) {
+    console.warn('SMTP not fully configured — set SMTP_SERVICE or SMTP_HOST and SMTP_PORT in .env');
     return null;
   }
 
@@ -102,7 +126,7 @@ function createMailTransport() {
     port: smtpPort,
     secure,
     auth: { user, pass },
-    tls: { rejectUnauthorized: false }, 
+    tls: { rejectUnauthorized: false },
   });
 }
 async function sendVerificationEmail(email, role, code) {
@@ -116,7 +140,7 @@ async function sendVerificationEmail(email, role, code) {
   if (!transport) {
     console.warn('SMTP not configured. Logging verification code instead.');
     console.log(`Email verification code for ${email}: ${code}`);
-    return;
+    return { deliveryMode: 'terminal', devCode: code };
   }
 
   await transport.sendMail({
@@ -126,6 +150,8 @@ async function sendVerificationEmail(email, role, code) {
     text,
     html,
   });
+
+  return { deliveryMode: 'email' };
 }
 
 function createVerificationCode() {
@@ -192,6 +218,188 @@ function parseList(value) {
     .split('|')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+const EMERGENCY_REQUEST_COLUMNS = [
+  ['hospital_name', 'VARCHAR(150) NULL'],
+  ['patient_type', 'VARCHAR(150) NULL'],
+  ['required_by', 'VARCHAR(100) NULL'],
+  ['hospital_address', 'TEXT NULL'],
+  ['hospital_city', 'VARCHAR(100) NULL'],
+  ['hospital_district', 'VARCHAR(100) NULL'],
+  ['contact_person', 'VARCHAR(150) NULL'],
+  ['contact_number', 'VARCHAR(30) NULL'],
+  ['additional_note', 'TEXT NULL'],
+  ['priority_label', 'VARCHAR(20) NULL'],
+];
+
+const DONATION_RESPONSE_COLUMNS = [
+  ['donor_name', 'VARCHAR(150) NULL'],
+  ['donor_email', 'VARCHAR(150) NULL'],
+  ['donor_blood_group', 'VARCHAR(10) NULL'],
+  ['phone_number', 'VARCHAR(30) NULL'],
+  ['available_today', 'BOOLEAN NULL'],
+  ['estimated_arrival', 'VARCHAR(50) NULL'],
+  ['current_location', 'VARCHAR(150) NULL'],
+  ['donated_recently', 'BOOLEAN NULL'],
+  ['healthy_now', 'BOOLEAN NULL'],
+  ['additional_message', 'TEXT NULL'],
+];
+
+async function ensureEmergencyRequestSchema() {
+  const existingColumns = await query(
+    `SELECT COLUMN_NAME
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'blood_requests'`
+  );
+  const known = new Set(existingColumns.map((row) => String(row.COLUMN_NAME).toLowerCase()));
+
+  for (const [columnName, definition] of EMERGENCY_REQUEST_COLUMNS) {
+    if (!known.has(columnName)) {
+      await query(`ALTER TABLE blood_requests ADD COLUMN ${columnName} ${definition}`);
+    }
+  }
+}
+
+async function ensureDonationResponseSchema() {
+  const existingColumns = await query(
+    `SELECT COLUMN_NAME
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'donation_responses'`
+  );
+  const known = new Set(existingColumns.map((row) => String(row.COLUMN_NAME).toLowerCase()));
+
+  for (const [columnName, definition] of DONATION_RESPONSE_COLUMNS) {
+    if (!known.has(columnName)) {
+      await query(`ALTER TABLE donation_responses ADD COLUMN ${columnName} ${definition}`);
+    }
+  }
+}
+
+function normalizePriorityLabel(priority) {
+  const value = String(priority || '').trim().toLowerCase();
+  if (value === 'critical' || value === 'emergency') {
+    return 'Emergency';
+  }
+  if (value === 'urgent') {
+    return 'Urgent';
+  }
+  return 'Normal';
+}
+
+function priorityToUrgency(priority) {
+  const value = String(priority || '').trim().toLowerCase();
+  if (value === 'critical' || value === 'emergency') {
+    return 'critical';
+  }
+  if (value === 'urgent') {
+    return 'urgent';
+  }
+  return 'normal';
+}
+
+function inferHospitalLocation(address, city, district) {
+  const rawAddress = String(address || '').trim();
+  const explicitCity = String(city || '').trim();
+  const explicitDistrict = String(district || '').trim();
+
+  if (explicitCity && explicitDistrict) {
+    return { city: explicitCity, district: explicitDistrict };
+  }
+
+  const parts = rawAddress
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const fallbackCity = parts.length ? parts[parts.length - 1] : 'Kathmandu';
+  const fallbackDistrict = parts.length > 1 ? parts[parts.length - 1] : fallbackCity;
+
+  return {
+    city: explicitCity || fallbackCity || 'Kathmandu',
+    district: explicitDistrict || fallbackDistrict || fallbackCity || 'Kathmandu',
+  };
+}
+
+function formatRequestRow(row) {
+  return {
+    id: row.request_id,
+    orgId: row.org_id,
+    orgName: row.org_name,
+    hospital: row.hospital_name || row.org_name,
+    bloodGroup: row.blood_group,
+    unitsRequired: row.units_needed,
+    priority: row.priority_label || normalizePriorityLabel(row.urgency),
+    urgency: row.urgency,
+    status: row.status,
+    patientType: row.patient_type,
+    requiredBy: row.required_by,
+    hospitalAddress: row.hospital_address || row.address || row.city,
+    hospitalCity: row.hospital_city || row.city,
+    hospitalDistrict: row.hospital_district || row.district,
+    contactPerson: row.contact_person,
+    contactNumber: row.contact_number,
+    additionalNote: row.additional_note,
+    createdAt: row.created_at ? new Date(row.created_at).toLocaleString() : null,
+    expiresAt: formatDate(row.expires_at),
+  };
+}
+
+function formatDonorResponseRow(row) {
+  return {
+    id: row.response_id,
+    requestId: row.request_id,
+    status: row.status,
+    respondedAt: row.responded_at ? new Date(row.responded_at).toLocaleString() : null,
+    confirmedAt: row.confirmed_at ? new Date(row.confirmed_at).toLocaleString() : null,
+    donorName: row.donor_name || row.user_full_name || 'Anonymous donor',
+    donorEmail: row.donor_email || row.user_email || '',
+    donorBloodGroup: row.donor_blood_group || row.profile_blood_group || '',
+    phoneNumber: row.phone_number || row.user_phone || '',
+    availableToday: row.available_today === 1 || row.available_today === true,
+    estimatedArrival: row.estimated_arrival || '',
+    currentLocation: row.current_location || '',
+    donatedRecently: row.donated_recently === 1 || row.donated_recently === true,
+    healthyNow: row.healthy_now === 1 || row.healthy_now === true,
+    additionalMessage: row.additional_message || '',
+  };
+}
+
+async function getOrgByEmail(email) {
+  const rows = await query(
+    `SELECT o.org_id, o.org_name, o.org_type, o.address, o.contact, o.verified,
+            u.user_id AS owner_user_id, u.full_name AS user_full_name, u.email AS user_email, u.phone AS user_phone
+     FROM users u
+     INNER JOIN organizations o ON o.user_id = u.user_id
+     WHERE LOWER(u.email) = ? AND u.role = 'org'
+     LIMIT 1`,
+    [email]
+  );
+
+  return rows[0] || null;
+}
+
+async function broadcastEmergencyRequest(requestRow) {
+  const donors = await query(
+    `SELECT u.user_id
+     FROM users u
+     INNER JOIN donor_profiles d ON d.user_id = u.user_id
+     WHERE u.role = 'donor'`
+  );
+
+  if (!donors.length) {
+    return 0;
+  }
+
+  const message = `${requestRow.orgName} needs ${requestRow.bloodGroup} blood for ${requestRow.hospital}.`;
+  await Promise.all(donors.map((donor) => query(
+    `INSERT INTO notifications (user_id, request_id, type, message, is_read)
+     VALUES (?, ?, 'broadcast', ?, FALSE)`,
+    [donor.user_id, requestRow.id, message]
+  )));
+
+  return donors.length;
 }
 
 app.get('/api/health', async (_req, res) => {
@@ -592,6 +800,554 @@ app.post('/api/org/campaigns', async (req, res) => {
   }
 });
 
+app.get('/api/org/dashboard', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ message: 'Email query parameter is required.' });
+  }
+
+  try {
+    const org = await getOrgByEmail(email);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization account not found.' });
+    }
+
+    const [upcomingRows, completedRows, requestRows, activityRows, campaignStatsRows, requestStatsRows, historyStatsRows, requestResponseRows] = await Promise.all([
+      query(
+        `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
+                bl.time_range, bl.location, bl.distance_km, bl.spots_total,
+                bl.spots_available, bl.event_type, bl.image_url
+         FROM blood_drive_listings bl
+         INNER JOIN organizations o ON o.org_id = bl.org_id
+         WHERE bl.org_id = ? AND bl.event_date >= CURDATE()
+         ORDER BY bl.event_date ASC, bl.event_id ASC`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
+                bl.time_range, bl.location, bl.distance_km, bl.spots_total,
+                bl.spots_available, bl.event_type, bl.image_url
+         FROM blood_drive_listings bl
+         INNER JOIN organizations o ON o.org_id = bl.org_id
+         WHERE bl.org_id = ? AND bl.event_date < CURDATE()
+         ORDER BY bl.event_date DESC, bl.event_id DESC`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT br.request_id, br.org_id, o.org_name, br.blood_group, br.units_needed, br.urgency, br.status,
+                br.city, br.district, br.created_at, br.expires_at,
+                br.hospital_name, br.patient_type, br.required_by, br.hospital_address,
+                br.contact_person, br.contact_number, br.additional_note, br.priority_label
+         FROM blood_requests br
+         INNER JOIN organizations o ON o.org_id = br.org_id
+         WHERE br.org_id = ?
+         ORDER BY br.created_at DESC, br.request_id DESC`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT dh.history_id, dh.donated_at, dh.units_donated, dh.location, o.org_name, br.request_id, br.status AS request_status
+         FROM donation_history dh
+         LEFT JOIN blood_requests br ON br.request_id = dh.request_id
+         LEFT JOIN organizations o ON o.org_id = br.org_id
+         WHERE br.org_id = ?
+         ORDER BY dh.donated_at DESC, dh.history_id DESC
+         LIMIT 12`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT COUNT(*) AS totalCampaigns,
+                COALESCE(SUM(spots_total), 0) AS totalCampaignSpots,
+                COALESCE(SUM(spots_available), 0) AS availableCampaignSpots,
+                SUM(CASE WHEN event_date >= CURDATE() THEN 1 ELSE 0 END) AS upcomingCampaigns,
+                SUM(CASE WHEN event_date < CURDATE() THEN 1 ELSE 0 END) AS completedCampaigns
+         FROM blood_drive_listings
+         WHERE org_id = ?`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT COUNT(*) AS requestForBloodUnits,
+                SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS openRequests,
+                SUM(CASE WHEN status = 'fulfilled' THEN 1 ELSE 0 END) AS fulfilledRequests,
+                COALESCE(SUM(units_needed), 0) AS totalSoldBloodUnits
+         FROM blood_requests
+         WHERE org_id = ?`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT COALESCE(SUM(dh.units_donated), 0) AS totalBloodUnitsCollected
+         FROM donation_history dh
+         INNER JOIN blood_requests br ON br.request_id = dh.request_id
+         WHERE br.org_id = ?`,
+        [org.org_id]
+      ),
+      query(
+        `SELECT dr.response_id, dr.request_id, dr.status, dr.responded_at, dr.confirmed_at,
+                dr.donor_name, dr.donor_email, dr.donor_blood_group, dr.phone_number,
+                dr.available_today, dr.estimated_arrival, dr.current_location,
+                dr.donated_recently, dr.healthy_now, dr.additional_message,
+                u.full_name AS user_full_name, u.email AS user_email, u.phone AS user_phone,
+                d.blood_group AS profile_blood_group
+         FROM donation_responses dr
+         INNER JOIN blood_requests br ON br.request_id = dr.request_id
+         LEFT JOIN donor_profiles d ON d.donor_id = dr.donor_id
+         LEFT JOIN users u ON u.user_id = d.user_id
+         WHERE br.org_id = ?
+         ORDER BY dr.responded_at DESC, dr.response_id DESC`,
+        [org.org_id]
+      ),
+    ]);
+
+    const responsesByRequest = new Map();
+    requestResponseRows.forEach((row) => {
+      const response = formatDonorResponseRow(row);
+      if (!responsesByRequest.has(response.requestId)) {
+        responsesByRequest.set(response.requestId, []);
+      }
+      responsesByRequest.get(response.requestId).push(response);
+    });
+
+    res.json({
+      org: {
+        orgId: org.org_id,
+        orgName: org.org_name,
+        managerName: org.user_full_name || org.org_name,
+        email,
+        verified: Boolean(org.verified),
+        address: org.address || null,
+        phone: org.user_phone || org.contact || null,
+        contact: org.contact || org.user_phone || null,
+        orgType: org.org_type || null,
+      },
+      metrics: {
+        totalBloodUnitsCollected: historyStatsRows[0]?.totalBloodUnitsCollected || 0,
+        requestForBloodUnits: requestStatsRows[0]?.requestForBloodUnits || 0,
+        totalSoldBloodUnits: requestStatsRows[0]?.totalSoldBloodUnits || 0,
+        upcomingCampaigns: campaignStatsRows[0]?.upcomingCampaigns || 0,
+        completedCampaigns: campaignStatsRows[0]?.completedCampaigns || 0,
+        openRequests: requestStatsRows[0]?.openRequests || 0,
+        totalCampaigns: campaignStatsRows[0]?.totalCampaigns || 0,
+        totalCampaignSpots: campaignStatsRows[0]?.totalCampaignSpots || 0,
+        availableCampaignSpots: campaignStatsRows[0]?.availableCampaignSpots || 0,
+        fulfilledRequests: requestStatsRows[0]?.fulfilledRequests || 0,
+      },
+      campaigns: {
+        upcoming: upcomingRows.map(mapCampaignRow),
+        completed: completedRows.map(mapCampaignRow),
+      },
+      requests: requestRows.map((row) => {
+        const request = formatRequestRow(row);
+        const responses = responsesByRequest.get(request.id) || [];
+        const confirmedResponses = responses.filter((item) => item.status === 'confirmed').length;
+        const pendingResponses = responses.filter((item) => item.status === 'pending').length;
+        return {
+          ...request,
+          responses,
+          responseCount: responses.length,
+          confirmedResponseCount: confirmedResponses,
+          pendingResponseCount: pendingResponses,
+        };
+      }),
+      recentActivity: activityRows.map((row) => ({
+        id: row.history_id,
+        date: formatDate(row.donated_at),
+        units: row.units_donated,
+        location: row.location,
+        org: row.org_name,
+        requestStatus: row.request_status || 'open',
+      })),
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.post('/api/org/requests', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const hospitalName = String(req.body.hospitalName || '').trim();
+  const bloodGroup = String(req.body.bloodGroupNeeded || '').trim();
+  const unitsRequired = Number.parseInt(req.body.unitsRequired || 0, 10);
+  const priority = String(req.body.priority || 'normal').trim();
+  const patientType = String(req.body.patientType || '').trim();
+  const requiredBy = String(req.body.requiredBy || '').trim();
+  const hospitalAddress = String(req.body.hospitalAddress || '').trim();
+  const { city: hospitalCity, district: hospitalDistrict } = inferHospitalLocation(
+    hospitalAddress,
+    req.body.hospitalCity,
+    req.body.hospitalDistrict
+  );
+  const contactPerson = String(req.body.contactPerson || '').trim();
+  const contactNumber = String(req.body.contactNumber || '').trim();
+  const additionalNote = String(req.body.additionalNote || '').trim();
+
+  if (!email || !hospitalName || !bloodGroup || !unitsRequired || !patientType || !requiredBy || !hospitalAddress || !contactPerson || !contactNumber) {
+    return res.status(400).json({ message: 'Please fill in all required emergency request fields.' });
+  }
+
+  if (!bloodGroups.includes(bloodGroup)) {
+    return res.status(400).json({ message: 'Invalid blood group selected.' });
+  }
+
+  try {
+    const org = await getOrgByEmail(email);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization account not found.' });
+    }
+
+    const insertResult = await query(
+      `INSERT INTO blood_requests (
+        org_id, blood_group, units_needed, urgency, status, city, district, expires_at,
+        hospital_name, patient_type, required_by, hospital_address, hospital_city, hospital_district,
+        contact_person, contact_number, additional_note, priority_label
+      )
+      VALUES (?, ?, ?, ?, 'open', ?, ?, DATE_ADD(NOW(), INTERVAL 1 DAY), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        org.org_id,
+        bloodGroup,
+        unitsRequired,
+        priorityToUrgency(priority),
+        hospitalCity,
+        hospitalDistrict,
+        hospitalName,
+        patientType,
+        requiredBy,
+        hospitalAddress,
+        hospitalCity,
+        hospitalDistrict,
+        contactPerson,
+        contactNumber,
+        additionalNote || null,
+        normalizePriorityLabel(priority),
+      ]
+    );
+
+    const requestRows = await query(
+      `SELECT br.request_id, br.org_id, o.org_name, br.blood_group, br.units_needed, br.urgency, br.status,
+              br.city, br.district, br.created_at, br.expires_at,
+              br.hospital_name, br.patient_type, br.required_by, br.hospital_address,
+              br.contact_person, br.contact_number, br.additional_note, br.priority_label
+       FROM blood_requests br
+       INNER JOIN organizations o ON o.org_id = br.org_id
+       WHERE br.request_id = ?
+       LIMIT 1`,
+      [insertResult.insertId]
+    );
+
+    const request = formatRequestRow(requestRows[0]);
+    await broadcastEmergencyRequest(request);
+
+    res.status(201).json({
+      message: 'Emergency blood request created and sent to donors.',
+      request,
+    });
+  } catch (error) {
+    console.error('Emergency request creation failed:', error);
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/donor/notifications', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ message: 'Email query parameter is required.' });
+  }
+
+  try {
+    const donorRows = await query(
+      `SELECT d.donor_id, u.user_id
+       FROM users u
+       INNER JOIN donor_profiles d ON d.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    const userId = donorRows[0].user_id;
+
+    const notifications = await query(
+      `SELECT n.notif_id, n.message, n.is_read, n.sent_at,
+              br.request_id, br.org_id, o.org_name, br.blood_group, br.units_needed, br.priority_label, br.urgency,
+              br.patient_type, br.required_by, br.hospital_name, br.hospital_address, br.hospital_city,
+              br.hospital_district, br.contact_person, br.contact_number, br.additional_note, br.status
+       FROM notifications n
+       INNER JOIN blood_requests br ON br.request_id = n.request_id
+       INNER JOIN organizations o ON o.org_id = br.org_id
+       WHERE n.user_id = ? AND n.type = 'broadcast'
+       ORDER BY n.sent_at DESC, n.notif_id DESC`,
+      [userId]
+    );
+
+    const unreadRows = await query(
+      `SELECT COUNT(*) AS unreadCount
+       FROM notifications
+       WHERE user_id = ? AND type = 'broadcast' AND is_read = FALSE`,
+      [userId]
+    );
+
+    res.json({
+      unreadCount: unreadRows[0]?.unreadCount || 0,
+      data: notifications.map((row) => ({
+        notifId: row.notif_id,
+        requestId: row.request_id,
+        orgName: row.org_name,
+        bloodGroup: row.blood_group,
+        unitsRequired: row.units_needed,
+        priority: row.priority_label || normalizePriorityLabel(row.urgency),
+        patientType: row.patient_type,
+        requiredBy: row.required_by,
+        hospital: row.hospital_name,
+        hospitalAddress: row.hospital_address,
+        hospitalCity: row.hospital_city,
+        hospitalDistrict: row.hospital_district,
+        contactPerson: row.contact_person,
+        contactNumber: row.contact_number,
+        additionalNote: row.additional_note,
+        status: row.status,
+        message: row.message,
+        isRead: Boolean(row.is_read),
+        sentAt: row.sent_at,
+      })),
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.post('/api/donor/notifications/:notifId/read', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const notifId = Number.parseInt(req.params.notifId, 10);
+
+  if (!email || !notifId) {
+    return res.status(400).json({ message: 'Email and notification id are required.' });
+  }
+
+  try {
+    const donorRows = await query(
+      `SELECT u.user_id
+       FROM users u
+       INNER JOIN donor_profiles d ON d.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    const result = await query(
+      `UPDATE notifications
+       SET is_read = TRUE
+       WHERE notif_id = ? AND user_id = ?`,
+      [notifId, donorRows[0].user_id]
+    );
+
+    res.json({ message: 'Notification marked as read.', affectedRows: result.affectedRows || 0 });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.post('/api/org/requests/:requestId/fulfill', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const requestId = Number.parseInt(req.params.requestId, 10);
+
+  if (!email || !requestId) {
+    return res.status(400).json({ message: 'Email and request id are required.' });
+  }
+
+  try {
+    const org = await getOrgByEmail(email);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization account not found.' });
+    }
+
+    const result = await query(
+      `UPDATE blood_requests
+       SET status = 'fulfilled'
+       WHERE request_id = ? AND org_id = ?`,
+      [requestId, org.org_id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Request not found.' });
+    }
+
+    res.json({ message: 'Request marked as fulfilled.', affectedRows: result.affectedRows || 0 });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.post('/api/donor/requests/:requestId/respond', async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const requestId = Number.parseInt(req.params.requestId, 10);
+  const phoneNumber = String(req.body.phoneNumber || '').trim() || null;
+  const availableToday = String(req.body.availableToday || '').toLowerCase() === 'yes';
+  const estimatedArrival = String(req.body.estimatedArrival || '').trim() || null;
+  const currentLocation = String(req.body.currentLocation || '').trim() || null;
+  const donatedRecently = String(req.body.donatedRecently || '').toLowerCase() === 'yes';
+  const healthyNow = String(req.body.healthyNow || '').toLowerCase() === 'yes';
+  const additionalMessage = String(req.body.additionalMessage || '').trim() || null;
+
+  if (!email || !requestId) {
+    return res.status(400).json({ message: 'Email and request id are required.' });
+  }
+
+  try {
+    const donorRows = await query(
+      `SELECT d.donor_id, u.full_name, u.email, d.blood_group, u.phone
+       FROM users u
+       INNER JOIN donor_profiles d ON d.user_id = u.user_id
+       WHERE LOWER(u.email) = ?
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    const requestRows = await query(
+      `SELECT request_id
+       FROM blood_requests
+       WHERE request_id = ?
+       LIMIT 1`,
+      [requestId]
+    );
+
+    if (!requestRows.length) {
+      return res.status(404).json({ message: 'Blood request not found.' });
+    }
+
+    const donor = donorRows[0];
+    const existingResponse = await query(
+      `SELECT response_id FROM donation_responses
+       WHERE request_id = ? AND donor_id = ?
+       LIMIT 1`,
+      [requestId, donor.donor_id]
+    );
+
+    const responseStatus = availableToday ? 'confirmed' : 'pending';
+
+    if (existingResponse.length) {
+      await query(
+        `UPDATE donation_responses
+         SET status = ?, responded_at = CURRENT_TIMESTAMP, confirmed_at = CASE WHEN ? = 'confirmed' THEN CURRENT_TIMESTAMP ELSE confirmed_at END,
+             donor_name = ?, donor_email = ?, donor_blood_group = ?, phone_number = ?, available_today = ?, estimated_arrival = ?,
+             current_location = ?, donated_recently = ?, healthy_now = ?, additional_message = ?
+         WHERE response_id = ?`,
+        [
+          responseStatus,
+          responseStatus,
+          donor.full_name,
+          donor.email,
+          donor.blood_group,
+          phoneNumber || donor.phone || null,
+          availableToday ? 1 : 0,
+          estimatedArrival,
+          currentLocation,
+          donatedRecently ? 1 : 0,
+          healthyNow ? 1 : 0,
+          additionalMessage,
+          existingResponse[0].response_id,
+        ]
+      );
+    } else {
+      await query(
+        `INSERT INTO donation_responses (
+          request_id, donor_id, status, responded_at, confirmed_at,
+          donor_name, donor_email, donor_blood_group, phone_number, available_today,
+          estimated_arrival, current_location, donated_recently, healthy_now, additional_message
+        )
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          requestId,
+          donor.donor_id,
+          responseStatus,
+          responseStatus === 'confirmed' ? new Date() : null,
+          donor.full_name,
+          donor.email,
+          donor.blood_group,
+          phoneNumber || donor.phone || null,
+          availableToday ? 1 : 0,
+          estimatedArrival,
+          currentLocation,
+          donatedRecently ? 1 : 0,
+          healthyNow ? 1 : 0,
+          additionalMessage,
+        ]
+      );
+    }
+
+    res.json({
+      message: 'Donation response saved successfully.',
+      responseStatus,
+    });
+  } catch (error) {
+    console.error('Donation response save failed:', error);
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/org/requests/:requestId/responses', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  const requestId = Number.parseInt(req.params.requestId, 10);
+
+  if (!email || !requestId) {
+    return res.status(400).json({ message: 'Email and request id are required.' });
+  }
+
+  try {
+    const org = await getOrgByEmail(email);
+    if (!org) {
+      return res.status(404).json({ message: 'Organization account not found.' });
+    }
+
+    const rows = await query(
+      `SELECT dr.response_id, dr.request_id, dr.status, dr.responded_at, dr.confirmed_at,
+              dr.donor_name, dr.donor_email, dr.donor_blood_group, dr.phone_number,
+              dr.available_today, dr.estimated_arrival, dr.current_location,
+              dr.donated_recently, dr.healthy_now, dr.additional_message,
+              u.full_name AS user_full_name, u.email AS user_email, u.phone AS user_phone,
+              d.blood_group AS profile_blood_group
+       FROM donation_responses dr
+       INNER JOIN blood_requests br ON br.request_id = dr.request_id
+       LEFT JOIN donor_profiles d ON d.donor_id = dr.donor_id
+       LEFT JOIN users u ON u.user_id = d.user_id
+       WHERE br.org_id = ? AND dr.request_id = ?
+       ORDER BY dr.responded_at DESC, dr.response_id DESC`,
+      [org.org_id, requestId]
+    );
+
+    const requestRows = await query(
+      `SELECT br.request_id, br.org_id, o.org_name, br.blood_group, br.units_needed, br.urgency, br.status,
+              br.city, br.district, br.created_at, br.expires_at,
+              br.hospital_name, br.patient_type, br.required_by, br.hospital_address,
+              br.contact_person, br.contact_number, br.additional_note, br.priority_label
+       FROM blood_requests br
+       INNER JOIN organizations o ON o.org_id = br.org_id
+       WHERE br.org_id = ? AND br.request_id = ?
+       LIMIT 1`,
+      [org.org_id, requestId]
+    );
+
+    if (!requestRows.length) {
+      return res.status(404).json({ message: 'Request not found.' });
+    }
+
+    res.json({
+      request: formatRequestRow(requestRows[0]),
+      data: rows.map(formatDonorResponseRow),
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
 app.post('/api/auth/send-verification-code', async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const role = String(req.body.role || 'donor').trim().toLowerCase();
@@ -610,15 +1366,20 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
     const code = storeVerificationCode(email, role);
+    let deliveryResult = { deliveryMode: 'email' };
     try {
-      await sendVerificationEmail(email, role, code);
+      deliveryResult = await sendVerificationEmail(email, role, code);
     } catch (error) {
       verificationCodes.delete(getVerificationKey(email, role));
       console.error('Email send failure:', error);
       return res.status(500).json({ message: 'Unable to send verification code. Please try again later.' });
     }
     res.json({
-      message: 'Verification code sent. Please check your email.',
+      message: deliveryResult.deliveryMode === 'terminal'
+        ? 'Verification code generated for development. Check the terminal for the code.'
+        : 'Verification code sent. Please check your email.',
+      deliveryMode: deliveryResult.deliveryMode,
+      devCode: deliveryResult.devCode,
     });
   } catch (error) {
     console.error('Verification code request failed:', error);
@@ -1081,6 +1842,8 @@ app.use((req, res) => {
 async function start() {
   try {
     await pool.query('SELECT 1');
+    await ensureEmergencyRequestSchema();
+    await ensureDonationResponseSchema();
 
     const transport = createMailTransport();
     if (transport) {

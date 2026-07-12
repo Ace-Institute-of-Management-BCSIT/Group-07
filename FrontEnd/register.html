@@ -151,6 +151,7 @@ const verifyButton = document.getElementById('verifyButton');
 let verificationCodeSent = false;
 let verificationEmail = '';
 let verificationRole = '';
+let verificationDeliveryMode = 'email';
 
 const NEPAL_DISTRICTS = [
   'Achham','Arghakhanchi','Baglung','Baitadi','Bajhang','Bajura','Banke','Bara','Bardiya','Bhaktapur','Bhojpur','Chitwan','Dadeldhura','Dailekh','Dang','Darchula','Dhading','Dhankuta','Dhanusha','Dholakha','Dolpa','Doti','Eastern Rukum','Gorkha','Gulmi','Humla','Ilam','Jajarkot','Jhapa','Jumla','Kailali','Kalikot','Kanchanpur','Kapilvastu','Kaski','Kathmandu','Kavrepalanchok','Khotang','Lalitpur','Lamjung','Mahottari','Makwanpur','Manang','Morang','Mugu','Mustang','Myagdi','Nawalpur','Nuwakot','Okhaldhunga','Palpa','Panchthar','Parasi','Parbat','Parsa','Pyuthan','Ramechhap','Rasuwa','Rautahat','Rolpa','Rupandehi','Salyan','Sankhuwasabha','Saptari','Sarlahi','Sindhuli','Sindhupalchok','Siraha','Solukhumbu','Sunsari','Surkhet','Syangja','Tanahun','Taplejung','Tehrathum','Udayapur','Western Rukum'
@@ -365,7 +366,12 @@ function openVerificationView(){
   signupFields.classList.add('hidden');
   verificationView.classList.add('open');
   modeHelper.textContent='Enter the verification code to finish creating your account.';
-  document.getElementById('verificationCopy').textContent=`Enter the 6-digit code sent to ${verificationEmail}.`;
+  const verificationCopy = document.getElementById('verificationCopy');
+  if(verificationCopy){
+    verificationCopy.textContent = verificationDeliveryMode === 'terminal'
+      ? 'Enter the 6-digit code shown in the terminal for this development build.'
+      : `Enter the 6-digit code sent to ${verificationEmail}.`;
+  }
   const codeInput=document.getElementById('emailCode');
   if(codeInput){codeInput.focus();}
 }
@@ -407,6 +413,7 @@ async function sendVerificationCode(email, selectedRole){
   verificationCodeSent=true;
   verificationEmail=email.toLowerCase();
   verificationRole=selectedRole;
+  verificationDeliveryMode=payload.deliveryMode || 'email';
   openVerificationView();
   showInfo(payload.devCode ? `${payload.message} Code: ${payload.devCode}` : payload.message);
 }

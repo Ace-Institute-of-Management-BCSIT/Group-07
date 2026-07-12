@@ -38,7 +38,31 @@
     .btn-red{background:var(--red);color:var(--white);border:none;font:600 .9rem var(--ff-body);padding:9px 22px;border-radius:6px;cursor:pointer;transition:background .2s}
     .btn-red:hover{background:var(--red-dark)}
     .nav-auth{position:relative;display:flex;align-items:center}
+    .notification-shell{position:relative}
+    .notification-trigger{width:44px;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s;position:relative}
+    .notification-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
+    .notification-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--red);color:var(--white);font-size:.72rem;font-weight:800;display:none;align-items:center;justify-content:center;border:2px solid #fff}
+    .notification-badge.open{display:flex}
+    .notification-menu{position:absolute;right:0;top:calc(100% + 8px);width:min(420px,calc(100vw - 24px));background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 44px rgba(0,0,0,.16);display:none;z-index:130;overflow:hidden}
+    .notification-menu.open{display:block}
+    .notification-menu-header{padding:14px 16px;border-bottom:1px solid var(--border);background:#fff7f7;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .notification-menu-header strong{font-family:var(--ff-head);font-size:1rem}
+    .notification-menu-list{max-height:420px;overflow:auto}
+    .notification-item{width:100%;border:none;background:none;padding:14px 16px;text-align:left;display:flex;gap:12px;align-items:flex-start;cursor:pointer;border-bottom:1px solid #f2f2f2}
+    .notification-item:hover{background:#fff9f9}
+    .notification-item.unread{background:#fff7f7}
+    .notification-item:last-child{border-bottom:none}
+    .notification-dot{width:10px;height:10px;border-radius:50%;background:var(--red);margin-top:6px;flex-shrink:0}
+    .notification-item-body{flex:1;min-width:0}
+    .notification-item-body strong{display:block;font-size:.94rem;color:var(--ink);margin-bottom:2px}
+    .notification-item-body span{display:block;font-size:.84rem;color:var(--mid);line-height:1.45}
+    .notification-item-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .notification-item-meta .pill{padding:4px 8px;font-size:.7rem}
+    .notification-empty{padding:18px;color:var(--mid);text-align:center}
     .profile-shell{position:relative;min-width:248px}
+    .backend-banner{max-width:1100px;margin:18px auto 0;padding:12px 16px;border-radius:14px;border:1px solid #f3c7c7;background:#fff5f5;color:#a32727;font-size:.92rem;box-shadow:0 8px 24px rgba(214,43,43,.08)}
+    .backend-banner.hidden{display:none}
+    .backend-banner strong{font-weight:800}
     .profile-trigger{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s}
     .profile-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
     .profile-trigger-left{display:flex;align-items:center;gap:10px;min-width:0}
@@ -521,6 +545,28 @@
     .profile-field{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body);color:var(--ink)}
     .profile-card-actions{padding:18px 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
     .profile-actions-left,.profile-card-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+    .request-detail-backdrop,.response-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:240}
+    .request-detail-backdrop.open,.response-backdrop.open{display:flex}
+    .request-detail-card,.response-card{width:100%;max-width:760px;max-height:calc(100vh - 40px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .request-detail-header,.response-header{padding:28px 24px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
+    .request-detail-header h3,.response-header h3{font-family:var(--ff-head);font-size:1.5rem}
+    .request-detail-header p,.response-header p{color:var(--mid);font-size:.9rem;line-height:1.5}
+    .request-detail-body,.response-body{padding:24px;overflow:auto;flex:1}
+    .request-detail-grid,.response-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .request-detail-item,.response-item{background:#fafafa;border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+    .request-detail-item .label,.response-item .label{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:6px}
+    .request-detail-item .value,.response-item .value{display:block;font-size:.95rem;color:var(--ink);word-break:break-word}
+    .response-item textarea,.response-item select,.response-item input[type="text"],.response-item input[type="email"],.response-item input[type="tel"],.response-item input[type="time"]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body);color:var(--ink);outline:none}
+    .response-item textarea:focus,.response-item select:focus,.response-item input:focus{border-color:var(--red)}
+    .response-item.readonly input[readonly]{background:#f7f7f7;color:#555;cursor:not-allowed}
+    .response-radio-row{display:flex;gap:10px;flex-wrap:wrap}
+    .response-radio-option{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-size:.92rem}
+    .response-radio-option input{accent-color:var(--red)}
+    .response-select-note{font-size:.78rem;color:var(--soft);margin-top:4px;line-height:1.4}
+    .request-detail-actions,.response-actions{padding:18px 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
+    .request-detail-actions-right,.response-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+    .response-field{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:500 .95rem var(--ff-body);color:var(--ink)}
+    .response-note{font-size:.78rem;color:var(--soft);margin-top:4px;line-height:1.4}
 
     @media (max-width:768px){
       nav{padding:0 18px}
@@ -531,6 +577,11 @@
       .section{padding:56px 18px}
       .footer-grid{grid-template-columns:1fr}
       .hero-stats{flex-direction:column;gap:16px}
+      .notification-menu{right:-84px;width:min(420px,calc(100vw - 16px))}
+      .request-detail-grid,.response-grid{grid-template-columns:1fr}
+      .request-detail-actions,.response-actions{flex-direction:column;align-items:stretch}
+      .request-detail-actions-right,.response-actions-right{justify-content:stretch}
+      .request-detail-actions-right .btn-outline,.request-detail-actions-right .btn-red,.response-actions-right .btn-outline,.response-actions-right .btn-red{width:100%;justify-content:center}
     }
   </style>
 </head>
@@ -555,9 +606,26 @@
       </button>
     </div>
     <div class="nav-right">
+      <div class="notification-shell">
+        <button class="notification-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleNotifications()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"/><path d="M9 17a3 3 0 0 0 6 0"/></svg>
+          <span class="notification-badge" id="notificationBadge">0</span>
+        </button>
+        <div class="notification-menu" id="notificationMenu" role="menu" aria-label="Blood request notifications">
+          <div class="notification-menu-header">
+            <strong>Blood Requests</strong>
+            <span style="font-size:.8rem;color:var(--soft)" id="notificationMenuCount">0 new</span>
+          </div>
+          <div class="notification-menu-list" id="notificationList">
+            <div class="notification-empty">No emergency requests yet.</div>
+          </div>
+        </div>
+      </div>
       <div class="nav-auth" id="navAuth"></div>
     </div>
   </nav>
+
+  <div class="backend-banner hidden" id="backendBanner" role="status" aria-live="polite"></div>
 
   <section class="hero">
     <div class="hero-text">
@@ -743,8 +811,58 @@
     </div>
   </div>
 
+  <div class="request-detail-backdrop" id="requestDetailBackdrop" aria-hidden="true">
+    <div class="request-detail-card" role="dialog" aria-modal="true" aria-labelledby="requestDetailTitle">
+      <div class="request-detail-header">
+        <div class="profile-avatar" id="requestDetailAvatar">R</div>
+        <h3 id="requestDetailTitle">Emergency Blood Request</h3>
+        <p id="requestDetailSubtitle">View the full request before deciding to donate.</p>
+      </div>
+      <div class="request-detail-body">
+        <div class="request-detail-grid" id="requestDetailGrid"></div>
+      </div>
+      <div class="request-detail-actions">
+        <div class="request-detail-actions-left">
+          <button class="btn-outline" type="button" id="requestDetailCloseBtn">Cancel</button>
+        </div>
+        <div class="request-detail-actions-right">
+          <button class="btn-red" type="button" id="requestDetailDonateBtn">Donate Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="response-backdrop" id="responseBackdrop" aria-hidden="true">
+    <div class="response-card" role="dialog" aria-modal="true" aria-labelledby="responseTitle">
+      <div class="response-header">
+        <div class="profile-avatar" id="responseAvatar">D</div>
+        <h3 id="responseTitle">Donor Response Form</h3>
+        <p id="responseSubtitle">Confirm your availability for this emergency request.</p>
+      </div>
+      <div class="response-body">
+        <form id="responseForm">
+          <div class="response-grid" id="responseFields"></div>
+        </form>
+      </div>
+      <div class="response-actions">
+        <div class="response-actions-left">
+          <button class="btn-outline" type="button" id="responseCancelBtn">Cancel</button>
+        </div>
+        <div class="response-actions-right">
+          <button class="btn-red" type="button" id="responseSubmitBtn">Confirm Donation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const AUTH_STORAGE_KEY='saveabeatUser';
+    const API_BASE = location.origin.startsWith('http://localhost:3000') ? '' : 'http://localhost:3000';
+    const apiPath = (path) => `${API_BASE}${path}`;
+    let REQUEST_NOTIFICATIONS = [];
+    let CURRENT_REQUEST = null;
+    let CURRENT_NOTIFICATION = null;
+    let CURRENT_DONOR = null;
 
     function getStoredUser(){
       try{
@@ -800,6 +918,51 @@
       return String(value).replace(/[&<>\"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
     }
 
+    async function readJsonResponse(response){
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        return response.json();
+      }
+      const text = await response.text();
+      if (text.trimStart().startsWith('<!DOCTYPE') || text.trimStart().startsWith('<html')) {
+        throw new Error('Server returned a page instead of data. Start the backend with npm start in BackEnd, then reopen the dashboard.');
+      }
+      throw new Error('Unexpected server response. Make sure the backend is running.');
+    }
+
+    function showBackendBanner(message){
+      const banner = document.getElementById('backendBanner');
+      if(!banner){
+        return;
+      }
+      banner.textContent = message;
+      banner.classList.remove('hidden');
+    }
+
+    function hideBackendBanner(){
+      const banner = document.getElementById('backendBanner');
+      if(!banner){
+        return;
+      }
+      banner.textContent = '';
+      banner.classList.add('hidden');
+    }
+
+    async function checkBackendHealth(){
+      try{
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2500);
+        const response = await fetch(apiPath('/api/health'), { cache: 'no-store', signal: controller.signal });
+        clearTimeout(timeout);
+        if(!response.ok){
+          throw new Error('Backend health check failed.');
+        }
+        hideBackendBanner();
+      }catch(_error){
+        showBackendBanner('Backend is offline or unreachable. Start the server in BackEnd with npm start, then refresh the page.');
+      }
+    }
+
     function getAvatarData(user){
       return user?.profileImageData || user?.donorProfile?.profilePicture || null;
     }
@@ -811,6 +974,62 @@
         return `<span class="${isLarge ? 'profile-avatar-photo-large' : 'profile-avatar-photo'}" style="background-image:url('${avatarData}')"></span>`;
       }
       return `<span class="${isLarge ? 'profile-avatar' : 'profile-initial'}">${initials}</span>`;
+    }
+
+    function normalizeDonorUser(user){
+      if(!user){
+        return null;
+      }
+
+      const donorProfile = user.donorProfile || {};
+      return {
+        ...user,
+        fullName: user.fullName || user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        city: user.city || '',
+        district: user.district || '',
+        profileImageData: user.profileImageData || user.profile_image_data || donorProfile.profilePicture || donorProfile.profile_picture || null,
+        bloodGroup: user.bloodGroup || user.blood_group || donorProfile.bloodGroup || donorProfile.blood_group || '',
+        donorProfile: {
+          ...donorProfile,
+          bloodGroup: donorProfile.bloodGroup || donorProfile.blood_group || user.bloodGroup || user.blood_group || '',
+          isAvailable: donorProfile.isAvailable ?? donorProfile.is_available ?? user.isAvailable ?? user.is_available ?? true,
+          totalDonations: donorProfile.totalDonations ?? donorProfile.total_donations ?? user.totalDonations ?? user.total_donations ?? 0,
+        },
+      };
+    }
+
+    function getDonorBloodGroup(user){
+      return user?.bloodGroup || user?.blood_group || user?.donorProfile?.bloodGroup || user?.donorProfile?.blood_group || 'Not available';
+    }
+
+    function getDonorPhone(user){
+      return user?.phone || '';
+    }
+
+    function getDonorEmail(user){
+      return user?.email || '';
+    }
+
+    function getDonorLocation(user){
+      return [user?.city, user?.district].filter(Boolean).join(', ');
+    }
+
+    function getRequestPriorityLabel(priority){
+      const value = String(priority || '').toLowerCase();
+      if(value === 'critical' || value === 'emergency'){
+        return '\u{1F534} Emergency';
+      }
+      if(value === 'urgent'){
+        return '\u{1F7E0} Urgent';
+      }
+      return '\u{1F7E2} Normal';
+    }
+
+    function shortRequestSummary(item){
+      return `${item.orgName || 'Organization'} needs ${item.bloodGroup || '-'} blood`;
     }
 
     function renderAuthArea(user){
@@ -837,6 +1056,302 @@
           </div>
         </div>
       `;
+    }
+
+    function closeNotificationsMenu(){
+      const menu = document.getElementById('notificationMenu');
+      const trigger = document.querySelector('.notification-trigger');
+      menu?.classList.remove('open');
+      trigger?.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleNotifications(){
+      const menu = document.getElementById('notificationMenu');
+      const trigger = document.querySelector('.notification-trigger');
+      if(!menu || !trigger) return;
+      const isOpen = menu.classList.toggle('open');
+      trigger.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function renderNotifications(list, unreadCount){
+      const badge = document.getElementById('notificationBadge');
+      const menuCount = document.getElementById('notificationMenuCount');
+      const notificationList = document.getElementById('notificationList');
+
+      if (badge) {
+        badge.textContent = String(unreadCount || 0);
+        badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+      }
+      if (menuCount) {
+        menuCount.textContent = `${unreadCount || 0} new`;
+      }
+
+      if (!notificationList) {
+        return;
+      }
+
+      if (!list.length) {
+        notificationList.innerHTML = `<div class="notification-empty">No emergency requests yet.</div>`;
+        return;
+      }
+
+      notificationList.innerHTML = list.map((item) => `
+        <button class="notification-item ${item.isRead ? '' : 'unread'}" type="button" data-notif-id="${item.notifId}" data-request-id="${item.requestId}">
+          <span class="notification-dot" aria-hidden="true" style="opacity:${item.isRead ? '.25' : '1'}"></span>
+          <span class="notification-item-body">
+            <strong>${escapeHtml(shortRequestSummary(item))}</strong>
+            <span>${escapeHtml(item.hospital || 'Hospital')} | ${escapeHtml(item.bloodGroup || '-')} | ${escapeHtml(item.priority || 'Normal')}</span>
+            <span class="notification-item-meta">
+              <span class="pill">${escapeHtml(item.requiredBy || 'Soon')}</span>
+              <span class="pill">${escapeHtml(item.patientType || 'Emergency')}</span>
+            </span>
+          </span>
+        </button>
+      `).join('');
+    }
+
+    async function markNotificationRead(notification){
+      const user = CURRENT_DONOR || getStoredUser();
+      if(!user || !notification || notification.isRead){
+        return;
+      }
+
+      try{
+        await fetch(`/api/donor/notifications/${notification.notifId}/read`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email }),
+        });
+      }catch(error){
+        console.warn('Unable to mark notification as read', error);
+      }
+    }
+
+    function requestDetailMarkup(request){
+      const priorityLabel = getRequestPriorityLabel(request.priority || request.urgency);
+      return [
+        ['Hospital', request.hospital || '-'],
+        ['Blood Group Needed', request.bloodGroup || '-'],
+        ['Units Required', `${request.unitsRequired ?? '-'} Units`],
+        ['Priority', priorityLabel],
+        ['Patient Type', request.patientType || '-'],
+        ['Required By', request.requiredBy || '-'],
+        ['Hospital Address', request.hospitalAddress || '-'],
+        ['Contact Person', request.contactPerson || '-'],
+        ['Contact Number', request.contactNumber || '-'],
+        ['Additional Note', request.additionalNote || 'No additional note provided.'],
+      ].map(([label, value]) => `
+        <div class="request-detail-item">
+          <span class="label">${escapeHtml(label)}</span>
+          <span class="value">${escapeHtml(value)}</span>
+        </div>
+      `).join('');
+    }
+
+    async function openRequestDetail(request, notification = null){
+      const backdrop = document.getElementById('requestDetailBackdrop');
+      const title = document.getElementById('requestDetailTitle');
+      const subtitle = document.getElementById('requestDetailSubtitle');
+      const avatar = document.getElementById('requestDetailAvatar');
+      const grid = document.getElementById('requestDetailGrid');
+      const donateBtn = document.getElementById('requestDetailDonateBtn');
+
+      if(!backdrop || !title || !subtitle || !avatar || !grid || !donateBtn){
+        return;
+      }
+
+      CURRENT_REQUEST = {
+        ...request,
+        id: request.id || request.requestId,
+      };
+      CURRENT_NOTIFICATION = notification;
+
+      title.textContent = 'Emergency Blood Request';
+      subtitle.textContent = `${request.orgName || 'Organization'} needs ${request.bloodGroup || '-'} blood.`;
+      avatar.textContent = getInitial(request.orgName || request.hospital || 'R');
+      grid.innerHTML = requestDetailMarkup(request);
+      donateBtn.textContent = 'Donate Now';
+
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+
+      if(notification && !notification.isRead){
+        await markNotificationRead(notification);
+        await loadNotifications();
+      }
+    }
+
+    function closeRequestDetail(){
+      const backdrop = document.getElementById('requestDetailBackdrop');
+      if(!backdrop) return;
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      CURRENT_REQUEST = null;
+      CURRENT_NOTIFICATION = null;
+    }
+
+    function buildResponseFormMarkup(user, request){
+      const name = user?.fullName || '';
+      const bloodGroup = getDonorBloodGroup(user);
+      const email = getDonorEmail(user);
+      const phone = getDonorPhone(user);
+      const location = getDonorLocation(user);
+      return `
+        <div class="response-item readonly">
+          <span class="label">Name</span>
+          <input type="text" value="${escapeHtml(name)}" readonly aria-readonly="true">
+        </div>
+        <div class="response-item readonly">
+          <span class="label">Blood Group</span>
+          <input type="text" value="${escapeHtml(bloodGroup)}" readonly aria-readonly="true">
+        </div>
+        <div class="response-item">
+          <span class="label" for="responsePhone">Phone Number</span>
+          <input id="responsePhone" type="tel" value="${escapeHtml(phone)}" placeholder="Phone number">
+        </div>
+        <div class="response-item readonly">
+          <span class="label">Email</span>
+          <input type="email" value="${escapeHtml(email)}" readonly aria-readonly="true">
+        </div>
+        <div class="response-item">
+          <span class="label">Are you available to donate today?</span>
+          <div class="response-radio-row">
+            <label class="response-radio-option"><input type="radio" name="availableToday" value="Yes" checked> Yes</label>
+            <label class="response-radio-option"><input type="radio" name="availableToday" value="No"> No</label>
+          </div>
+        </div>
+        <div class="response-item">
+          <span class="label" for="estimatedArrival">Estimated Arrival Time</span>
+          <select id="estimatedArrival">
+            <option value="Within 30 minutes">Within 30 minutes</option>
+            <option value="Within 1 hour">Within 1 hour</option>
+            <option value="Within 2 hours">Within 2 hours</option>
+            <option value="Other">Other</option>
+          </select>
+          <div id="estimatedArrivalOtherWrap" style="display:none;margin-top:10px">
+            <input id="estimatedArrivalOther" type="time" class="response-field">
+            <div class="response-select-note">Pick an exact time if you need a different arrival estimate.</div>
+          </div>
+        </div>
+        <div class="response-item">
+          <span class="label" for="responseLocation">Current Location</span>
+          <input id="responseLocation" type="text" value="${escapeHtml(location)}" placeholder="Optional">
+          <div class="response-select-note">Optional, or auto-filled if location sharing is enabled.</div>
+        </div>
+        <div class="response-item">
+          <span class="label">Have you donated blood in the last 3 months?</span>
+          <div class="response-radio-row">
+            <label class="response-radio-option"><input type="radio" name="donatedRecently" value="Yes"> Yes</label>
+            <label class="response-radio-option"><input type="radio" name="donatedRecently" value="No" checked> No</label>
+          </div>
+        </div>
+        <div class="response-item">
+          <span class="label">Are you currently healthy and feeling well?</span>
+          <div class="response-radio-row">
+            <label class="response-radio-option"><input type="radio" name="healthyNow" value="Yes" checked> Yes</label>
+            <label class="response-radio-option"><input type="radio" name="healthyNow" value="No"> No</label>
+          </div>
+        </div>
+        <div class="response-item" style="grid-column:1/-1">
+          <span class="label" for="responseMessage">Additional Message</span>
+          <textarea id="responseMessage" rows="4" placeholder="Example: I can arrive by 3:30 PM."></textarea>
+        </div>
+      `;
+    }
+
+    function updateArrivalOtherVisibility(){
+      const arrival = document.getElementById('estimatedArrival');
+      const otherWrap = document.getElementById('estimatedArrivalOtherWrap');
+      if(!arrival || !otherWrap){
+        return;
+      }
+      otherWrap.style.display = arrival.value === 'Other' ? 'block' : 'none';
+    }
+
+    function openResponseModal(){
+      const user = CURRENT_DONOR || getStoredUser();
+      const request = CURRENT_REQUEST;
+      const backdrop = document.getElementById('responseBackdrop');
+      const fields = document.getElementById('responseFields');
+      const avatar = document.getElementById('responseAvatar');
+      const subtitle = document.getElementById('responseSubtitle');
+
+      if(!backdrop || !fields || !request || !user){
+        return;
+      }
+
+      CURRENT_DONOR = user;
+      fields.innerHTML = buildResponseFormMarkup(user, request);
+      avatar.textContent = getInitial(user.fullName || user.email || 'D');
+      subtitle.textContent = `${request.orgName || 'Organization'} is requesting ${request.bloodGroup || '-'} blood.`;
+
+      const arrival = document.getElementById('estimatedArrival');
+      arrival?.addEventListener('change', updateArrivalOtherVisibility);
+      updateArrivalOtherVisibility();
+
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeResponseModal(){
+      const backdrop = document.getElementById('responseBackdrop');
+      if(!backdrop) return;
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    async function submitDonationResponse(){
+      const user = CURRENT_DONOR || getStoredUser();
+      const request = CURRENT_REQUEST;
+      if(!user || !request){
+        return;
+      }
+
+      const phoneNumber = String(document.getElementById('responsePhone')?.value || '').trim();
+      const availableToday = String(document.querySelector('input[name="availableToday"]:checked')?.value || 'Yes').trim();
+      const estimatedArrivalChoice = String(document.getElementById('estimatedArrival')?.value || 'Within 30 minutes').trim();
+      const estimatedArrivalOther = String(document.getElementById('estimatedArrivalOther')?.value || '').trim();
+      const estimatedArrival = estimatedArrivalChoice === 'Other' ? estimatedArrivalOther : estimatedArrivalChoice;
+      const currentLocation = String(document.getElementById('responseLocation')?.value || '').trim();
+      const donatedRecently = String(document.querySelector('input[name="donatedRecently"]:checked')?.value || 'No').trim();
+      const healthyNow = String(document.querySelector('input[name="healthyNow"]:checked')?.value || 'Yes').trim();
+      const additionalMessage = String(document.getElementById('responseMessage')?.value || '').trim();
+
+      if(estimatedArrivalChoice === 'Other' && !estimatedArrival){
+        alert('Please choose an arrival time for the "Other" option.');
+        return;
+      }
+
+      try{
+        const requestId = request.id || request.requestId;
+        const response = await fetch(`/api/donor/requests/${requestId}/respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            phoneNumber: phoneNumber || user.phone || '',
+            availableToday,
+            estimatedArrival,
+            currentLocation,
+            donatedRecently,
+            healthyNow,
+            additionalMessage,
+          }),
+        });
+
+        const payload = await readJsonResponse(response);
+        if(!response.ok){
+          alert(payload.message || 'Unable to save your response.');
+          return;
+        }
+
+        closeResponseModal();
+        closeRequestDetail();
+        await loadNotifications();
+        alert(payload.message || 'Donation response saved successfully.');
+      }catch(error){
+        alert(error.message || 'Unable to save your response.');
+      }
     }
 
     function toggleProfileMenu(){
@@ -1020,7 +1535,7 @@
       }
 
       try{
-        const response = await fetch('/api/me', {
+        const response = await fetch(apiPath('/api/me'), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1053,6 +1568,28 @@
       }
     }
 
+    async function loadNotifications(userOverride = null){
+      const user = normalizeDonorUser(userOverride || CURRENT_DONOR || getStoredUser());
+      if(!user || !user.email){
+        renderNotifications([], 0);
+        return;
+      }
+
+      try{
+        const response = await fetch(apiPath(`/api/donor/notifications?email=${encodeURIComponent(user.email)}`));
+        const payload = await readJsonResponse(response);
+        if(!response.ok){
+          throw new Error(payload.message || 'Unable to load notifications.');
+        }
+
+        REQUEST_NOTIFICATIONS = payload.data || [];
+        renderNotifications(REQUEST_NOTIFICATIONS, Number(payload.unreadCount || 0));
+      }catch(error){
+        console.warn('Unable to load notifications', error);
+        renderNotifications([], 0);
+      }
+    }
+
     let EVENTS = [];
     let CENTERS = [];
 
@@ -1062,10 +1599,10 @@
         if(!user){location.href='login.html?role=donor'; return;}
         const email = user.email;
         const [eventsResp, centersResp, historyResp, meResp] = await Promise.all([
-          fetch('/api/events'),
-          fetch('/api/centers'),
-          email ? fetch(`/api/donor/history?email=${encodeURIComponent(email)}`) : Promise.resolve(new Response(JSON.stringify({data:[]}))),
-          email ? fetch(`/api/me?email=${encodeURIComponent(email)}`) : Promise.resolve(new Response(JSON.stringify({user:null})))
+          fetch(apiPath('/api/events')),
+          fetch(apiPath('/api/centers')),
+          email ? fetch(apiPath(`/api/donor/history?email=${encodeURIComponent(email)}`)) : Promise.resolve(new Response(JSON.stringify({data:[]}))),
+          email ? fetch(apiPath(`/api/me?email=${encodeURIComponent(email)}`)) : Promise.resolve(new Response(JSON.stringify({user:null})))
         ]);
 
         const eventsJson = eventsResp.ok ? await eventsResp.json() : { data: [] };
@@ -1075,18 +1612,20 @@
 
         EVENTS = eventsJson.data || [];
         CENTERS = centersJson.data || [];
+        CURRENT_DONOR = normalizeDonorUser(meJson.user || user);
 
         renderDrives(EVENTS);
         renderCenters(CENTERS);
-        renderHistory(historyJson.data || [], meJson.user);
+        renderHistory(historyJson.data || [], CURRENT_DONOR);
         
-        if (meJson.user) {
-          saveStoredUser(meJson.user);
-          renderAuthArea(meJson.user);
-          renderDashboardWelcome(meJson.user);
+        if (CURRENT_DONOR) {
+          saveStoredUser(CURRENT_DONOR);
+          renderAuthArea(CURRENT_DONOR);
+          renderDashboardWelcome(CURRENT_DONOR);
         }
 
         setupTabs();
+        await loadNotifications(CURRENT_DONOR);
       }catch(err){
         console.error('Unable to load dashboard data', err);
       }
@@ -1094,9 +1633,9 @@
 
     async function loadStats(){
       try{
-        const response=await fetch('/api/health');
+        const response=await fetch(apiPath('/api/health'));
         if(!response.ok) return;
-        const statsResponse=await fetch('/api/stats');
+        const statsResponse=await fetch(apiPath('/api/stats'));
         if(!statsResponse.ok) return;
         const stats=await statsResponse.json();
         document.getElementById('statDonors').textContent=`${Number(stats.donors || 15000).toLocaleString()}+`;
@@ -1121,7 +1660,7 @@
       const user = getStoredUser();
       if(!user) return;
       try {
-        const response = await fetch('/api/me', {
+        const response = await fetch(apiPath('/api/me'), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1310,7 +1849,7 @@
       const user = getStoredUser();
       if(!user || !user.email){location.href='login.html?role=donor';return}
       try{
-        const res = await fetch(`/api/events/${id}/apply`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email,units:1})});
+        const res = await fetch(apiPath(`/api/events/${id}/apply`), {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email,units:1})});
         const payload = await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
         if(!res.ok){alert(payload?.message||'Unable to apply');return}
         alert(payload?.message||'Applied — donation recorded');
@@ -1330,7 +1869,7 @@
       const city = user.city || prompt('City');
       const district = user.district || prompt('District');
       try{
-        const res = await fetch('/api/requests', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listingId,bloodGroup,unitsNeeded:units,urgency,city,district})});
+        const res = await fetch(apiPath('/api/requests'), {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listingId,bloodGroup,unitsNeeded:units,urgency,city,district})});
         const payload = await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
         if(!res.ok){alert(payload?.message||'Unable to create request');return}
         alert(payload?.message||'Request created');
@@ -1362,6 +1901,48 @@
       if(authArea && menu && !authArea.contains(event.target)){
         closeProfileMenu();
       }
+    });
+
+    document.addEventListener('click', (event) => {
+      const notificationShell = document.querySelector('.notification-shell');
+      if(notificationShell && !notificationShell.contains(event.target)){
+        closeNotificationsMenu();
+      }
+    });
+
+    document.addEventListener('click', async (event) => {
+      const notificationButton = event.target.closest('.notification-item[data-notif-id]');
+      if(notificationButton){
+        const requestId = Number.parseInt(notificationButton.dataset.requestId, 10);
+        const notification = REQUEST_NOTIFICATIONS.find((item) => Number(item.notifId) === Number.parseInt(notificationButton.dataset.notifId, 10));
+        const request = REQUEST_NOTIFICATIONS.find((item) => Number(item.requestId) === requestId) || notification;
+        const requestData = notification || request;
+        if(requestData){
+          await openRequestDetail(requestData, notification || requestData);
+        }
+        closeNotificationsMenu();
+      }
+    });
+
+    document.getElementById('requestDetailCloseBtn')?.addEventListener('click', closeRequestDetail);
+    document.getElementById('requestDetailDonateBtn')?.addEventListener('click', openResponseModal);
+    document.getElementById('requestDetailBackdrop')?.addEventListener('click', (event) => {
+      if(event.target === document.getElementById('requestDetailBackdrop')){
+        closeRequestDetail();
+      }
+    });
+
+    document.getElementById('responseCancelBtn')?.addEventListener('click', closeResponseModal);
+    document.getElementById('responseSubmitBtn')?.addEventListener('click', submitDonationResponse);
+    document.getElementById('responseBackdrop')?.addEventListener('click', (event) => {
+      if(event.target === document.getElementById('responseBackdrop')){
+        closeResponseModal();
+      }
+    });
+
+    document.getElementById('responseForm')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitDonationResponse();
     });
 
     loadData();
