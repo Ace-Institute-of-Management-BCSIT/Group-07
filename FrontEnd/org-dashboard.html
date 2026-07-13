@@ -676,17 +676,19 @@
       }
 
       currentCampaignDetail = campaign;
-      title.textContent = campaign.title || 'Campaign Details';
+      const isBloodRequest = campaign.kind === 'blood-request';
+      title.textContent = campaign.title || (isBloodRequest ? 'Blood Request Details' : 'Campaign Details');
       subtitle.textContent = campaign.org || campaign.orgName || 'Campaign information';
       avatar.textContent = initialForName(campaign.title);
       grid.innerHTML = [
-        ['Campaign', campaign.title || '-'],
+        [isBloodRequest ? 'Request' : 'Campaign', campaign.title || '-'],
         ['Organization', campaign.org || campaign.orgName || '-'],
         ['Type', campaign.type || '-'],
         ['Date', campaign.date || '-'],
         ['Time', campaign.time || '-'],
         ['Location', campaign.location || '-'],
-        ['Spots', `${campaign.spots ?? '-'} / ${campaign.total ?? '-'}`],
+        [isBloodRequest ? 'Units needed' : 'Spots', isBloodRequest ? (campaign.spots ?? '-') : `${campaign.spots ?? '-'} / ${campaign.total ?? '-'}`],
+        ...(isBloodRequest ? [['Urgency', campaign.urgency || '-'], ['Contact', [campaign.contactPerson, campaign.contactNumber].filter(Boolean).join(' — ') || '-']] : []),
       ].map(([label, value]) => `
         <div class="campaign-detail-item">
           <div class="label">${escapeHtml(label)}</div>
@@ -695,7 +697,8 @@
       `).join('');
 
       const isUpcoming = campaign.state !== 'completed';
-      stopBtn.style.display = isUpcoming ? 'inline-flex' : 'none';
+      stopBtn.style.display = isUpcoming && !isBloodRequest ? 'inline-flex' : 'none';
+      deleteBtn.style.display = isBloodRequest ? 'none' : 'inline-flex';
       deleteBtn.textContent = 'Delete Campaign';
 
       backdrop.classList.add('open');
@@ -906,15 +909,16 @@ async function publishBloodRequest() {
     }
 
     function campaignCardMarkup(campaign, variant){
+      const isBloodRequest = campaign.kind === 'blood-request';
       const remaining = Number(campaign.spots ?? 0);
       const total = Number(campaign.total ?? 0);
       const filled = Math.max(total - remaining, 0);
       const badgeClass = variant === 'completed' ? 'completed' : 'secondary';
-      const badgeLabel = variant === 'completed' ? 'Completed' : campaign.type || 'Upcoming';
-      const firstMetricLabel = variant === 'completed' ? 'Spots used' : 'Open spots';
-      const firstMetricValue = variant === 'completed' ? `${filled} / ${total}` : `${remaining} left`;
-      const secondMetricLabel = variant === 'completed' ? 'Collection rate' : 'Total spots';
-      const secondMetricValue = total > 0 ? `${Math.round((filled / total) * 100)}%` : '0%';
+      const badgeLabel = isBloodRequest ? 'Blood Request' : variant === 'completed' ? 'Completed' : campaign.type || 'Upcoming';
+      const firstMetricLabel = isBloodRequest ? 'Units needed' : variant === 'completed' ? 'Spots used' : 'Open spots';
+      const firstMetricValue = isBloodRequest ? `${remaining} unit${remaining === 1 ? '' : 's'}` : variant === 'completed' ? `${filled} / ${total}` : `${remaining} left`;
+      const secondMetricLabel = isBloodRequest ? 'Urgency' : variant === 'completed' ? 'Collection rate' : 'Total spots';
+      const secondMetricValue = isBloodRequest ? (campaign.urgency || 'normal') : total > 0 ? `${Math.round((filled / total) * 100)}%` : '0%';
 
       return `
         <article class="campaign-card">

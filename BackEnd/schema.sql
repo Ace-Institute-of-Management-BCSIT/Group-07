@@ -203,7 +203,7 @@ CREATE TABLE blood_drive_listings (
   spots_available INT NOT NULL,
   event_type ENUM('Drive', 'Camp', 'Emergency') NOT NULL,
   status ENUM('active', 'completed', 'stopped') NOT NULL DEFAULT 'active',
-  image_url TEXT NOT NULL,
+  image_url MEDIUMTEXT NOT NULL,
   CONSTRAINT fk_drive_org
     FOREIGN KEY (org_id) REFERENCES organizations(org_id)
     ON DELETE CASCADE

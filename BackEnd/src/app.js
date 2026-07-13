@@ -296,7 +296,8 @@ app.get('/api/centers', async (_req, res) => {
 
 app.get('/api/events', async (_req, res) => {
   try {
-    const rows = await query(
+    const [campaignRows, requestRows] = await Promise.all([
+      query(
       `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
               bl.time_range, bl.location, bl.distance_km, bl.spots_total,
               bl.spots_available, bl.event_type, bl.image_url
@@ -304,10 +305,22 @@ app.get('/api/events', async (_req, res) => {
        INNER JOIN organizations o ON o.org_id = bl.org_id
        WHERE bl.status = 'active' AND bl.spots_available > 0
        ORDER BY bl.event_date ASC, bl.event_id ASC`
-    );
+      ),
+      query(
+        `SELECT br.request_id, br.blood_group, br.units_needed, br.urgency,
+                br.expires_at, br.hospital_name, br.patient_type,
+                br.hospital_address, br.contact_person, br.contact_number,
+                o.org_name
+         FROM blood_requests br
+         INNER JOIN organizations o ON o.org_id = br.org_id
+         WHERE br.status = 'open' AND (br.expires_at IS NULL OR br.expires_at >= NOW())
+         ORDER BY br.expires_at ASC, br.request_id DESC`
+      ),
+    ]);
 
     res.json({
-      data: rows.map((row) => ({
+      data: [
+        ...campaignRows.map((row) => ({
         id: row.event_id,
         title: row.title,
         org: `Organized by ${row.org_name}`,
@@ -319,7 +332,10 @@ app.get('/api/events', async (_req, res) => {
         total: row.spots_total,
         type: row.event_type,
         img: row.image_url,
-      })),
+        kind: 'campaign',
+        })),
+        ...requestRows.map(mapBloodRequestListing),
+      ].sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))),
     });
   } catch (error) {
     res.status(500).json({ message: 'Unable to load events.' });
@@ -378,7 +394,8 @@ app.get('/api/org/dashboard', async (req, res) => {
         [org.org_id]
       ),
       query(
-        `SELECT request_id, blood_group, units_needed, urgency, status, city, district, created_at, expires_at
+        `SELECT request_id, blood_group, units_needed, urgency, status, city, district, created_at, expires_at,
+                hospital_name, patient_type, hospital_address, contact_person, contact_number
          FROM blood_requests WHERE org_id = ?
          ORDER BY created_at DESC`,
         [org.org_id]
@@ -401,6 +418,9 @@ app.get('/api/org/dashboard', async (req, res) => {
     );
     const upcomingCampaigns = campaignRows.filter((campaign) => !isCampaignComplete(campaign));
     const completedCampaigns = campaignRows.filter(isCampaignComplete);
+    const openRequestListings = requestRows
+      .filter((request) => String(request.status).toLowerCase() === 'open' && (!request.expires_at || new Date(request.expires_at) >= new Date()))
+      .map((request) => mapBloodRequestListing({ ...request, org_name: org.org_name }));
     const totalBloodUnitsCollected = donationRows.reduce((s, r) => s + Number(r.units_donated || 0), 0);
     const totalSoldBloodUnits = donationRows.filter((r) => String(r.request_status || '').toLowerCase() === 'fulfilled').reduce((s, r) => s + Number(r.units_donated || 0), 0);
     const requestForBloodUnits = requestRows.reduce((s, r) => s + Number(r.units_needed || 0), 0);
@@ -423,7 +443,7 @@ app.get('/api/org/dashboard', async (req, res) => {
       },
       campaigns: {
         all: campaignRows.map(mapCampaignRow),
-        upcoming: upcomingCampaigns.map(mapCampaignRow),
+        upcoming: [...upcomingCampaigns.map(mapCampaignRow), ...openRequestListings],
         completed: completedCampaigns.map(mapCampaignRow),
       },
       requests: requestRows.map((r) => ({
@@ -873,6 +893,29 @@ async function getOrganizationForCampaignAction(email) {
     [email]
   );
   return rows[0] || null;
+}
+
+function mapBloodRequestListing(row) {
+  const urgency = String(row.urgency || 'normal').toLowerCase();
+  return {
+    id: `request-${row.request_id}`,
+    requestId: row.request_id,
+    kind: 'blood-request',
+    title: `${String(row.blood_group || '').trim()} blood needed`,
+    org: `Requested by ${row.hospital_name || row.org_name}`,
+    orgName: row.org_name,
+    date: formatDate(row.expires_at),
+    time: 'Required by',
+    location: row.hospital_address || 'Location not specified',
+    spots: row.units_needed,
+    total: row.units_needed,
+    type: 'Emergency',
+    urgency,
+    patientType: row.patient_type || null,
+    contactPerson: row.contact_person || null,
+    contactNumber: row.contact_number || null,
+    img: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=900&auto=format&fit=crop&q=70',
+  };
 }
 
 app.post('/api/org/campaigns/:eventId/stop', async (req, res) => {
@@ -1484,6 +1527,10 @@ async function start() {
     if (!campaignStatusColumns.length) {
       await pool.query("ALTER TABLE blood_drive_listings ADD COLUMN status ENUM('active', 'completed', 'stopped') NOT NULL DEFAULT 'active' AFTER event_type");
     }
+
+    // Campaign images are sent from the browser as base64 data URLs. Older
+    // databases used VARCHAR/TEXT here, which rejects ordinary photo uploads.
+    await pool.query('ALTER TABLE blood_drive_listings MODIFY COLUMN image_url MEDIUMTEXT NOT NULL');
 
     const transport = createMailTransport();
     if (transport) {

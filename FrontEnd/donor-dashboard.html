@@ -1281,7 +1281,9 @@
                 ${d.spots || 0} spots available out of ${d.total || 0}
               </div>
             </div>
-            <button class="btn-register" onclick="apply(${d.id})">Donate Now</button>
+            ${d.kind === 'blood-request'
+              ? `<button class="btn-register" onclick="respondToRequest(${Number(d.requestId)})">Respond to Request</button>`
+              : `<button class="btn-register" onclick="apply(${d.id})">Donate Now</button>`}
           </div>
         </div>
       `).join('');
@@ -1395,6 +1397,12 @@
         alert(payload?.message||'Applied — donation recorded');
         await loadData();
       }catch(e){console.error(e);alert('Unable to apply at the moment');}
+    }
+
+    function respondToRequest(requestId){
+      const request = EVENTS.find((event) => event.kind === 'blood-request' && Number(event.requestId) === Number(requestId));
+      const contact = [request?.contactPerson, request?.contactNumber].filter(Boolean).join(' — ');
+      alert(contact ? `Please contact ${contact} to respond to this blood request.` : 'Please contact the requesting organization to respond.');
     }
 
     function setupTabs(){
