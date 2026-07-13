@@ -130,7 +130,25 @@
     .campaign-modal-actions-right{display:flex;gap:10px;flex-wrap:wrap}
     .campaign-modal-actions-right .btn-outline,.campaign-modal-actions-right .btn-red{min-width:140px;justify-content:center}
     .field-note{font-size:.78rem;color:var(--soft);margin-top:4px;line-height:1.4}
-
+    .request-backdrop{position:fixed;inset:0;background:rgba(10,10,15,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:225}
+    .request-backdrop.open{display:flex}
+    .request-modal-card{width:100%;max-width:680px;max-height:calc(100vh - 36px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .request-modal-header{padding:24px 28px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fff7f7 0%,#fff 100%)}
+    .request-modal-header h3{font-family:var(--ff-head);font-size:1.4rem;margin-bottom:6px;color:var(--ink)}
+    .request-modal-header p{color:var(--soft);font-size:.92rem}
+    .request-modal-body{padding:24px 28px;overflow:auto}
+    .request-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .request-form-grid .form-group{margin-bottom:0}
+    .request-form-grid .full-width{grid-column:1/-1}
+    .request-form-grid label{display:block;font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:6px}
+    .request-form-grid input,.request-form-grid select,.request-form-grid textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font:400 .92rem var(--ff-body);background:var(--white);outline:none;transition:border-color .2s}
+    .request-form-grid input:focus,.request-form-grid select:focus,.request-form-grid textarea:focus{border-color:var(--red)}
+    .request-form-grid textarea{resize:vertical;min-height:72px}
+    .request-form-grid .autofill-note{font-size:.76rem;color:var(--soft);margin-top:3px}
+    .request-modal-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 28px;border-top:1px solid var(--border);background:#fcfcfc}
+    .request-modal-actions-right{display:flex;gap:10px}
+    .btn-blood{background:#7b1fa2;color:#fff;border:none;cursor:pointer;border-radius:10px;padding:11px 18px;font:700 .92rem var(--ff-body);display:inline-flex;align-items:center;gap:8px;transition:transform .2s,background .2s;box-shadow:0 10px 24px rgba(123,31,162,.18)}
+    .btn-blood:hover{background:#6a1b9a;transform:translateY(-1px)}
     .campaign-detail-backdrop{position:fixed;inset:0;background:rgba(10,10,15,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:230}
     .campaign-detail-backdrop.open{display:flex}
     .campaign-detail-card{width:100%;max-width:760px;max-height:calc(100vh - 36px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
@@ -206,24 +224,31 @@
       </a>
     </div>
 
-    <div class="nav-right">
-      <div class="profile-shell" id="profileShell">
-        <button class="profile-trigger" id="profileTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
-          <span class="profile-trigger-left">
-            <span class="profile-initial" id="profileInitial">O</span>
-            <span class="profile-name" id="orgNameDisplay">Organization</span>
-          </span>
-          <span class="profile-arrow" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="profile-menu" id="profileMenu" role="menu" aria-label="Profile menu">
-          <button type="button" id="profileSummaryBtn" role="menuitem">View Summary</button>
-          <div class="menu-sep"></div>
-          <button type="button" id="logoutBtn" role="menuitem">Logout</button>
-        </div>
-      </div>
+<div class="nav-right">
+  <div class="profile-shell" id="profileShell">
+    <button class="profile-trigger" id="profileTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
+      <span class="profile-trigger-left">
+        <span class="profile-initial" id="profileInitial">O</span>
+        <span class="profile-name" id="orgNameDisplay">Organization</span>
+      </span>
+      <span class="profile-arrow" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+    </button>
+    <div class="profile-menu" id="profileMenu" role="menu" aria-label="Profile menu">
+      <button type="button" id="profileSummaryBtn" role="menuitem">View Summary</button>
+      <div class="menu-sep"></div>
+      <button type="button" id="logoutBtn" role="menuitem">Logout</button>
     </div>
+  </div>
+  <button
+    type="button"
+    id="directLogoutBtn"
+    onclick="sessionStorage.removeItem('saveabeatUser');localStorage.removeItem('saveabeatUser');location.replace('login.html?role=org');"
+    style="background:none;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.85rem;color:#555;margin-left:8px;font-family:inherit">
+    Logout
+  </button>
+</div>
   </nav>
 
   <div class="wrap">
@@ -282,10 +307,17 @@
             <h2>Org Details</h2>
             <p>This tab groups the operational details you requested: total blood units collected, request totals, sold units, and supporting organization data.</p>
           </div>
-          <button class="start-campaign-btn" type="button" id="startCampaignBtn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-            Start Campaign
-          </button>
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+            <button class="start-campaign-btn" type="button" id="startCampaignBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Start Campaign
+            </button>
+            <button class="btn-blood" type="button" id="requestBloodBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+              Request Blood
+            </button>
+          </div>
+          
         </div>
 
         <div class="org-status" id="orgStatusBadge">Checking account status...</div>
@@ -411,10 +443,6 @@
               <input id="campaignLocation" type="text" placeholder="Event location" />
             </div>
             <div class="form-group">
-              <label for="campaignDistance">Distance (km) <span style="color:var(--red)">*</span></label>
-              <input id="campaignDistance" type="number" min="0" step="0.1" placeholder="5.0" />
-            </div>
-            <div class="form-group">
               <label for="campaignSpots">Total Spots <span style="color:var(--red)">*</span></label>
               <input id="campaignSpots" type="number" min="1" step="1" placeholder="100" />
             </div>
@@ -461,6 +489,92 @@
     </div>
   </div>
 
+  <div class="request-backdrop" id="requestBackdrop" aria-hidden="true">
+  <div class="request-modal-card" role="dialog" aria-modal="true" aria-labelledby="requestModalTitle">
+    <div class="request-modal-header">
+      <h3 id="requestModalTitle">🩸 Request Blood</h3>
+      <p>Fill in the details below. Donors with the matching blood type will be notified by email and in-app.</p>
+    </div>
+    <div class="request-modal-body">
+      <div class="request-form-grid">
+        <div class="form-group full-width">
+          <label for="reqHospital">Hospital / Facility Name <span style="color:var(--red)">*</span></label>
+          <input id="reqHospital" type="text" placeholder="e.g. Bir Hospital" />
+          <div class="autofill-note">Auto-filled from your organization profile.</div>
+        </div>
+        <div class="form-group full-width">
+          <label for="reqHospitalAddress">Hospital Address <span style="color:var(--red)">*</span></label>
+          <input id="reqHospitalAddress" type="text" placeholder="e.g. Tundilkhel Road, Kathmandu" />
+          <div class="autofill-note">Auto-filled from your organization profile.</div>
+        </div>
+        <div class="form-group">
+          <label for="reqBloodGroup">Blood Group Needed <span style="color:var(--red)">*</span></label>
+          <select id="reqBloodGroup">
+            <option value="">Select blood group</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reqUnits">Units Required <span style="color:var(--red)">*</span></label>
+          <input id="reqUnits" type="number" min="1" step="1" placeholder="e.g. 3" />
+        </div>
+        <div class="form-group">
+          <label for="reqPriority">Priority <span style="color:var(--red)">*</span></label>
+          <select id="reqPriority">
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reqPatientType">Patient Type <span style="color:var(--red)">*</span></label>
+          <select id="reqPatientType">
+            <option value="">Select type</option>
+            <option value="Surgery">Surgery</option>
+            <option value="Child">Child</option>
+            <option value="Cancer">Cancer</option>
+            <option value="Accident">Accident</option>
+            <option value="Maternity">Maternity</option>
+            <option value="Anaemia">Anaemia</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label for="reqRequiredBy">Required By (Date & Time) <span style="color:var(--red)">*</span></label>
+          <input id="reqRequiredBy" type="datetime-local" />
+        </div>
+        <div class="form-group">
+          <label for="reqContactPerson">Contact Person <span style="color:var(--red)">*</span></label>
+          <input id="reqContactPerson" type="text" placeholder="e.g. Dr. Sharma" />
+          <div class="autofill-note">Auto-filled from your organization profile.</div>
+        </div>
+        <div class="form-group">
+          <label for="reqContactNumber">Contact Number <span style="color:var(--red)">*</span></label>
+          <input id="reqContactNumber" type="tel" placeholder="e.g. +977-9800000000" />
+          <div class="autofill-note">Auto-filled from your organization profile.</div>
+        </div>
+        <div class="form-group full-width">
+          <label for="reqNote">Additional Note</label>
+          <textarea id="reqNote" placeholder="Any additional information for donors..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="request-modal-actions">
+      <button class="btn-outline" type="button" id="requestCloseBtn">Cancel</button>
+      <div class="request-modal-actions-right">
+        <button class="btn-blood" type="button" id="requestSubmitBtn">Publish Request & Notify Donors</button>
+      </div>
+    </div>
+  </div>
+</div>
+
   <script>
     const AUTH_STORAGE_KEY = 'saveabeatUser';
     const dashboardState = {
@@ -473,7 +587,12 @@
 
     function getStoredUser(){
       try {
-        return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+        const savedUser = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+        const user = JSON.parse(savedUser || 'null');
+        if (user && !localStorage.getItem(AUTH_STORAGE_KEY)) {
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        }
+        return user;
       } catch (_error) {
         return null;
       }
@@ -567,7 +686,6 @@
         ['Date', campaign.date || '-'],
         ['Time', campaign.time || '-'],
         ['Location', campaign.location || '-'],
-        ['Distance', campaign.dist || '-'],
         ['Spots', `${campaign.spots ?? '-'} / ${campaign.total ?? '-'}`],
       ].map(([label, value]) => `
         <div class="campaign-detail-item">
@@ -647,6 +765,95 @@
       backdrop.setAttribute('aria-hidden', 'true');
     }
 
+    function openRequestModal() {
+  const user = getStoredUser();
+  const org = dashboardState.org || {};
+
+  // Auto-fill from org profile
+  document.getElementById('reqHospital').value = org.orgName || user?.fullName || '';
+  document.getElementById('reqHospitalAddress').value = org.address || '';
+  document.getElementById('reqContactPerson').value = org.managerName || user?.fullName || '';
+  document.getElementById('reqContactNumber').value = org.contact || org.phone || user?.phone || '';
+
+  // Set default required-by to tomorrow
+  const tomorrow = new Date(Date.now() + 86400000);
+  document.getElementById('reqRequiredBy').value = tomorrow.toISOString().slice(0, 16);
+
+  const backdrop = document.getElementById('requestBackdrop');
+  backdrop.classList.add('open');
+  backdrop.setAttribute('aria-hidden', 'false');
+}
+
+function closeRequestModal() {
+  const backdrop = document.getElementById('requestBackdrop');
+  backdrop.classList.remove('open');
+  backdrop.setAttribute('aria-hidden', 'true');
+}
+
+async function publishBloodRequest() {
+  const user = getStoredUser();
+  if (!user || user.role !== 'org') {
+    location.href = 'login.html?role=org';
+    return;
+  }
+
+  const hospitalName    = String(document.getElementById('reqHospital')?.value || '').trim();
+  const hospitalAddress = String(document.getElementById('reqHospitalAddress')?.value || '').trim();
+  const bloodGroup      = String(document.getElementById('reqBloodGroup')?.value || '').trim();
+  const unitsRequired   = String(document.getElementById('reqUnits')?.value || '').trim();
+  const priority        = String(document.getElementById('reqPriority')?.value || 'normal').trim();
+  const patientType     = String(document.getElementById('reqPatientType')?.value || '').trim();
+  const requiredBy      = String(document.getElementById('reqRequiredBy')?.value || '').trim();
+  const contactPerson   = String(document.getElementById('reqContactPerson')?.value || '').trim();
+  const contactNumber   = String(document.getElementById('reqContactNumber')?.value || '').trim();
+  const additionalNote  = String(document.getElementById('reqNote')?.value || '').trim();
+
+  if (!hospitalName || !hospitalAddress || !bloodGroup || !unitsRequired || !patientType || !requiredBy || !contactPerson || !contactNumber) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+
+  const submitBtn = document.getElementById('requestSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Publishing...';
+
+  try {
+    const response = await fetch('/api/org/requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: user.email,
+        hospitalName,
+        hospitalAddress,
+        bloodGroup,
+        unitsRequired: Number(unitsRequired),
+        priority,
+        patientType,
+        requiredBy,
+        contactPerson,
+        contactNumber,
+        additionalNote,
+      }),
+    });
+
+    const payload = await readJsonResponse(response);
+    if (!response.ok) {
+      alert(payload.message || 'Unable to publish blood request.');
+      return;
+    }
+
+    closeRequestModal();
+    await loadDashboard();
+    setActiveTab('overview');
+    alert(payload.message || 'Blood request published and donors notified.');
+  } catch (error) {
+    alert(error.message || 'Unable to publish blood request.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Publish Request & Notify Donors';
+  }
+}
+
     async function publishCampaign(){
       const user = getStoredUser();
       if (!user || user.role !== 'org') {
@@ -659,11 +866,10 @@
       const eventDate = String(document.getElementById('campaignDate')?.value || '').trim();
       const timeRange = String(document.getElementById('campaignTime')?.value || '').trim();
       const locationValue = String(document.getElementById('campaignLocation')?.value || '').trim();
-      const distanceKm = String(document.getElementById('campaignDistance')?.value || '').trim();
       const spotsTotal = String(document.getElementById('campaignSpots')?.value || '').trim();
       const imageFile = document.getElementById('campaignImage')?.files?.[0];
 
-      if (!title || !eventType || !eventDate || !timeRange || !locationValue || !distanceKm || !spotsTotal || !imageFile) {
+      if (!title || !eventType || !eventDate || !timeRange || !locationValue || !spotsTotal || !imageFile) {
         alert('Please fill in all campaign fields and upload an image.');
         return;
       }
@@ -679,7 +885,6 @@
             eventDate,
             timeRange,
             location: locationValue,
-            distanceKm,
             spotsTotal,
             imageData: await readFileAsDataUrl(imageFile),
           }),
@@ -728,7 +933,6 @@
               <div class="campaign-stat"><strong>${escapeHtml(firstMetricValue)}</strong><span>${escapeHtml(firstMetricLabel)}</span></div>
               <div class="campaign-stat"><strong>${escapeHtml(secondMetricValue)}</strong><span>${escapeHtml(secondMetricLabel)}</span></div>
               <div class="campaign-stat"><strong>${escapeHtml(campaign.time || '-')}</strong><span>Time range</span></div>
-              <div class="campaign-stat"><strong>${escapeHtml(campaign.dist || '-')}</strong><span>Distance</span></div>
             </div>
             <button class="btn-red" type="button" data-detail-kind="campaign" data-detail-data="${encodeDetailData({ ...campaign, state: variant })}">View Details</button>
           </div>
@@ -924,6 +1128,13 @@
       const profileLogoutBtn = document.getElementById('profileLogoutBtn');
       const logoutBtn = document.getElementById('logoutBtn');
       const startCampaignBtn = document.getElementById('startCampaignBtn');
+      document.getElementById('requestBloodBtn')?.addEventListener('click', openRequestModal);
+      document.getElementById('requestCloseBtn')?.addEventListener('click', closeRequestModal);
+      document.getElementById('requestSubmitBtn')?.addEventListener('click', publishBloodRequest);
+
+      document.getElementById('requestBackdrop')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('requestBackdrop')) closeRequestModal();
+      });
       const campaignBackdrop = document.getElementById('campaignBackdrop');
       const campaignCloseBtn = document.getElementById('campaignCloseBtn');
       const campaignSubmitBtn = document.getElementById('campaignSubmitBtn');
@@ -958,7 +1169,6 @@
 
       function doLogout(){
         closeProfileMenu();
-        sessionStorage.removeItem(AUTH_STORAGE_KEY);
         localStorage.removeItem(AUTH_STORAGE_KEY);
         location.replace('index.html');
       }
@@ -1017,6 +1227,7 @@
           closeProfileMenu();
           closeCampaignModal();
           closeCampaignDetailModal();
+          closeRequestModal();
         }
       });
 

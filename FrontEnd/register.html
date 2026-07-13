@@ -789,6 +789,7 @@ async function handleRegister(event){
       }
       throw new Error(message);
     }
+    localStorage.removeItem('saveabeatUser');
     sessionStorage.removeItem('saveabeatUser');
     location.href='login.html?role=donor';
   }catch(error){

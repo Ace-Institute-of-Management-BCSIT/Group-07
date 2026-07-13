@@ -38,6 +38,21 @@
     .btn-red{background:var(--red);color:var(--white);border:none;font:600 .9rem var(--ff-body);padding:9px 22px;border-radius:6px;cursor:pointer;transition:background .2s}
     .btn-red:hover{background:var(--red-dark)}
     .nav-auth{position:relative;display:flex;align-items:center}
+    .notification-shell{position:relative}
+    .notification-trigger{position:relative;width:44px;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+    .notification-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06)}
+    .notification-dot{position:absolute;top:8px;right:8px;width:9px;height:9px;background:var(--red);border:2px solid var(--white);border-radius:50%;display:none}
+    .notification-dot.visible{display:block}
+    .notification-menu{position:absolute;right:0;top:calc(100% + 8px);width:min(380px,calc(100vw - 32px));background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.12);overflow:hidden;display:none;z-index:120}
+    .notification-menu.open{display:block}
+    .notification-title{padding:14px 16px;border-bottom:1px solid var(--border);font:700 1rem var(--ff-body)}
+    .notification-list{max-height:360px;overflow:auto}
+    .notification-item{width:100%;border:0;border-bottom:1px solid var(--border);background:var(--white);padding:13px 16px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;display:block}
+    .notification-item:hover{background:#fff7f7}
+    .notification-item.unread{background:var(--white);font-weight:600}
+    .notification-message{display:block;font-size:.86rem;line-height:1.4}
+    .notification-time{display:block;color:var(--soft);font-size:.75rem;margin-top:4px}
+    .notification-empty{padding:24px 16px;text-align:center;color:var(--soft);font-size:.9rem}
     .profile-shell{position:relative;min-width:248px}
     .profile-trigger{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:border-color .2s,box-shadow .2s,transform .2s}
     .profile-trigger:hover{border-color:#d7d7d7;box-shadow:0 6px 14px rgba(0,0,0,.06);transform:translateY(-1px)}
@@ -555,6 +570,16 @@
       </button>
     </div>
     <div class="nav-right">
+      <div class="notification-shell" id="notificationShell">
+        <button class="notification-trigger" id="notificationTrigger" type="button" aria-label="Notifications" aria-haspopup="menu" aria-expanded="false" onclick="toggleNotifications()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          <span class="notification-dot" id="notificationDot"></span>
+        </button>
+        <div class="notification-menu" id="notificationMenu" role="menu" aria-label="Notifications">
+          <div class="notification-title">Notifications</div>
+          <div class="notification-list" id="notificationList"><div class="notification-empty">No notifications yet.</div></div>
+        </div>
+      </div>
       <div class="nav-auth" id="navAuth"></div>
     </div>
   </nav>
@@ -567,10 +592,6 @@
         <button class="btn-red" onclick="document.getElementById('events').scrollIntoView({behavior:'smooth'})">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
           Find Donation Events
-        </button>
-        <button class="btn-outline" onclick="document.getElementById('my-donation').scrollIntoView({behavior:'smooth'})">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          View My Donation
         </button>
       </div>
       <div class="hero-stats">
@@ -599,12 +620,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" placeholder="Search events by name or location..." id="eventSearch" oninput="filterDrives()"/>
       </div>
-      <select class="filter-select" id="distFilter" onchange="filterDrives()">
-        <option value="">All distances</option>
-        <option value="2">Within 2 km</option>
-        <option value="5">Within 5 km</option>
-        <option value="10">Within 10 km</option>
-      </select>
       <select class="filter-select" id="typeFilter" onchange="filterDrives()">
         <option value="">All types</option>
         <option value="Drive">Drive</option>
@@ -621,7 +636,7 @@
   <section class="section section-panel hidden" id="centers" data-panel="centers">
     <div class="section-header">
       <h2>Find Donation Centers Near You</h2>
-      <p>Locate blood donation centers with real-time availability, contact information, and distance filtering to find the most convenient location for you.</p>
+      <p>Locate blood donation centers with real-time availability and contact information.</p>
     </div>
 
     <div class="filters">
@@ -629,12 +644,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" placeholder="Search centers, addresses, or services..." id="centerSearch" oninput="filterCenters()"/>
       </div>
-      <select class="filter-select" id="centerDistFilter" onchange="filterCenters()">
-        <option value="">All Distances</option>
-        <option value="2">Within 2 km</option>
-        <option value="5">Within 5 km</option>
-        <option value="10">Within 10 km</option>
-      </select>
       <select class="filter-select" id="centerAvailFilter" onchange="filterCenters()">
         <option value="">All Centers</option>
         <option value="High">High Availability</option>
@@ -748,17 +757,21 @@
 
     function getStoredUser(){
       try{
-        return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+        const savedUser = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+        const user = JSON.parse(savedUser || 'null');
+        if(user && !localStorage.getItem(AUTH_STORAGE_KEY)) saveStoredUser(user);
+        return user;
       }catch(error){
         return null;
       }
     }
 
     function saveStoredUser(user){
-      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
     }
 
     function clearStoredUser(){
+      localStorage.removeItem(AUTH_STORAGE_KEY);
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
     }
 
@@ -798,6 +811,83 @@
 
     function escapeHtml(value){
       return String(value).replace(/[&<>\"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    }
+
+    let notifications = [];
+
+    function formatNotificationTime(value){
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '' : date.toLocaleString([], {dateStyle:'medium', timeStyle:'short'});
+    }
+
+    function briefNotificationMessage(message){
+      const compact = String(message || '').replace(/\s+/g, ' ').trim();
+      return compact.length > 96 ? `${compact.slice(0, 93).trimEnd()}…` : compact;
+    }
+
+    function renderNotifications(){
+      const list = document.getElementById('notificationList');
+      const dot = document.getElementById('notificationDot');
+      if(!list || !dot) return;
+      const hasUnread = notifications.some(notification => !notification.isRead);
+      dot.classList.toggle('visible', hasUnread);
+      list.innerHTML = notifications.length
+        ? notifications.map(notification => `
+            <button type="button" class="notification-item${notification.isRead ? '' : ' unread'}" role="menuitem" onclick="openNotification(${Number(notification.id)})">
+              <span class="notification-message">${escapeHtml(briefNotificationMessage(notification.message))}</span>
+              <span class="notification-time">${escapeHtml(formatNotificationTime(notification.sentAt))}</span>
+            </button>
+          `).join('')
+        : '<div class="notification-empty">No notifications yet.</div>';
+    }
+
+    async function loadNotifications(email = getStoredUser()?.email){
+      if(!email) return;
+      try{
+        const response = await fetch(`/api/notifications?email=${encodeURIComponent(email)}`);
+        if(!response.ok) return;
+        const payload = await response.json();
+        notifications = payload.data || [];
+        renderNotifications();
+      }catch(error){
+        console.warn('Unable to load notifications.', error);
+      }
+    }
+
+    function toggleNotifications(){
+      const menu = document.getElementById('notificationMenu');
+      const trigger = document.getElementById('notificationTrigger');
+      if(!menu || !trigger) return;
+      const isOpen = menu.classList.toggle('open');
+      trigger.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    async function openNotification(notificationId){
+      const notification = notifications.find(item => Number(item.id) === Number(notificationId));
+      const user = getStoredUser();
+      document.getElementById('notificationMenu')?.classList.remove('open');
+      document.getElementById('notificationTrigger')?.setAttribute('aria-expanded', 'false');
+      if(!notification) return;
+
+      if(!notification.isRead && user?.email){
+        notification.isRead = true;
+        renderNotifications();
+        fetch(`/api/notifications/${notification.id}/read`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:user.email})
+        }).catch(error => console.warn('Unable to mark notification as read.', error));
+      }
+
+      // Campaign notifications retain the created event id, so the donor lands
+      // directly on the matching listing instead of only the dashboard.
+      if(notification.eventId){
+        document.getElementById('eventSearch').value = '';
+        document.getElementById('typeFilter').value = '';
+        renderDrives(EVENTS);
+        document.querySelector('#donorNavTabs [data-tab="browse"]')?.click();
+        window.requestAnimationFrame(() => {
+          document.getElementById(`event-${notification.eventId}`)?.scrollIntoView({behavior:'smooth', block:'center'});
+        });
+      }
     }
 
     function getAvatarData(user){
@@ -1086,6 +1176,8 @@
           renderDashboardWelcome(meJson.user);
         }
 
+        loadNotifications(email);
+
         setupTabs();
       }catch(err){
         console.error('Unable to load dashboard data', err);
@@ -1163,7 +1255,7 @@
       }
       
       drivesNode.innerHTML = list.map(d=>`
-        <div class="event-card">
+        <div class="event-card" id="event-${d.id}">
           <div class="card-img">
             <img src="${d.img || 'https://picsum.photos/600/400?random'}" alt="${d.title}" loading="lazy"/>
             <span class="badge ${badgeClass(d.type)}">${d.type}</span>
@@ -1182,7 +1274,7 @@
               </div>
               <div class="card-meta-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                ${d.location || 'Location not specified'} &nbsp;<span style="color:#D62B2B;font-weight:600">${d.dist || ''}</span>
+                ${d.location || 'Location not specified'}
               </div>
               <div class="card-meta-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -1215,10 +1307,6 @@
               <div class="center-meta">
                 <div class="center-meta-row">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  ${c.dist || 'N/A'}
-                </div>
-                <div class="center-meta-row">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   ${c.address || 'N/A'}
                 </div>
                 <div class="center-meta-row">
@@ -1232,9 +1320,6 @@
               </div>
               <div class="services">
                 ${(c.services || []).map(s=>`<span class="service-tag">${s}</span>`).join('')}
-              </div>
-              <div class="center-btns">
-                <button class="btn-sm-red" onclick="request(${c.id})">Request Blood</button>
               </div>
             </div>
           </div>
@@ -1278,30 +1363,24 @@
 
     function filterDrives() {
       const q = document.getElementById("eventSearch").value.toLowerCase();
-      const dist = document.getElementById("distFilter").value;
       const type = document.getElementById("typeFilter").value;
       
       const filtered = EVENTS.filter(e => {
         const matchQ = !q || e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q) || e.org.toLowerCase().includes(q);
         const matchType = !type || e.type === type;
-        const distVal = parseFloat(e.dist) || 999;
-        const matchDist = !dist || distVal <= parseFloat(dist);
-        return matchQ && matchType && matchDist;
+        return matchQ && matchType;
       });
       renderDrives(filtered);
     }
 
     function filterCenters() {
       const q = document.getElementById("centerSearch").value.toLowerCase();
-      const dist = document.getElementById("centerDistFilter").value;
       const avail = document.getElementById("centerAvailFilter").value;
       
       const filtered = CENTERS.filter(c => {
         const matchQ = !q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q) || c.services.some(s => s.toLowerCase().includes(q));
-        const distVal = parseFloat(c.dist) || 999;
-        const matchDist = !dist || distVal <= parseFloat(dist);
         const matchAvail = !avail || c.avail === avail;
-        return matchQ && matchDist && matchAvail;
+        return matchQ && matchAvail;
       });
       renderCenters(filtered);
     }
@@ -1316,25 +1395,6 @@
         alert(payload?.message||'Applied — donation recorded');
         await loadData();
       }catch(e){console.error(e);alert('Unable to apply at the moment');}
-    }
-
-    async function request(listingId){
-      const user = getStoredUser();
-      if(!user){location.href='login.html?role=donor';return}
-      const bloodGroup = prompt('Enter blood group (e.g. A+, O-)');
-      if(!bloodGroup) return;
-      const units = prompt('How many units needed?', '1');
-      if(!units) return;
-      const urgency = prompt('Urgency (normal, urgent, critical)', 'normal');
-      if(!urgency) return;
-      const city = user.city || prompt('City');
-      const district = user.district || prompt('District');
-      try{
-        const res = await fetch('/api/requests', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({listingId,bloodGroup,unitsNeeded:units,urgency,city,district})});
-        const payload = await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
-        if(!res.ok){alert(payload?.message||'Unable to create request');return}
-        alert(payload?.message||'Request created');
-      }catch(e){console.error(e);alert('Unable to create request');}
     }
 
     function setupTabs(){
@@ -1361,6 +1421,11 @@
       const menu = document.getElementById('profileMenu');
       if(authArea && menu && !authArea.contains(event.target)){
         closeProfileMenu();
+      }
+      const notificationShell = document.getElementById('notificationShell');
+      if(notificationShell && !notificationShell.contains(event.target)){
+        document.getElementById('notificationMenu')?.classList.remove('open');
+        document.getElementById('notificationTrigger')?.setAttribute('aria-expanded', 'false');
       }
     });
 

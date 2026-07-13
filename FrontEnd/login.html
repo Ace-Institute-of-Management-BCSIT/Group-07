@@ -200,7 +200,7 @@ async function handleLogin(){
         storedUser=mePayload.user;
       }
     }catch(_error){}
-    sessionStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
+    localStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
     if(storedUser.role === 'org'){
       location.href = 'org-dashboard.html#panel-upcoming';
       return;

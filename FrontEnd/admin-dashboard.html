@@ -546,7 +546,10 @@ let currentDetail = null;
 
 function getStoredUser(){
   try{
-    return JSON.parse(sessionStorage.getItem(AUTH_STORAGE_KEY) || 'null');
+    const savedUser=localStorage.getItem(AUTH_STORAGE_KEY)||sessionStorage.getItem(AUTH_STORAGE_KEY);
+    const user=JSON.parse(savedUser||'null');
+    if(user&&!localStorage.getItem(AUTH_STORAGE_KEY)) localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(user));
+    return user;
   }catch(_error){
     return null;
   }
@@ -864,6 +867,7 @@ async function loadAdminData(){
 }
 
 function logout(){
+  localStorage.removeItem(AUTH_STORAGE_KEY);
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
   location.replace('index.html');
 }

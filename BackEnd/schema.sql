@@ -97,6 +97,7 @@ CREATE TABLE notifications (
   notif_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   request_id INT,
+  event_id INT,
   type ENUM('match', 'broadcast', 'system') NOT NULL,
   message TEXT NOT NULL,
   is_read BOOLEAN NOT NULL DEFAULT FALSE,
@@ -201,6 +202,7 @@ CREATE TABLE blood_drive_listings (
   spots_total INT NOT NULL,
   spots_available INT NOT NULL,
   event_type ENUM('Drive', 'Camp', 'Emergency') NOT NULL,
+  status ENUM('active', 'completed', 'stopped') NOT NULL DEFAULT 'active',
   image_url TEXT NOT NULL,
   CONSTRAINT fk_drive_org
     FOREIGN KEY (org_id) REFERENCES organizations(org_id)
