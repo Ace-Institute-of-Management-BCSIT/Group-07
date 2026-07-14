@@ -275,6 +275,7 @@ app.get('/api/centers', async (_req, res) => {
               cl.availability, cl.services, cl.image_url, cl.latitude, cl.longitude
        FROM organizations o
        LEFT JOIN center_listings cl ON cl.org_id = o.org_id
+       WHERE o.verified = TRUE
        ORDER BY o.org_name ASC`
     );
 
@@ -291,6 +292,182 @@ app.get('/api/centers', async (_req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Unable to load centers.' });
+  }
+});
+
+// =========================
+// ADMIN — ALL ORGANIZATIONS
+// =========================
+app.get('/api/admin/organizations', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ message: 'Admin email is required.' });
+  }
+  try {
+    const adminCheck = await query(
+      `SELECT user_id FROM users WHERE LOWER(email) = ? AND role = 'admin' LIMIT 1`,
+      [email]
+    );
+    if (!adminCheck.length) {
+      return res.status(403).json({ message: 'Admin access required.' });
+    }
+    const rows = await query(
+      `SELECT o.org_id, o.org_name, o.org_type, o.address, o.contact,
+              o.verified, o.building_photo, o.building_photo_name,
+              o.verification_documents_name,
+              u.full_name, u.email, u.phone, u.city, u.district, u.created_at,
+              cl.availability, cl.services, cl.image_url
+       FROM organizations o
+       INNER JOIN users u ON u.user_id = o.user_id
+       LEFT JOIN center_listings cl ON cl.org_id = o.org_id
+       ORDER BY o.verified ASC, u.created_at DESC`
+    );
+    res.json({
+      data: rows.map((row) => ({
+        orgId: row.org_id,
+        orgName: row.org_name,
+        orgType: row.org_type,
+        address: row.address,
+        contact: row.contact,
+        verified: Boolean(row.verified),
+        buildingPhoto: row.building_photo || '',
+        buildingPhotoName: row.building_photo_name || '',
+        verificationDocumentsName: row.verification_documents_name || '',
+        managerName: row.full_name,
+        email: row.email,
+        phone: row.phone || row.contact || '',
+        city: row.city || '',
+        district: row.district || '',
+        createdAt: row.created_at,
+        availability: row.availability || 'Medium',
+        services: parseList(row.services || 'Whole Blood|Platelets|Plasma'),
+        img: row.image_url || row.building_photo || '',
+      })),
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+// =========================
+// ADMIN — VERIFY ORG
+// =========================
+app.post('/api/admin/organizations/:orgId/verify', async (req, res) => {
+  const orgId = Number.parseInt(req.params.orgId, 10);
+  const adminEmail = String(req.body.email || '').trim().toLowerCase();
+  if (!orgId || !adminEmail) {
+    return res.status(400).json({ message: 'Org id and admin email are required.' });
+  }
+  try {
+    const adminCheck = await query(
+      `SELECT user_id FROM users WHERE LOWER(email) = ? AND role = 'admin' LIMIT 1`,
+      [adminEmail]
+    );
+    if (!adminCheck.length) {
+      return res.status(403).json({ message: 'Admin access required.' });
+    }
+
+    const orgRows = await query(
+      `SELECT o.org_id, o.org_name, o.verified, u.user_id, u.email, u.full_name
+       FROM organizations o
+       INNER JOIN users u ON u.user_id = o.user_id
+       WHERE o.org_id = ? LIMIT 1`,
+      [orgId]
+    );
+    if (!orgRows.length) {
+      return res.status(404).json({ message: 'Organization not found.' });
+    }
+    const org = orgRows[0];
+    if (org.verified) {
+      return res.status(409).json({ message: 'Organization is already verified.' });
+    }
+
+    await query(`UPDATE organizations SET verified = TRUE WHERE org_id = ?`, [orgId]);
+
+    const notifMessage = `Congratulations! Your organization "${org.org_name}" has been verified by SaveABeat admin. You are now listed on the platform and donors can find your center.`;
+    await query(
+      `INSERT INTO notifications (user_id, type, message) VALUES (?, 'system', ?)`,
+      [org.user_id, notifMessage]
+    );
+
+    // Send approval email
+    try {
+      const transport = createMailTransport();
+      const emailFrom = process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@saveabeat.local';
+      if (transport) {
+        await transport.sendMail({
+          from: emailFrom,
+          to: org.email,
+          subject: 'SaveABeat — Your Organization Has Been Verified! 🎉',
+          html: `
+            <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;border:1px solid #eee;border-radius:12px">
+              <h2 style="color:#D62B2B">SaveABeat ❤️</h2>
+              <p>Hi <strong>${org.full_name}</strong>,</p>
+              <p>We are pleased to inform you that your organization <strong>${org.org_name}</strong> has been <strong style="color:#1f7a3d">verified</strong> and is now live on the SaveABeat platform.</p>
+              <p style="background:#effaf1;border:1px solid #a3d9b1;border-radius:8px;padding:12px;">
+                ✅ Your organization is now visible to donors in the <strong>Find Center</strong> section.
+              </p>
+              <p style="margin-top:16px"><a href="http://localhost:3000/org-dashboard.html" style="background:#D62B2B;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Go to Organization Dashboard</a></p>
+              <p style="color:#888;font-size:.82rem;margin-top:24px">Thank you for being part of the SaveABeat community.</p>
+            </div>`,
+        });
+      } else {
+        console.log(`[Org Verified] Email to ${org.email}: ${notifMessage}`);
+      }
+    } catch (emailErr) {
+      console.warn('Org verification email failed (org still verified):', emailErr.message);
+    }
+
+    res.json({ message: `Organization "${org.org_name}" has been verified successfully.` });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+// =========================
+// ORG — NOTIFICATIONS
+// =========================
+app.get('/api/org/notifications', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ message: 'Email query parameter is required.' });
+  }
+  try {
+    const rows = await query(
+      `SELECT n.notif_id AS id, n.type, n.message, n.is_read AS isRead, n.sent_at AS sentAt
+       FROM notifications n
+       INNER JOIN users u ON u.user_id = n.user_id
+       WHERE LOWER(u.email) = ? AND u.role = 'org'
+       ORDER BY n.sent_at DESC, n.notif_id DESC
+       LIMIT 50`,
+      [email]
+    );
+    res.json({ data: rows });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.patch('/api/org/notifications/:notifId/read', async (req, res) => {
+  const notifId = Number.parseInt(req.params.notifId, 10);
+  const email = String(req.body.email || '').trim().toLowerCase();
+  if (!notifId || !email) {
+    return res.status(400).json({ message: 'Notification id and email are required.' });
+  }
+  try {
+    const result = await query(
+      `UPDATE notifications n
+       INNER JOIN users u ON u.user_id = n.user_id
+       SET n.is_read = TRUE
+       WHERE n.notif_id = ? AND LOWER(u.email) = ? AND u.role = 'org'`,
+      [notifId, email]
+    );
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Notification not found.' });
+    }
+    res.json({ message: 'Notification marked as read.' });
+  } catch (error) {
+    sendDbError(res, error);
   }
 });
 
@@ -1058,11 +1235,14 @@ app.post('/api/auth/register', async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const phone = String(req.body.phone || '').trim();
   const role = String(req.body.role || 'donor').trim().toLowerCase();
-  const address = String(req.body.address || '').trim() || null;
+  const district = String(req.body.district || '').trim() || null;
+  let address = String(req.body.address || '').trim() || null;
+  if (role === 'org') {
+    address = district ? `${district}, Nepal` : address;
+  }
   const bloodGroup = String(req.body.bloodGroup || '').trim() || null;
   const password = String(req.body.password || '');
   const city = String(req.body.city || '').trim() || null;
-  const district = String(req.body.district || '').trim() || null;
   const totalDonations = Number.parseInt(req.body.totalDonations, 10);
   const profileImageName = String(req.body.profileImageName || '').trim() || null;
   const profileImageData = String(req.body.profileImageData || '').trim() || null;
@@ -1354,6 +1534,11 @@ app.put('/api/me', async (req, res) => {
 
     const user = rows[0];
 
+    let finalAddress = address;
+    if (user.role === 'org' || user.org_id) {
+      finalAddress = district ? `${district}, Nepal` : address;
+    }
+
     if (newEmail !== email) {
       const existingEmailRows = await query(
         'SELECT user_id FROM users WHERE email = ? AND user_id <> ? LIMIT 1',
@@ -1366,7 +1551,7 @@ app.put('/api/me', async (req, res) => {
 
     await query(
       'UPDATE users SET full_name = ?, email = ?, phone = ?, address = ?, city = ?, district = ?, profile_image_name = COALESCE(?, profile_image_name), profile_image_data = COALESCE(?, profile_image_data) WHERE user_id = ?',
-      [fullName || user.full_name, newEmail, phone, address, city, district, profileImageName, profileImageData, user.user_id]
+      [fullName || user.full_name, newEmail, phone, finalAddress, city, district, profileImageName, profileImageData, user.user_id]
     );
 
     if (user.donor_id) {
@@ -1390,7 +1575,7 @@ app.put('/api/me', async (req, res) => {
     if (user.org_id) {
       await query(
         'UPDATE organizations SET org_name = ?, address = ?, contact = ?, building_photo = COALESCE(?, building_photo), building_photo_name = COALESCE(?, building_photo_name) WHERE user_id = ?',
-        [orgName || fullName || user.org_name, address || user.org_address, phone || null, orgPhotoData, orgPhotoName, user.user_id]
+        [orgName || fullName || user.org_name, finalAddress || user.org_address, phone || null, orgPhotoData, orgPhotoName, user.user_id]
       );
 
       const normalizedServices = services

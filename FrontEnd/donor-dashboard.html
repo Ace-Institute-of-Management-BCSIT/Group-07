@@ -973,12 +973,24 @@
 
     function buildProfileRows(user){
       const donorProfile = user.donorProfile || {};
+      if (profileEditing) {
+        return [
+          { field: 'fullName', label: 'Full Name', value: user.fullName },
+          { field: 'email', label: 'Email', value: user.email, type: 'email' },
+          { field: 'phone', label: 'Contact', value: user.phone },
+          { field: 'role', label: 'Role', value: 'Donor', readonly: true },
+          { field: 'address', label: 'Street/Tol', value: user.address },
+          { field: 'district', label: 'District', value: user.district },
+          { field: 'city', label: 'City / Municipality', value: user.city },
+          { field: 'totalDonations', label: 'Total Donations', value: donorProfile.totalDonations, type: 'number' },
+        ];
+      }
       return [
         { field: 'fullName', label: 'Full Name', value: user.fullName },
         { field: 'email', label: 'Email', value: user.email, type: 'email' },
         { field: 'phone', label: 'Contact', value: user.phone },
         { field: 'role', label: 'Role', value: 'Donor', readonly: true },
-        { field: 'address', label: 'Address', value: user.address },
+        { field: 'address', label: 'Address', value: user.address && user.district ? `${user.address}, ${user.district}` : (user.address || user.district || '-'), readonly: true },
         { field: 'district', label: 'District', value: user.district },
         { field: 'city', label: 'City / Municipality', value: user.city },
         { field: 'totalDonations', label: 'Total Donations', value: donorProfile.totalDonations, type: 'number' },

@@ -1014,7 +1014,7 @@ async function publishBloodRequest() {
       document.getElementById('infoManager').textContent = org.managerName || '-';
       document.getElementById('infoEmail').textContent = org.email || '-';
       document.getElementById('infoPhone').textContent = org.phone || org.contact || '-';
-      document.getElementById('infoAddress').textContent = org.address || '-';
+      document.getElementById('infoAddress').textContent = org.address || (org.district ? org.district + ', Nepal' : '-');
       document.getElementById('infoVerified').textContent = org.verified ? 'Verified' : 'Pending verification';
       document.getElementById('infoTotalCampaigns').textContent = formatNumber(metrics.totalCampaigns);
       document.getElementById('infoTotalSpots').textContent = formatNumber(metrics.totalCampaignSpots);
@@ -1031,8 +1031,8 @@ async function publishBloodRequest() {
         ['Manager', org.managerName || '-'],
         ['Email', org.email || '-'],
         ['Phone', org.phone || org.contact || '-'],
-        ['Address', org.address || '-'],
-        ['Type', org.orgType || '-'],
+        ['Address', org.address || (org.district ? org.district + ', Nepal' : '-')],
+        ['Type', org.orgType === 'clinic' ? 'Blood Bank' : (org.orgType === 'ngo' ? 'NGO' : (org.orgType === 'hospital' ? 'Hospital' : (org.orgType ? org.orgType.toUpperCase() : '-')))],
         ['Verification', org.verified ? 'Verified' : 'Pending'],
         ['District', org.district || '-'],
       ].map(([label, value]) => `

@@ -471,10 +471,22 @@ function buildProfileRows(user){
       { field: 'email', label: 'Email', value: user.email, type: 'email' },
       { field: 'phone', label: 'Phone Number', value: user.phone || organization.contact },
       { field: 'role', label: 'Role', value: getRoleLabel(user.role), readonly: true },
-      { field: 'address', label: 'Address', value: organization.address || user.address },
       { field: 'district', label: 'District', value: user.district },
       { field: 'city', label: 'City / Municipality', value: user.city },
       { field: 'premisesPhoto', label: 'Premises Photo', value: organization.buildingPhoto, full: true },
+    ];
+  }
+
+  if (profileEditing) {
+    return [
+      { field: 'fullName', label: 'Full Name', value: user.fullName },
+      { field: 'email', label: 'Email', value: user.email, type: 'email' },
+      { field: 'phone', label: 'Contact', value: user.phone },
+      { field: 'role', label: 'Role', value: getRoleLabel(user.role), readonly: true },
+      { field: 'address', label: 'Street/Tol', value: user.address },
+      { field: 'district', label: 'District', value: user.district },
+      { field: 'city', label: 'City / Municipality', value: user.city },
+      { field: 'totalDonations', label: 'Total Donations', value: donorProfile.totalDonations, type: 'number' },
     ];
   }
 
@@ -483,7 +495,7 @@ function buildProfileRows(user){
     { field: 'email', label: 'Email', value: user.email, type: 'email' },
     { field: 'phone', label: 'Contact', value: user.phone },
     { field: 'role', label: 'Role', value: getRoleLabel(user.role), readonly: true },
-    { field: 'address', label: 'Address', value: user.address },
+    { field: 'address', label: 'Address', value: user.address && user.district ? `${user.address}, ${user.district}` : (user.address || user.district || '-'), readonly: true },
     { field: 'district', label: 'District', value: user.district },
     { field: 'city', label: 'City / Municipality', value: user.city },
     { field: 'totalDonations', label: 'Total Donations', value: donorProfile.totalDonations, type: 'number' },
@@ -610,10 +622,10 @@ async function saveProfileChanges(){
   const fullName = String(grid.querySelector('[data-profile-field="fullName"]')?.value || '').trim();
   const orgName = String(grid.querySelector('[data-profile-field="orgName"]')?.value || '').trim();
   const newEmail = String(grid.querySelector('[data-profile-field="email"]')?.value || user.email || '').trim();
-  const address = String(grid.querySelector('[data-profile-field="address"]')?.value || '').trim();
+  const district = String(grid.querySelector('[data-profile-field="district"]')?.value || '').trim();
+  const address = user.role === 'org' ? (district ? district + ', Nepal' : '') : String(grid.querySelector('[data-profile-field="address"]')?.value || '').trim();
   const phone = String(grid.querySelector('[data-profile-field="phone"]')?.value || '').trim();
   const city = String(grid.querySelector('[data-profile-field="city"]')?.value || '').trim();
-  const district = String(grid.querySelector('[data-profile-field="district"]')?.value || '').trim();
   const totalDonations = String(grid.querySelector('[data-profile-field="totalDonations"]')?.value || '').trim();
   const profilePictureFile = document.querySelector('[data-profile-field="profilePictureHeader"]')?.files?.[0];
   const premisesHeaderFile = document.querySelector('[data-profile-field="premisesPhotoHeader"]')?.files?.[0];

@@ -95,13 +95,29 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
     </div>
   </div>
 
+  <div class="role-gate" id="orgGate">
+    <h3>Select organization type</h3>
+    <p>Choose the type of organization you want to register.</p>
+    <div class="role-choice-grid">
+      <button class="role-choice" type="button" onclick="location.href='register.html?role=org&orgType=bloodbank'">
+        <strong>Blood Bank</strong>
+        <span>Register a blood transfusion service.</span>
+      </button>
+      <button class="role-choice" type="button" onclick="location.href='register.html?role=org&orgType=ngo'">
+        <strong>NGO</strong>
+        <span>Register a non-governmental organization.</span>
+      </button>
+      <button class="role-choice" type="button" onclick="location.href='register.html?role=org&orgType=hospital'">
+        <strong>Hospital</strong>
+        <span>Register a hospital or clinic.</span>
+      </button>
+    </div>
+  </div>
+
   <h2>Join SaveABeat</h2>
-  <p class="sub">Create your account and start making a difference in people's lives</p>
 
   <div class="error-msg" id="errMsg"></div>
   <div class="success-msg" id="infoMsg"></div>
-
-  <div class="helper-text" id="modeHelper"></div>
 
   <form id="registerForm">
     <div class="signup-fields" id="signupFields">
@@ -140,6 +156,7 @@ const DEFAULT_ORG_PHOTO_LABEL = 'buildingPhoto';
 const AUTH_KEY = 'saveabeatUser';
 
 const role = new URLSearchParams(location.search).get('role');
+const orgType = new URLSearchParams(location.search).get('orgType');
 const dynamicFields = document.getElementById('dynamicFields');
 const modeHelper = document.getElementById('modeHelper');
 const registerForm = document.getElementById('registerForm');
@@ -332,7 +349,16 @@ function updateConfirmPasswordStatus(){
   if(confirm){setFieldError('reg-pw2', '');}
 }
 
+function updateDocUploadLabel() {
+  const docType = document.getElementById('orgDocType')?.value;
+  const label = document.getElementById('orgDocLabel');
+  if (label && docType) {
+    label.innerHTML = `${docType} <span class="req">*</span>`;
+  }
+}
+
 function bindLiveValidation(){
+  document.getElementById('orgDocType')?.addEventListener('change', updateDocUploadLabel);
   document.getElementById('district')?.addEventListener('change', () => {
     setFieldError('district', '');
     updateCityOptions();
@@ -364,7 +390,6 @@ function bindLiveValidation(){
 function openVerificationView(){
   signupFields.classList.add('hidden');
   verificationView.classList.add('open');
-  modeHelper.textContent='Enter the verification code to finish creating your account.';
   document.getElementById('verificationCopy').textContent=`Enter the 6-digit code sent to ${verificationEmail}.`;
   const codeInput=document.getElementById('emailCode');
   if(codeInput){codeInput.focus();}
@@ -373,9 +398,6 @@ function openVerificationView(){
 function backToSignup(){
   verificationView.classList.remove('open');
   signupFields.classList.remove('hidden');
-  modeHelper.textContent = role === 'org'
-    ? 'Organization accounts need verification documents and a building photo.'
-    : 'Donor accounts need a profile picture, blood group, city, and district.';
   setFieldError('emailCode', '');
 }
 
@@ -422,10 +444,12 @@ function validateEmailAndPassword(email, pw, pw2){
 
 function renderRegisterForm(){
   const gate=document.getElementById('roleGate');
+  const orgGate=document.getElementById('orgGate');
   const backLink=document.getElementById('backToRoles');
 
   if(!role){
     gate?.classList.add('open');
+    orgGate?.classList.remove('open');
     backLink?.classList.remove('open');
     document.querySelector('.card h2').textContent = 'Choose Sign Up Type';
     document.querySelector('.card .sub').textContent = 'Pick the account type first, then continue to the matching sign up form.';
@@ -436,7 +460,23 @@ function renderRegisterForm(){
     return;
   }
 
+  if(role === 'org' && !orgType){
+    gate?.classList.remove('open');
+    orgGate?.classList.add('open');
+    backLink?.classList.add('open');
+    backLink?.setAttribute('onclick', "location.href='register.html'");
+    backLink.textContent = 'Change account type';
+    document.querySelector('.card h2').textContent = 'Select Organization Type';
+    document.querySelector('.card .sub').textContent = 'Choose the type of organization you represent to show the matching registration form.';
+    footerLink.innerHTML = 'Already have an account? <a href="login.html?role=org">Sign in here</a>';
+    dynamicFields.innerHTML = '';
+    signupFields.classList.add('hidden');
+    verificationView.classList.remove('open');
+    return;
+  }
+
   gate?.classList.remove('open');
+  orgGate?.classList.remove('open');
   backLink?.classList.add('open');
   signupFields.classList.remove('hidden');
 
@@ -446,22 +486,52 @@ function renderRegisterForm(){
   }
 
   if(role === 'org'){
-    document.title = 'SaveABeat — Organization Register';
-    document.querySelector('.card h2').textContent = 'Organization Registration';
-    document.querySelector('.card .sub').textContent = 'Create your organization account, upload verification files, and continue to login.';
-    modeHelper.textContent = 'Organization accounts need verification documents and a building photo.';
+    backLink?.setAttribute('onclick', "location.href='register.html?role=org'");
+    backLink.textContent = 'Change organization type';
+
+    let orgNameLabel = 'Organization Name';
+    let orgNamePlaceholder = 'Enter organization name';
+    let docTypes = [];
+
+    if (orgType === 'bloodbank') {
+      document.title = 'SaveABeat — Blood Bank Register';
+      document.querySelector('.card h2').textContent = 'Blood Bank Registration';
+      orgNameLabel = 'Blood Bank Name';
+      orgNamePlaceholder = 'Enter blood bank name';
+      docTypes = [
+        'Blood Transfusion Service Center Operating License',
+        'Blood Transfusion Service Registration/Renewal Certificate (if recently renewed)'
+      ];
+    } else if (orgType === 'ngo') {
+      document.title = 'SaveABeat — NGO Register';
+      document.querySelector('.card h2').textContent = 'NGO Registration';
+      orgNameLabel = 'NGO Name';
+      orgNamePlaceholder = 'Enter NGO name';
+      docTypes = [
+        'Social Welfare Council (SWC) Affiliation Certificate',
+        'District Administration Office (DAO) Registration Certificate'
+      ];
+    } else if (orgType === 'hospital') {
+      document.title = 'SaveABeat — Hospital Register';
+      document.querySelector('.card h2').textContent = 'Hospital Registration';
+      orgNameLabel = 'Hospital Name';
+      orgNamePlaceholder = 'Enter hospital name';
+      docTypes = [
+        'Health Facility Operation License',
+        'Health Facility Registration Certificate'
+      ];
+    }
+
     footerLink.innerHTML = 'Already have an account? <a href="login.html?role=org">Sign in here</a>';
     submitButton.textContent = 'Send Verification Code';
+
+    const renderDocOptions = (opts) => opts.map(o => `<option value="${o}">${o}</option>`).join('');
+
     dynamicFields.innerHTML = `
       <div class="form-group">
-        <label>Organization Name <span class="req">*</span></label>
-        <input type="text" id="orgName" placeholder="Enter organization name"/>
+        <label>${orgNameLabel} <span class="req">*</span></label>
+        <input type="text" id="orgName" placeholder="${orgNamePlaceholder}"/>
         ${fieldErrorHtml('orgName')}
-      </div>
-      <div class="form-group">
-        <label>Address <span class="req">*</span></label>
-        <input type="text" id="address" placeholder="Enter organization address"/>
-        ${fieldErrorHtml('address')}
       </div>
       <div class="form-group">
         <label>District <span class="req">*</span></label>
@@ -495,9 +565,15 @@ function renderRegisterForm(){
       </div>
       
       <div class="form-group">
-        <label>Verification Documents <span class="req">*</span></label>
+        <label>Document Type <span class="req">*</span></label>
+        <select id="orgDocType" onchange="updateDocUploadLabel()">
+          ${renderDocOptions(docTypes)}
+        </select>
+      </div>
+      <div class="form-group">
+        <label id="orgDocLabel">${docTypes[0] || 'Verification Document'} <span class="req">*</span></label>
         <input class="file-input" type="file" id="orgDocuments" accept=".pdf,image/*"/>
-        <div class="field-note">Upload your verification document as PDF or image.</div>
+        <div class="field-note" id="orgDocNote">Upload the selected document.</div>
         ${fieldErrorHtml('orgDocuments')}
       </div>
       <div class="form-group">
@@ -534,8 +610,6 @@ function renderRegisterForm(){
 
   document.title = 'SaveABeat — Create Account';
   document.querySelector('.card h2').textContent = 'Join SaveABeat';
-  document.querySelector('.card .sub').textContent = 'Create your account and start making a difference in people\'s lives';
-  modeHelper.textContent = 'Donor accounts need a profile picture, blood group, city, and district.';
   footerLink.innerHTML = 'Already have an account? <a href="login.html?role=donor">Sign in here</a>';
   submitButton.textContent = 'Send Verification Code';
   dynamicFields.innerHTML = `
@@ -554,8 +628,8 @@ function renderRegisterForm(){
       <input type="tel" id="phone" placeholder="Enter your phone number"/>
     </div>
     <div class="form-group">
-      <label>Address <span class="req">*</span></label>
-      <input type="text" id="address" placeholder="Enter your address"/>
+      <label>Street/Tol <span class="req">*</span></label>
+      <input type="text" id="address" placeholder="Enter your street / tol"/>
       ${fieldErrorHtml('address')}
     </div>
     <div class="form-group">
@@ -657,9 +731,9 @@ async function handleRegister(event){
   try{
     if(role === 'org'){
       const orgName=document.getElementById('orgName').value.trim();
-      const address=document.getElementById('address').value.trim();
       const district=document.getElementById('district').value.trim();
       const city=document.getElementById('city').value.trim();
+      const address=district ? district + ', Nepal' : '';
       const email=document.getElementById('reg-email').value.trim().toLowerCase();
       const phone=document.getElementById('phone').value.trim();
       const operatingHours=document.getElementById('operatingHours').value.trim();
@@ -667,9 +741,15 @@ async function handleRegister(event){
       const pw2=document.getElementById('reg-pw2').value;
       const docs=document.getElementById('orgDocuments').files[0];
       const photo=document.getElementById('orgPhoto').files[0];
+      const orgDocType=document.getElementById('orgDocType')?.value || 'Verification Document';
       let valid=true;
-      if(!orgName){valid=showFieldError('orgName', 'Organization name is required.');}
-      if(!address){valid=showFieldError('address', 'Address is required.');}
+      if(!orgName){
+        let nameErr = 'Organization name is required.';
+        if (orgType === 'bloodbank') nameErr = 'Blood Bank name is required.';
+        else if (orgType === 'ngo') nameErr = 'NGO name is required.';
+        else if (orgType === 'hospital') nameErr = 'Hospital name is required.';
+        valid=showFieldError('orgName', nameErr);
+      }
       if(!district){valid=showFieldError('district', 'Please select organization district.');}
       if(!city){valid=showFieldError('city', 'Please select organization city or municipality.');}
       if(!phone){valid=showFieldError('phone', 'Contact number is required.');}
@@ -697,6 +777,7 @@ async function handleRegister(event){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           role:'org',
+          orgType,
           orgName,
           fullName: orgName,
           address,
@@ -706,7 +787,7 @@ async function handleRegister(event){
           phone,
           operatingHours,
           
-          orgDocumentsName: docs.name,
+          orgDocumentsName: orgDocType + ' — ' + docs.name,
           orgDocumentsData: await fileToDataUrl(docs),
           orgPhotoName: photo.name,
           orgPhotoData: await fileToDataUrl(photo),
@@ -741,7 +822,7 @@ async function handleRegister(event){
     const pw2=document.getElementById('reg-pw2').value;
     let valid=true;
     if(!name){valid=showFieldError('fullname', 'Full name is required.');}
-    if(!address){valid=showFieldError('address', 'Address is required.');}
+    if(!address){valid=showFieldError('address', 'Street/Tol is required.');}
     if(!district){valid=showFieldError('district', 'Please select your district first.');}
     if(!city){valid=showFieldError('city', 'Please select your city or municipality.');}
     if(!profilePicture){valid=showFieldError('profilePicture', 'Profile picture is required.');}
