@@ -248,12 +248,14 @@ function mapCenterRow(row) {
   const availability = row.availability || 'Medium';
   const imageUrl = row.image_url || row.building_photo || '';
   return {
-    id: row.listing_id || row.org_id,
+    id: row.org_id,
     orgId: row.org_id,
     name: row.display_name || row.org_name,
     orgName: row.org_name,
     orgType: row.org_type,
     address: row.address,
+    district: row.district || '',
+    city: row.city || '',
     phone: row.phone || row.contact || '',
     hours: row.hours || 'Contact organization for hours',
     availability,
@@ -262,6 +264,7 @@ function mapCenterRow(row) {
     imageUrl,
     img: imageUrl,
     verified: Boolean(row.verified),
+    verification_documents: row.verification_documents || null,
     latitude: row.latitude,
     longitude: row.longitude,
   };
@@ -270,10 +273,12 @@ function mapCenterRow(row) {
 app.get('/api/centers', async (_req, res) => {
   try {
     const rows = await query(
-      `SELECT o.org_id, o.org_name, o.org_type, o.address, o.contact, o.building_photo, o.verified,
+      `SELECT o.org_id, o.org_name, o.org_type, o.address, o.contact, o.building_photo, o.verified, o.verification_documents,
+              u.district, u.city,
               cl.listing_id, cl.display_name, cl.phone, cl.hours, cl.distance_km,
               cl.availability, cl.services, cl.image_url, cl.latitude, cl.longitude
        FROM organizations o
+       LEFT JOIN users u ON u.user_id = o.user_id
        LEFT JOIN center_listings cl ON cl.org_id = o.org_id
        ORDER BY o.org_name ASC`
     );
@@ -287,6 +292,8 @@ app.get('/api/centers', async (_req, res) => {
         services: row.services,
         availability: row.availability || 'Medium',
         display_name: row.display_name || row.org_name,
+        district: row.district,
+        city: row.city,
       })),
     });
   } catch (error) {
@@ -669,7 +676,7 @@ app.post('/api/org/requests', async (req, res) => {
 
   try {
     const orgRows = await query(
-      `SELECT o.org_id, o.org_name, o.address, o.contact,
+      `SELECT o.org_id, o.org_name, o.verified, o.address, o.contact,
               u.full_name, u.phone, u.city, u.district
        FROM users u
        INNER JOIN organizations o ON o.user_id = u.user_id
@@ -683,6 +690,9 @@ app.post('/api/org/requests', async (req, res) => {
     }
 
     const org = orgRows[0];
+    if (!org.verified) {
+      return res.status(403).json({ message: 'Only verified organizations can create blood requests.' });
+    }
     const city = org.city || 'Kathmandu';
     const district = org.district || 'Kathmandu';
 
@@ -790,7 +800,7 @@ app.post('/api/org/campaigns', async (req, res) => {
 
   try {
     const orgRows = await query(
-      `SELECT o.org_id, o.org_name
+      `SELECT o.org_id, o.org_name, o.verified
        FROM users u
        INNER JOIN organizations o ON o.user_id = u.user_id
        WHERE LOWER(u.email) = ? AND u.role = 'org'
@@ -800,6 +810,10 @@ app.post('/api/org/campaigns', async (req, res) => {
 
     if (!orgRows.length) {
       return res.status(404).json({ message: 'Organization account not found.' });
+    }
+
+    if (!orgRows[0].verified) {
+      return res.status(403).json({ message: 'Only verified organizations can create campaigns.' });
     }
 
     const insertResult = await query(
@@ -967,6 +981,44 @@ app.delete('/api/org/campaigns/:eventId', async (req, res) => {
     }
     await query('DELETE FROM notifications WHERE event_id = ?', [eventId]);
     res.json({ message: 'Campaign deleted successfully.' });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.post('/api/org/:orgId/verify', async (req, res) => {
+  const orgId = Number.parseInt(req.params.orgId, 10);
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const role = String(req.body.role || '').trim().toLowerCase();
+
+  if (!orgId || !email) {
+    return res.status(400).json({ message: 'Organization id and admin email are required.' });
+  }
+
+  if (role !== 'admin') {
+    return res.status(403).json({ message: 'Only admins can verify organizations.' });
+  }
+
+  try {
+    const adminRows = await query(
+      `SELECT u.user_id FROM users u WHERE LOWER(u.email) = ? AND u.role = 'admin' LIMIT 1`,
+      [email]
+    );
+
+    if (!adminRows.length) {
+      return res.status(403).json({ message: 'Admin account not found.' });
+    }
+
+    const result = await query(
+      `UPDATE organizations SET verified = TRUE WHERE org_id = ?`,
+      [orgId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Organization not found.' });
+    }
+
+    res.json({ message: 'Organization verified successfully.' });
   } catch (error) {
     sendDbError(res, error);
   }
@@ -1146,8 +1198,8 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
-    if (!orgName || !address || !orgDocumentsData || !orgDocumentsName || !orgPhotoData || !orgPhotoName) {
-      return res.status(400).json({ message: 'Organization name, address, documents, and photo are required.' });
+    if (!orgName || !orgDocumentsData || !orgDocumentsName || !orgPhotoData || !orgPhotoName) {
+      return res.status(400).json({ message: 'Organization name, documents, and photo are required.' });
     }
 
     if (!operatingHours) {

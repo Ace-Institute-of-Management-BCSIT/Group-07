@@ -30,7 +30,7 @@ CREATE TABLE organizations (
   user_id INT NOT NULL,
   org_name VARCHAR(150) NOT NULL,
   org_type ENUM('hospital', 'ngo', 'clinic', 'individual') NOT NULL,
-  address TEXT NOT NULL,
+  address TEXT,
   contact VARCHAR(20),
   verification_documents LONGTEXT,
   verification_documents_name VARCHAR(255),
