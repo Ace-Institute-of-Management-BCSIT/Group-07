@@ -459,11 +459,6 @@ function renderRegisterForm(){
         ${fieldErrorHtml('orgName')}
       </div>
       <div class="form-group">
-        <label>Address <span class="req">*</span></label>
-        <input type="text" id="address" placeholder="Enter organization address"/>
-        ${fieldErrorHtml('address')}
-      </div>
-      <div class="form-group">
         <label>District <span class="req">*</span></label>
         <select id="district">
           ${renderOptions(NEPAL_DISTRICTS, 'Select organization district')}
@@ -657,7 +652,6 @@ async function handleRegister(event){
   try{
     if(role === 'org'){
       const orgName=document.getElementById('orgName').value.trim();
-      const address=document.getElementById('address').value.trim();
       const district=document.getElementById('district').value.trim();
       const city=document.getElementById('city').value.trim();
       const email=document.getElementById('reg-email').value.trim().toLowerCase();
@@ -669,7 +663,6 @@ async function handleRegister(event){
       const photo=document.getElementById('orgPhoto').files[0];
       let valid=true;
       if(!orgName){valid=showFieldError('orgName', 'Organization name is required.');}
-      if(!address){valid=showFieldError('address', 'Address is required.');}
       if(!district){valid=showFieldError('district', 'Please select organization district.');}
       if(!city){valid=showFieldError('city', 'Please select organization city or municipality.');}
       if(!phone){valid=showFieldError('phone', 'Contact number is required.');}
@@ -699,7 +692,6 @@ async function handleRegister(event){
           role:'org',
           orgName,
           fullName: orgName,
-          address,
           district,
           city,
           email,

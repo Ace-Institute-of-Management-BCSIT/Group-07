@@ -226,25 +226,19 @@
 
 <div class="nav-right">
   <div class="profile-shell" id="profileShell">
-    <button class="profile-trigger" id="profileTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
+    <button class="profile-trigger" id="profileTrigger" type="button" onclick="document.getElementById('profileTrigger').dispatchEvent(new Event('navigate-org-details'))">
       <span class="profile-trigger-left">
         <span class="profile-initial" id="profileInitial">O</span>
         <span class="profile-name" id="orgNameDisplay">Organization</span>
       </span>
-      <span class="profile-arrow" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-      </span>
     </button>
     <div class="profile-menu" id="profileMenu" role="menu" aria-label="Profile menu">
-      <button type="button" id="profileSummaryBtn" role="menuitem">View Summary</button>
-      <div class="menu-sep"></div>
-      <button type="button" id="logoutBtn" role="menuitem">Logout</button>
     </div>
   </div>
   <button
     type="button"
     id="directLogoutBtn"
-    onclick="sessionStorage.removeItem('saveabeatUser');localStorage.removeItem('saveabeatUser');location.replace('login.html?role=org');"
+    onclick="sessionStorage.removeItem('saveabeatUser');localStorage.removeItem('saveabeatUser');location.replace('index.html');"
     style="background:none;border:1px solid #e8e8e8;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:.85rem;color:#555;margin-left:8px;font-family:inherit">
     Logout
   </button>
@@ -1127,10 +1121,8 @@ async function publishBloodRequest() {
       const profileTrigger = document.getElementById('profileTrigger');
       const profileBackdrop = document.getElementById('profileBackdrop');
       const profileCloseBtn = document.getElementById('profileCloseBtn');
-      const profileSummaryBtn = document.getElementById('profileSummaryBtn');
       const profileSummaryCloseBtn = document.getElementById('profileSummaryCloseBtn');
       const profileLogoutBtn = document.getElementById('profileLogoutBtn');
-      const logoutBtn = document.getElementById('logoutBtn');
       const startCampaignBtn = document.getElementById('startCampaignBtn');
       document.getElementById('requestBloodBtn')?.addEventListener('click', openRequestModal);
       document.getElementById('requestCloseBtn')?.addEventListener('click', closeRequestModal);
@@ -1150,13 +1142,11 @@ async function publishBloodRequest() {
       function closeProfileMenu(){
         profileShell.classList.remove('open');
         profileMenu.classList.remove('open');
-        profileTrigger.setAttribute('aria-expanded', 'false');
       }
 
-      profileTrigger.addEventListener('click', () => {
-        const isOpen = profileMenu.classList.toggle('open');
-        profileShell.classList.toggle('open', isOpen);
-        profileTrigger.setAttribute('aria-expanded', String(isOpen));
+      profileTrigger.addEventListener('navigate-org-details', () => {
+        setActiveTab('overview');
+        document.getElementById('panel-overview')?.scrollIntoView({ behavior: 'auto', block: 'start' });
       });
 
       document.addEventListener('click', (event) => {
@@ -1171,14 +1161,7 @@ async function publishBloodRequest() {
         document.getElementById('panel-overview')?.scrollIntoView({ behavior: 'auto', block: 'start' });
       }
 
-      function doLogout(){
-        closeProfileMenu();
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-        location.replace('index.html');
-      }
-
-      profileSummaryBtn.addEventListener('click', (event) => { event.preventDefault(); goToOrgDetails(); });
-      profileCloseBtn.addEventListener('click', (event) => { event.preventDefault(); closeProfileMenu(); });
+      profileCloseBtn.addEventListener('click', (event) => { event.preventDefault(); goToOrgDetails(); });
       profileSummaryCloseBtn.addEventListener('click', (event) => { event.preventDefault(); goToOrgDetails(); });
       profileBackdrop.addEventListener('click', (event) => {
         if (event.target === profileBackdrop) {
@@ -1186,8 +1169,11 @@ async function publishBloodRequest() {
         }
       });
 
-      logoutBtn.addEventListener('click', (event) => { event.preventDefault(); doLogout(); });
-      profileLogoutBtn.addEventListener('click', (event) => { event.preventDefault(); doLogout(); });
+      profileLogoutBtn.addEventListener('click', (event) => { 
+        event.preventDefault(); 
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        location.replace('index.html');
+      });
 
       startCampaignBtn?.addEventListener('click', openCampaignModal);
       document.getElementById('campaignForm')?.addEventListener('submit', (event) => {
@@ -1228,16 +1214,9 @@ async function publishBloodRequest() {
 
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
-          closeProfileMenu();
           closeCampaignModal();
           closeCampaignDetailModal();
           closeRequestModal();
-        }
-      });
-
-      profileTrigger.addEventListener('blur', () => {
-        if (!profileShell.contains(document.activeElement)) {
-          closeProfileMenu();
         }
       });
 

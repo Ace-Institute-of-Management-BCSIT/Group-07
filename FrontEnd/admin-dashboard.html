@@ -531,6 +531,7 @@ nav{
         <div class="detail-actions-right">
           <button class="btn-outline" type="button" id="detailStopBtn">Stop Campaign</button>
           <button class="btn-red" type="button" id="detailDeleteBtn">Delete Campaign</button>
+          <button class="btn-red" type="button" id="detailVerifyBtn" style="display:none">Verify Account</button>
         </div>
       </div>
     </div>
@@ -630,6 +631,7 @@ function openDetailModal(type, item){
   const grid = document.getElementById('detailGrid');
   const stopBtn = document.getElementById('detailStopBtn');
   const deleteBtn = document.getElementById('detailDeleteBtn');
+  const verifyBtn = document.getElementById('detailVerifyBtn');
 
   if(!backdrop || !title || !subtitle || !avatar || !grid || !stopBtn || !deleteBtn){
     return;
@@ -637,25 +639,31 @@ function openDetailModal(type, item){
 
   if(type === 'org'){
     title.textContent = item.orgName || item.name || 'Organization Details';
-    subtitle.textContent = item.address || 'Organization information';
+    subtitle.textContent = item.verified ? 'Verified account' : 'Pending verification';
     avatar.textContent = initialForName(item.orgName || item.name);
-    grid.innerHTML = [
+    
+    // Build grid items for organization
+    const gridItems = [
       ['Organization', item.orgName || item.name || '-'],
-      ['Type', item.orgType || '-'],
-      ['Address', item.address || '-'],
-      ['Phone', item.phone || '-'],
-      ['Availability', item.avail || '-'],
-      ['Services', Array.isArray(item.services) ? item.services.join(', ') : '-'],
-      ['Verified', item.verified ? 'Verified' : 'Pending verification'],
-      ['Distance', item.dist || '-'],
-    ].map(([label, value]) => `
+      ['District', item.district || '-'],
+      ['Municipality', item.city || '-'],
+    ];
+    
+    // Add legal document as an item
+    if(item.verification_documents){
+      gridItems.push(['Legal Document', `<a href="${escapeHtml(item.verification_documents)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
+    }
+    
+    grid.innerHTML = gridItems.map(([label, value]) => `
       <div class="detail-item">
         <div class="label">${escapeHtml(label)}</div>
-        <div class="value">${escapeHtml(value)}</div>
+        <div class="value">${value}</div>
       </div>
     `).join('');
+    
     stopBtn.style.display = 'none';
     deleteBtn.style.display = 'none';
+    verifyBtn.style.display = item.verified ? 'none' : 'inline-flex';
   } else {
     title.textContent = item.title || 'Campaign Details';
     subtitle.textContent = item.orgName || item.org || 'Campaign information';
@@ -667,7 +675,6 @@ function openDetailModal(type, item){
       ['Date', formatDateString(item.date)],
       ['Time', item.time || '-'],
       ['Location', item.location || '-'],
-      ['Distance', item.dist || '-'],
       ['Spots', `${item.spots ?? '-'} / ${item.total ?? '-'}`],
     ].map(([label, value]) => `
       <div class="detail-item">
@@ -677,6 +684,7 @@ function openDetailModal(type, item){
     `).join('');
     stopBtn.style.display = item.state === 'completed' ? 'none' : 'inline-flex';
     deleteBtn.style.display = 'inline-flex';
+    verifyBtn.style.display = 'none';
   }
 
   backdrop.classList.add('open');
@@ -722,6 +730,33 @@ async function modifyCampaign(action){
   }
 }
 
+async function verifyOrganization(){
+  const user = getStoredUser();
+  const detail = currentDetail;
+  if(!user || !detail || detail.type !== 'org'){
+    return;
+  }
+
+  try{
+    const response = await fetch(`/api/org/${detail.item.orgId}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, role: user.role }),
+    });
+    const payload = await readJsonResponse(response);
+    if(!response.ok){
+      alert(payload.message || 'Unable to verify organization.');
+      return;
+    }
+
+    closeDetailModal();
+    await loadAdminData();
+    alert(payload.message || 'Organization verified successfully.');
+  }catch(error){
+    alert(error.message || 'Unable to verify organization.');
+  }
+}
+
 function summaryLabel(org){
   return org.verified ? 'Verified' : 'Pending';
 }
@@ -731,19 +766,11 @@ function organizationCardMarkup(org){
     <article class="card">
       <div class="card-img">
         <img src="${escapeHtml(org.img || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=900&auto=format&fit=crop&q=70')}" alt="${escapeHtml(org.orgName || org.name)}" loading="lazy"/>
-        <span class="badge">${escapeHtml(summaryLabel(org))}</span>
+        <span class="badge ${org.verified ? 'completed' : ''}">${org.verified ? 'Verified' : 'Pending'}</span>
       </div>
       <div class="body">
         <h3>${escapeHtml(org.orgName || org.name)}</h3>
         <p>${escapeHtml(org.address || 'Address not listed')}</p>
-        <div class="meta-row">
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${escapeHtml(org.dist || 'N/A')}</span>
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${escapeHtml(org.phone || 'N/A')}</span>
-        </div>
-        <div class="card-stats">
-          <div class="stat-box"><strong>${escapeHtml(org.avail || 'Medium')}</strong><span>Availability</span></div>
-          <div class="stat-box"><strong>${escapeHtml((org.services || []).length || 0)}</strong><span>Services</span></div>
-        </div>
         <div class="card-actions">
           <button class="detail-btn" type="button" data-detail-kind="org" data-detail-data="${encodeDetailData(org)}">View Details</button>
         </div>
@@ -890,6 +917,7 @@ document.querySelectorAll('.nav-tab').forEach((link) => {
 document.getElementById('profileTrigger')?.addEventListener('click', toggleProfileMenu);
 document.getElementById('logoutBtn')?.addEventListener('click', logout);
 document.getElementById('detailCloseBtn')?.addEventListener('click', closeDetailModal);
+document.getElementById('detailVerifyBtn')?.addEventListener('click', verifyOrganization);
 document.getElementById('detailStopBtn')?.addEventListener('click', () => modifyCampaign('stop'));
 document.getElementById('detailDeleteBtn')?.addEventListener('click', () => {
   const detail = currentDetail;

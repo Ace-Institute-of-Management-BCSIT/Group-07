@@ -37,23 +37,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
 .center-info{padding:18px}
 .center-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
 .center-header h3{font-size:.95rem;font-weight:600}
-.avail-badge{font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-.avail-high{background:#e8f5e9;color:#2e7d32}
-.avail-med{background:#fff8e1;color:#f57f17}
-.avail-low{background:#fdecea;color:var(--red)}
 .center-meta{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .center-meta-row{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--mid)}
 .center-meta-row svg{color:var(--soft);flex-shrink:0;width:13px;height:13px}
-.services{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.service-tag{font-size:.73rem;padding:3px 10px;background:#f0f0f0;border-radius:20px;color:var(--mid);font-weight:500}
 .center-btns{display:flex;gap:8px}
 .btn-outline{background:var(--white);border:1.5px solid var(--border);color:var(--ink);font:500 .82rem var(--ff-body);padding:7px 14px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:border-color .2s}
 .btn-outline:hover{border-color:var(--ink)}
 .btn-sm-red{background:var(--red);color:var(--white);border:none;font:600 .82rem var(--ff-body);padding:7px 14px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
 .btn-sm-red:hover{background:var(--red-dark)}
-.map-note{background:#f0f7ff;border:1px solid #c5ddf9;border-radius:8px;padding:16px 20px;display:flex;gap:12px;align-items:flex-start;margin-top:28px}
-.map-note svg{color:#1a6fa8;flex-shrink:0;margin-top:2px}
-.map-note p{font-size:.85rem;color:#1a4a72;line-height:1.6}
 footer{background:#1a1a2e;color:#ccc;padding:48px}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:32px}
 .footer-brand p{font-size:.85rem;color:#999;margin:12px 0 20px;max-width:240px;line-height:1.7}
@@ -99,11 +90,6 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
   </div>
 
   <div class="centers-grid" id="centersGrid"></div>
-
-  <div class="map-note">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    <p><strong>Interactive Map View</strong><br/>For a better experience, use our interactive map to see all donation centers in your area and check current wait times.</p>
-  </div>
 </section>
 
 <footer>
@@ -120,8 +106,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
     <div class="footer-col"><h4>Contact Us</h4><a href="#">Emergency: 102</a><a href="#">+977-1-4221119</a><a href="#">info@bloodcare.org.np</a></div>
   </div>
   <div class="footer-bottom">
-    <span>© 2025 SaveABeat Nepal. All rights reserved.</span>
-    <div class="footer-bottom-stats"><span>15,000+ Donors</span><span>200+ Centers</span><span>24/7 Support</span></div>
+    <span>© 2026 SaveABeat Nepal. All rights reserved.</span>
   </div>
 </footer>
 
@@ -161,14 +146,12 @@ function renderCenters(list){
       <div class="center-info">
         <div class="center-header">
           <h3>${c.name}</h3>
-          <span class="avail-badge ${ac}">${c.avail} Availability</span>
         </div>
         <div class="center-meta">
           <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${c.address}</div>
           <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${c.phone}</div>
           <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>${c.hours}</div>
         </div>
-        <div class="services">${c.services.map(s=>`<span class="service-tag">${s}</span>`).join("")}</div>
       </div>
     </div>`}).join("")
 }

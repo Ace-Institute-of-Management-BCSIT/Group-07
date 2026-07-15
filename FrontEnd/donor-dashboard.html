@@ -387,17 +387,6 @@
       font-weight: 700;
       color: var(--ink);
     }
-    .avail-badge {
-      font-size: .72rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .avail-high { background: #e8f5e9; color: #2e7d32; }
-    .avail-med { background: #fff8e1; color: #f57f17; }
-    .avail-low { background: #fdecea; color: var(--red); }
     .center-meta {
       display: flex;
       flex-direction: column;
@@ -416,20 +405,6 @@
       flex-shrink: 0;
       width: 14px;
       height: 14px;
-    }
-    .services {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 18px;
-    }
-    .service-tag {
-      font-size: .72rem;
-      padding: 4px 10px;
-      background: #f3f3f3;
-      border-radius: 20px;
-      color: var(--mid);
-      font-weight: 500;
     }
     .center-btns {
       display: flex;
@@ -692,9 +667,6 @@
           SaveABeat Nepal
         </a>
         <p>Connecting donors across Kathmandu Valley with those in need through technology and compassion. Every donation saves lives.</p>
-        <div class="footer-btns">
-          <button class="btn-ghost">Learn More</button>
-        </div>
       </div>
       <div class="footer-col">
         <h4>Quick Links</h4>
@@ -717,12 +689,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 SaveABeat Nepal. All rights reserved. Serving Kathmandu and beyond.</span>
-      <div class="footer-bottom-stats">
-        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>15,000+ Donors</span>
-        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>200+ Centers</span>
-        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>24/7 Support</span>
-      </div>
+      <span>© 2026 SaveABeat Nepal. All rights reserved. Serving Kathmandu and beyond.</span>
     </div>
   </footer>
 
@@ -1297,14 +1264,12 @@
       }
       
       centersNode.innerHTML = list.map(c=>{
-        const ac = c.avail === 'High' ? 'avail-high' : c.avail === 'Medium' ? 'avail-med' : 'avail-low';
         return `
           <div class="center-card">
             <img src="${c.img || 'https://picsum.photos/400/300?random'}" alt="${c.name || c.display_name}" loading="lazy"/>
             <div class="center-info">
               <div class="center-header">
                 <h3>${c.name || c.display_name}</h3>
-                <span class="avail-badge ${ac}">${c.avail || 'Medium'} Availability</span>
               </div>
               <div class="center-meta">
                 <div class="center-meta-row">
@@ -1319,9 +1284,6 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
                   ${c.hours || 'N/A'}
                 </div>
-              </div>
-              <div class="services">
-                ${(c.services || []).map(s=>`<span class="service-tag">${s}</span>`).join('')}
               </div>
             </div>
           </div>
