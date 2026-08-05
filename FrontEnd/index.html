@@ -4,12 +4,12 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SaveABeat — Save Lives Through Blood Donation</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23D62B2B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --red:#D62B2B;--red-dark:#a81e1e;--red-light:#fdecea;
+  --red:#E3242B;--red-dark:#a81e1e;--red-light:#fdecea;
   --ink:#1a1a1a;--mid:#555;--soft:#888;--border:#e8e8e8;
   --bg:#fafafa;--white:#fff;
   --ff-head:'Playfair Display',serif;--ff-body:'DM Sans',sans-serif;
@@ -20,7 +20,7 @@ body{font-family:var(--ff-body);background:var(--bg);color:var(--ink);font-size:
 /* ── NAV ── */
 nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .logo{display:flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.25rem;font-weight:700;color:var(--ink);text-decoration:none}
-.logo svg{color:var(--red)}
+.logo svg{color:#E3242B}
 .nav-links{display:flex;align-items:center;gap:32px}
 .nav-links a{text-decoration:none;color:var(--mid);font-size:.9rem;font-weight:500;display:flex;align-items:center;gap:6px;transition:color .2s}
 .nav-links a:hover{color:var(--ink)}
@@ -107,7 +107,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
 .stat strong{display:block;font-family:var(--ff-head);font-size:1.5rem;font-weight:700;color:var(--red)}
 .stat span{font-size:.8rem;color:var(--soft)}
 .hero-img{position:relative;border-radius:16px;overflow:hidden}
-.hero-img img{width:100%;height:320px;object-fit:cover;border-radius:16px;display:block}
+.hero-img img{width:100%;height:500px;object-fit:cover;border-radius:16px;display:block}
 .next-drive{position:absolute;bottom:16px;right:16px;background:rgba(255,255,255,.96);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow)}
 .next-drive svg{color:var(--red)}
 .next-drive strong{display:block;font-size:.82rem;font-weight:600}
@@ -169,6 +169,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
 <!-- NAV -->
 <nav>
   <a href="index.html" class="logo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
     SaveABeat
   </a>
   <div class="nav-links">
@@ -243,8 +244,8 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
   <div class="footer-grid">
     <div class="footer-brand">
       <a href="index.html" class="logo" style="color:#fff">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
-        SaveABeat Nepal
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+        SaveABeat
       </a>
       <p>Connecting donors across Kathmandu Valley with those in need through technology and compassion. Every donation saves lives.</p>
     </div>
@@ -265,9 +266,9 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
     </div>
     <div class="footer-col">
       <h4>Contact Us</h4>
-      <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Emergency: 102</div>
-      <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>+977-1-4221119</div>
-      <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>info@bloodcare.org.np</div>
+      <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E3242B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Emergency: 102</div>
+      <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E3242B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>+977-1-4221119</div>
+      <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E3242B" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>info@bloodcare.org.np</div>
     </div>
   </div>
   <div class="footer-bottom">
@@ -750,6 +751,14 @@ async function loadStats(){
     console.warn('Using default stats.', error);
   }
 }
+
+// Listen for notifications from org dashboard to refresh events
+window.addEventListener('showNotification', function(event) {
+  if (event.detail && event.detail.message) {
+    // Refresh events grid to show new campaigns
+    loadEvents();
+  }
+});
 
 loadEvents();
 loadStats();

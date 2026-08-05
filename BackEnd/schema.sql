@@ -29,9 +29,13 @@ CREATE TABLE organizations (
   org_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   org_name VARCHAR(150) NOT NULL,
-  org_type ENUM('hospital', 'ngo', 'clinic', 'individual') NOT NULL,
+  org_type ENUM('hospital', 'ngo', 'clinic', 'individual', 'blood-bank') NOT NULL DEFAULT 'hospital',
   address TEXT,
   contact VARCHAR(20),
+  verification_document_type VARCHAR(255),
+  verification_document_file LONGTEXT,
+  verification_document_name VARCHAR(255),
+  verification_status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
   verification_documents LONGTEXT,
   verification_documents_name VARCHAR(255),
   building_photo LONGTEXT,
@@ -54,6 +58,10 @@ CREATE TABLE donor_profiles (
   total_donations INT NOT NULL DEFAULT 0,
   profile_picture LONGTEXT NOT NULL,
   profile_picture_name VARCHAR(255),
+  blood_verification_document_type VARCHAR(255),
+  blood_verification_document_file LONGTEXT,
+  blood_verification_document_name VARCHAR(255),
+  verification_status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
   CONSTRAINT fk_donor_user
     FOREIGN KEY (user_id) REFERENCES users(user_id)
     ON DELETE CASCADE
@@ -85,6 +93,13 @@ CREATE TABLE blood_requests (
   district VARCHAR(100) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   expires_at DATETIME,
+  hospital_name VARCHAR(200) NULL,
+  patient_type VARCHAR(50) NULL,
+  required_by DATETIME NULL,
+  hospital_address TEXT NULL,
+  contact_person VARCHAR(100) NULL,
+  contact_number VARCHAR(20) NULL,
+  additional_note TEXT NULL,
   CONSTRAINT fk_request_org
     FOREIGN KEY (org_id) REFERENCES organizations(org_id)
     ON DELETE CASCADE
@@ -138,7 +153,19 @@ CREATE TABLE chat_messages (
 CREATE TABLE donation_responses (
   response_id INT AUTO_INCREMENT PRIMARY KEY,
   request_id INT NOT NULL,
-  donor_id INT NOT NULL,
+  donor_id INT,
+  response_type ENUM('self', 'referral') NOT NULL DEFAULT 'self',
+  full_name VARCHAR(100),
+  phone VARCHAR(20),
+  email VARCHAR(150),
+  blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
+  referral_full_name VARCHAR(100),
+  referral_phone VARCHAR(20),
+  referral_blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
+  referral_relationship VARCHAR(50),
+  availability_date DATE NOT NULL,
+  availability_time VARCHAR(10) NOT NULL,
+  notes TEXT,
   status ENUM('pending', 'confirmed', 'rejected') DEFAULT 'pending',
   responded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   confirmed_at DATETIME,
@@ -147,7 +174,7 @@ CREATE TABLE donation_responses (
     ON DELETE CASCADE,
   CONSTRAINT fk_response_donor
     FOREIGN KEY (donor_id) REFERENCES donor_profiles(donor_id)
-    ON DELETE CASCADE
+    ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- =========================
@@ -166,6 +193,33 @@ CREATE TABLE donation_history (
   CONSTRAINT fk_history_request
     FOREIGN KEY (request_id) REFERENCES blood_requests(request_id)
     ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =========================
+-- DONATION PARTICIPATION
+-- =========================
+CREATE TABLE donation_participation (
+  participation_id INT AUTO_INCREMENT PRIMARY KEY,
+  donor_id INT NOT NULL,
+  campaign_id INT NOT NULL,
+  organization_id INT NOT NULL,
+  participation_type ENUM('event', 'drive', 'center') NOT NULL DEFAULT 'event',
+  status ENUM('pending', 'approved', 'rejected', 'cancelled', 'completed', 'no_show') NOT NULL DEFAULT 'pending',
+  applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  approved_at DATETIME,
+  donation_completed_at DATETIME,
+  cancelled_at DATETIME,
+  eligibility_checked BOOLEAN DEFAULT FALSE,
+  notes TEXT,
+  CONSTRAINT fk_participation_donor
+    FOREIGN KEY (donor_id) REFERENCES donor_profiles(donor_id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_participation_campaign
+    FOREIGN KEY (campaign_id) REFERENCES blood_drive_listings(event_id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_participation_org
+    FOREIGN KEY (organization_id) REFERENCES organizations(org_id)
+    ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
@@ -198,13 +252,30 @@ CREATE TABLE blood_drive_listings (
   event_date DATE NOT NULL,
   time_range VARCHAR(50) NOT NULL,
   location VARCHAR(150) NOT NULL,
-  distance_km DECIMAL(4,1) NOT NULL,
-  spots_total INT NOT NULL,
-  spots_available INT NOT NULL,
+  distance_km DECIMAL(4,1) NULL DEFAULT 0.0,
+  spots_total INT NULL DEFAULT 0,
+  spots_available INT NULL DEFAULT 0,
   event_type ENUM('Drive', 'Camp', 'Emergency') NOT NULL,
   status ENUM('active', 'completed', 'stopped') NOT NULL DEFAULT 'active',
-  image_url MEDIUMTEXT NOT NULL,
+  image_url LONGTEXT NOT NULL,
+  blood_group_needed ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_drive_org
     FOREIGN KEY (org_id) REFERENCES organizations(org_id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- =========================
+-- CAMPAIGN BLOOD REQUIREMENTS
+-- =========================
+CREATE TABLE IF NOT EXISTS campaign_blood_requirements (
+  requirement_id INT AUTO_INCREMENT PRIMARY KEY,
+  event_id INT NOT NULL,
+  blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NOT NULL,
+  units_required INT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_req_event
+    FOREIGN KEY (event_id) REFERENCES blood_drive_listings(event_id)
+    ON DELETE CASCADE,
+  UNIQUE KEY unique_event_blood (event_id, blood_group)
+) ENGINE=InnoDB;
+

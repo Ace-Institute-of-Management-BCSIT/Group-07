@@ -231,6 +231,54 @@ app.get('/api/schema', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'schema.sql'));
 });
 
+app.post('/api/responses', async (req, res) => {
+  const { requestId, responseType, fullName, phone, email, bloodGroup, referralFullName, referralPhone, referralBloodGroup, referralRelationship, availabilityDate, availabilityTime, notes } = req.body;
+
+  if (!requestId || !responseType || !availabilityDate || !availabilityTime) {
+    return res.status(400).json({ message: 'Request ID, response type, availability date, and time are required.' });
+  }
+
+  if (responseType === 'self' && (!fullName || !phone)) {
+    return res.status(400).json({ message: 'Full name and phone are required for self response.' });
+  }
+
+  if (responseType === 'referral' && (!referralFullName || !referralPhone || !referralBloodGroup || !referralRelationship)) {
+    return res.status(400).json({ message: 'Referral full name, phone, blood group, and relationship are required for referral response.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO donation_responses 
+       (request_id, donor_id, response_type, full_name, phone, email, blood_group, 
+        referral_full_name, referral_phone, referral_blood_group, referral_relationship, 
+        availability_date, availability_time, notes, status)
+       VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [
+        requestId,
+        responseType,
+        responseType === 'self' ? fullName : null,
+        responseType === 'self' ? phone : null,
+        responseType === 'self' ? email : null,
+        responseType === 'self' ? bloodGroup : null,
+        responseType === 'referral' ? referralFullName : null,
+        responseType === 'referral' ? referralPhone : null,
+        responseType === 'referral' ? referralBloodGroup : null,
+        responseType === 'referral' ? referralRelationship : null,
+        availabilityDate,
+        availabilityTime,
+        notes || null
+      ]
+    );
+
+    res.status(201).json({
+      message: 'Response submitted successfully.',
+      responseId: result.insertId
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
 });

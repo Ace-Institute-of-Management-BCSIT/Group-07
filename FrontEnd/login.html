@@ -4,15 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SaveABeat — Sign In</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23D62B2B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--red:#D62B2B;--red-dark:#a81e1e;--red-light:#fdecea;--ink:#1a1a1a;--mid:#555;--soft:#888;--border:#e8e8e8;--bg:#fdecea;--white:#fff;--ff-head:'Playfair Display',serif;--ff-body:'DM Sans',sans-serif}
+:root{--red:#E3242B;--red-dark:#a81e1e;--red-light:#fdecea;--ink:#1a1a1a;--mid:#555;--soft:#888;--border:#e8e8e8;--bg:#fdecea;--white:#fff;--ff-head:'Playfair Display',serif;--ff-body:'DM Sans',sans-serif}
 body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px}
 .card{background:var(--white);border-radius:16px;padding:44px 40px;width:100%;max-width:420px;box-shadow:0 4px 32px rgba(0,0,0,.08)}
 .card-logo{text-align:center;margin-bottom:24px}
-.card-logo a{display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.4rem;font-weight:700;color:var(--red);text-decoration:none}
+.card-logo a{display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.4rem;font-weight:700;color:var(--ink);text-decoration:none}
 .card h2{font-family:var(--ff-head);font-size:1.6rem;font-weight:700;text-align:center;margin-bottom:6px;color:var(--ink)}
 .card .sub{text-align:center;font-size:.88rem;color:var(--soft);margin-bottom:28px;line-height:1.5}
 .form-group{margin-bottom:18px}
@@ -48,32 +48,32 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 <div class="card">
   <div class="card-logo">
     <a href="index.html">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
       SaveABeat
     </a>
   </div>
 
   <div class="role-gate open" id="roleGate">
-    <h3>Select account type</h3>
-    <p>Choose the type of account you want to use before opening the matching login form.</p>
+    <h3>Choose Sign Up Type</h3>
     <div class="role-choice-grid">
       <button class="role-choice" type="button" onclick="location.href='login.html?role=donor'">
         <strong>Donor</strong>
-        <span>Sign in as a blood donor.</span>
+        <span>Create a donor account.</span>
       </button>
       <button class="role-choice" type="button" onclick="location.href='login.html?role=org'">
         <strong>Organization</strong>
-        <span>Sign in as a blood center or organization.</span>
+        <span>Create an organization account.</span>
       </button>
       <button class="role-choice" type="button" onclick="location.href='login.html?role=admin'">
         <strong>Admin</strong>
-        <span>Sign in as a site administrator.</span>
+        <span>Admin accounts are pre-created. Use Login instead.</span>
       </button>
     </div>
   </div>
 
   <div class="auth-form" id="loginFormArea">
-    <h2 id="loginTitle">Welcome Back</h2>
-    <p class="sub" id="loginSubtitle">Sign in to your SaveABeat account to continue helping save lives</p>
+    <h2 id="loginTitle">Sign In</h2>
+    <p class="sub" id="loginSubtitle"></p>
 
     <div class="error-msg" id="errorMsg">Invalid email or password. Please try again.</div>
 
@@ -96,8 +96,7 @@ body{font-family:var(--ff-body);background:var(--bg);min-height:100vh;display:fl
 
     <button class="btn-full" onclick="handleLogin()" type="button">Sign In</button>
 
-    <p class="card-footer" id="loginFooter">Don't have an account? <a href="register.html">Sign up here</a></p>
-    <p class="demo-note">Use your registered email and password.</p>
+    <p class="card-footer" id="loginFooter">Already have an account? <a href="register.html">Sign up here</a></p>
     <button class="back-link" id="backToRoles" type="button" onclick="location.href='login.html'">Change account type</button>
   </div>
 </div>
@@ -122,9 +121,9 @@ function applyLoginRole(){
     gate?.classList.add('open');
     backLink?.classList.remove('open');
     formArea?.classList.remove('open');
-    title.textContent='Choose Login Type';
-    subtitle.textContent='Pick the account type first, then sign in with the matching form.';
-    footer.innerHTML="Don't have an account? <a href='register.html'>Sign up here</a>";
+    title.textContent='Choose Sign Up Type';
+    subtitle.textContent='';
+    footer.innerHTML="Already have an account? <a href='login.html'>Sign in here</a>";
     return;
   }
 
@@ -134,21 +133,21 @@ function applyLoginRole(){
 
   if(loginRole === 'admin'){
     title.textContent='Admin Login';
-    subtitle.textContent='Use the seeded admin credentials to sign in.';
+    subtitle.textContent='';
     footer.innerHTML="Admin accounts are pre-created. <a href='register.html'>Go to Sign up</a>";
     return;
   }
 
   if(loginRole === 'org'){
     title.textContent='Organization Login';
-    subtitle.textContent='Sign in with your organization email and password.';
-    footer.innerHTML="Don't have an account? <a href=\"register.html?role=org\">Sign up here</a>";
+    subtitle.textContent='';
+    footer.innerHTML="Already have an account? <a href=\"login.html?role=org\">Sign in here</a>";
     return;
   }
 
   title.textContent='Donor Login';
-  subtitle.textContent='Sign in to your donor account to continue helping save lives.';
-  footer.innerHTML="Don't have an account? <a href=\"register.html?role=donor\">Sign up here</a>";
+  subtitle.textContent='';
+  footer.innerHTML="Already have an account? <a href=\"login.html?role=donor\">Sign in here</a>";
 }
 
 async function readJsonResponse(response){
@@ -172,25 +171,21 @@ async function handleLogin(){
     const response=await fetch('/api/auth/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,password:pw})
+      body:JSON.stringify({email, password: pw, role: loginRole || undefined})
     });
     const payload=await readJsonResponse(response);
     if(!response.ok){
-      err.textContent=payload.message||'Invalid email or password.';
+      err.textContent=payload.message || 'Invalid Credentials';
       err.style.display='block';
       return;
     }
-    if(loginRole !== 'admin' && payload.user.role !== loginRole){
-      if(loginRole === 'org'){
-        err.textContent='This account is not an organization account. Use the donor login page or register as an organization.';
-      }else if(loginRole === 'donor'){
-        err.textContent='This account is not a donor account. Use the organization login page or register as a donor.';
-      }else{
-        err.textContent='Please use the correct account type for this login page.';
-      }
+
+    if(loginRole && payload.user.role !== loginRole){
+      err.textContent='Invalid Credentials';
       err.style.display='block';
       return;
     }
+
     err.style.display='none';
     let storedUser=payload.user;
     try{
@@ -200,6 +195,13 @@ async function handleLogin(){
         storedUser=mePayload.user;
       }
     }catch(_error){}
+
+    if(loginRole && storedUser.role !== loginRole){
+      err.textContent='Invalid Credentials';
+      err.style.display='block';
+      return;
+    }
+
     localStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
     if(storedUser.role === 'org'){
       location.href = 'org-dashboard.html#panel-upcoming';
@@ -209,7 +211,11 @@ async function handleLogin(){
       location.href = 'admin-dashboard.html';
       return;
     }
-    location.href = 'donor-dashboard.html';
+    if(storedUser.role === 'donor'){
+      location.href = 'donor-dashboard.html';
+      return;
+    }
+    location.href = 'index.html';
   }catch(error){
     err.textContent=error.message||'Unable to reach the server. Make sure the backend is running.';
     err.style.display='block';

@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Organization Dashboard — SaveABeat</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23D62B2B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --red:#D62B2B;
+      --red:#E3242B;
       --red-dark:#a81e1e;
       --red-light:#fdecea;
       --bg:#fafafa;
@@ -71,23 +71,33 @@
     .search-box input,.filter-select{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--border);border-radius:10px;font:400 .92rem var(--ff-body);background:var(--white);outline:none;transition:border-color .2s;color:var(--ink)}
     .search-box input:focus,.filter-select:focus{border-color:var(--red)}
     .filter-select{padding:11px 36px 11px 14px;min-width:160px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
-    .campaign-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
-    .campaign-card{background:var(--white);border-radius:16px;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;transition:transform .25s,box-shadow .25s}
-    .campaign-card:hover{transform:translateY(-3px);box-shadow:0 14px 38px rgba(0,0,0,.08)}
-    .campaign-card .card-img{position:relative;height:180px;overflow:hidden}
-    .campaign-card .card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
-    .campaign-card:hover .card-img img{transform:scale(1.04)}
-    .badge{position:absolute;top:14px;left:14px;padding:6px 10px;border-radius:999px;font-size:.75rem;font-weight:800;letter-spacing:.01em;color:var(--white);background:var(--red)}
+    .campaign-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:24px}
+    .campaign-card{background:var(--white);border-radius:18px;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;transition:transform .25s cubic-bezier(0.4,0,0.2,1),box-shadow .25s cubic-bezier(0.4,0,0.2,1);box-shadow:0 4px 16px rgba(0,0,0,.03)}
+    .campaign-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.09)}
+    .campaign-card .card-img{position:relative;height:195px;overflow:hidden}
+    .campaign-card .card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+    .campaign-card:hover .card-img img{transform:scale(1.05)}
+    .badge{position:absolute;top:14px;left:14px;padding:6px 12px;border-radius:999px;font-size:.76rem;font-weight:800;letter-spacing:.02em;color:var(--white);background:var(--red);box-shadow:0 4px 12px rgba(0,0,0,.15)}
     .badge.completed{background:#166534}
-    .badge.secondary{background:#6b7280}
-    .campaign-card .body{padding:18px}
-    .campaign-card .body h3{font-family:var(--ff-head);font-size:1.18rem;margin-bottom:6px}
-    .meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--soft);margin-top:10px}
+    .badge.secondary{background:#4b5563}
+    .campaign-card .body{padding:20px 22px;display:flex;flex-direction:column;flex:1}
+    .campaign-card .body h3{font-family:var(--ff-head);font-size:1.22rem;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.3}
+    .meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--mid);margin-top:8px;margin-bottom:14px}
     .meta-row span{display:inline-flex;align-items:center;gap:6px}
-    .campaign-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
-    .campaign-stat{padding:10px 12px;border-radius:12px;background:#fafafa;border:1px solid var(--border)}
-    .campaign-stat strong{display:block;font-size:.95rem;margin-bottom:3px}
-    .campaign-stat span{font-size:.76rem;color:var(--soft)}
+    .meta-row svg{color:var(--red);flex-shrink:0}
+
+    /* Redesigned Blood Requirements & Metric Boxes */
+    .blood-req-section{margin-top:4px;margin-bottom:14px;background:#fdf8f8;border:1px solid #f8e1e1;border-radius:12px;padding:12px 14px}
+    .blood-req-header{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--red-dark);margin-bottom:8px}
+    .blood-req-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .blood-chip{display:inline-flex;align-items:center;background:var(--white);border:1px solid #f2c2c2;border-radius:999px;padding:3px 10px 3px 4px;font-size:.82rem;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+    .blood-chip .chip-group{background:var(--red);color:var(--white);font-weight:800;font-size:.75rem;padding:2px 7px;border-radius:999px;margin-right:6px}
+    .blood-chip .chip-units{color:var(--ink);font-weight:600}
+
+    .campaign-metrics-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:18px}
+    .metric-box{padding:10px 12px;border-radius:10px;background:#fafafa;border:1px solid var(--border)}
+    .metric-box label{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--soft);margin-bottom:2px}
+    .metric-box strong{display:block;font-size:.94rem;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .empty-state{padding:28px 18px;border:1px dashed #d9d9d9;border-radius:14px;background:#fcfcfc;color:var(--mid);text-align:center}
 
     .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
@@ -153,15 +163,22 @@
     .campaign-detail-backdrop.open{display:flex}
     .campaign-detail-card{width:100%;max-width:760px;max-height:calc(100vh - 36px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
     .campaign-detail-header{display:flex;align-items:center;gap:16px;padding:24px 28px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fff7f7 0%,#fff 100%)}
-    .campaign-detail-avatar{width:64px;height:64px;border-radius:18px;background:var(--red);display:flex;align-items:center;justify-content:center;color:var(--white);font-family:var(--ff-head);font-size:1.8rem;font-weight:900;flex-shrink:0}
     .campaign-detail-title h3{font-family:var(--ff-head);font-size:1.4rem}
     .campaign-detail-title p{color:var(--soft);font-size:.9rem}
     .campaign-detail-body{padding:24px 28px;overflow:auto}
     .campaign-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
     .campaign-detail-item{padding:14px;border-radius:14px;background:#fafafa;border:1px solid var(--border)}
+    .campaign-detail-item.full-width{grid-column:1/-1}
     .campaign-detail-item .label{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin-bottom:6px}
     .campaign-detail-item .value{font-size:.95rem;color:var(--ink);word-break:break-word}
+    .blood-table-wrapper{margin-top:8px}
+    .blood-table{width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+    .blood-table thead{background:#f5f5f5}
+    .blood-table th{padding:10px 14px;text-align:left;font-size:.82rem;font-weight:600;color:var(--ink);border-bottom:1px solid var(--border)}
+    .blood-table td{padding:10px 14px;font-size:.9rem;color:var(--mid);border-bottom:1px solid var(--border)}
+    .blood-table tr:last-child td{border-bottom:none}
     .campaign-detail-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 28px;border-top:1px solid var(--border);background:#fcfcfc}
+    .campaign-detail-actions-left{display:flex;gap:10px;flex-wrap:wrap}
     .campaign-detail-actions-right{display:flex;gap:10px;flex-wrap:wrap}
     .campaign-detail-actions-right .btn-outline,.campaign-detail-actions-right .btn-red{min-width:140px;justify-content:center}
 
@@ -200,12 +217,150 @@
       .profile-actions-right{justify-content:stretch}
       .profile-actions-right .btn-outline,.profile-actions-right .btn-red,.profile-actions-right .btn-soft{width:100%;justify-content:center}
     }
+
+    /* Notification Bar */
+    #campaignNotificationBar{
+      position:fixed;
+      top:64px;
+      right:24px;
+      max-width:320px;
+      width:280px;
+      z-index:999;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      pointer-events:none;
+    }
+    #campaignNotificationBar .notification-toast{
+      background:var(--white);
+      border:1px solid var(--border);
+      border-left:4px solid var(--red);
+      border-radius:10px;
+      box-shadow:var(--shadow);
+      padding:12px 16px;
+      font-family:var(--ff-body);
+      font-size:0.92rem;
+      color:var(--ink);
+      pointer-events:auto;
+      animation:slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn{
+      from{opacity:0;transform:translateX(20px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+
+    /* Notification Bar */
+    #campaignNotificationBar{
+      position:fixed;
+      top:64px;
+      right:24px;
+      max-width:320px;
+      width:280px;
+      z-index:999;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      pointer-events:none;
+    }
+    #campaignNotificationBar .notification-toast{
+      background:var(--white);
+      border:1px solid var(--border);
+      border-left:4px solid var(--red);
+      border-radius:10px;
+      box-shadow:var(--shadow);
+      padding:12px 16px;
+      font-family:var(--ff-body);
+      font-size:0.92rem;
+      color:var(--ink);
+      pointer-events:auto;
+      animation:slideIn 0.3s ease-out;
+    }
+    /* Blood Group Requirements Selector & Unit Cards */
+    .blood-group-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+      margin-bottom: 8px;
+    }
+    .blood-pill {
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      color: var(--ink);
+      font: 600 0.9rem var(--ff-body);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .blood-pill:hover {
+      border-color: var(--red);
+      color: var(--red);
+      transform: translateY(-1px);
+    }
+    .blood-pill.selected {
+      background: var(--red);
+      color: var(--white);
+      border-color: var(--red);
+      box-shadow: 0 4px 12px rgba(214, 43, 43, 0.25);
+    }
+    .blood-units-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .blood-unit-card {
+      background: #fdf8f8;
+      border: 1.5px solid #f5d3d3;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(-8px) scale(0.97);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      animation: slideInRequirement 0.25s forwards cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes slideInRequirement {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .blood-unit-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .blood-unit-card label {
+      font-weight: 700;
+      color: var(--red-dark);
+      font-size: 0.88rem;
+    }
+    .blood-unit-card input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font: 600 0.95rem var(--ff-body);
+      color: var(--ink);
+      background: var(--white);
+      outline: none;
+    }
+    .blood-unit-card input:focus {
+      border-color: var(--red);
+    }
   </style>
 </head>
 <body>
   <nav>
     <a class="logo" href="#panel-upcoming" onclick="setActiveTab('upcoming')">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
       SaveABeat
     </a>
 
@@ -244,6 +399,9 @@
   </button>
 </div>
   </nav>
+
+  <!-- Notification Bar (hidden until populated) -->
+  <div id="campaignNotificationBar"></div>
 
   <div class="wrap">
     <main id="dashboardRoot">
@@ -426,19 +584,30 @@
             </div>
             <div class="form-group">
               <label for="campaignDate">Event Date <span style="color:var(--red)">*</span></label>
-              <input id="campaignDate" type="date" />
+              <input id="campaignDate" type="date" min="2026-07-25" />
             </div>
             <div class="form-group">
               <label for="campaignTime">Time Range <span style="color:var(--red)">*</span></label>
               <input id="campaignTime" type="text" placeholder="9:00 AM - 5:00 PM" />
             </div>
-            <div class="form-group">
+            <div class="form-group full-width">
               <label for="campaignLocation">Location <span style="color:var(--red)">*</span></label>
-              <input id="campaignLocation" type="text" placeholder="Event location" />
+              <input id="campaignLocation" type="text" placeholder="e.g. Bir Hospital Grounds, Kathmandu" />
             </div>
-            <div class="form-group">
-              <label for="campaignSpots">Total Spots <span style="color:var(--red)">*</span></label>
-              <input id="campaignSpots" type="number" min="1" step="1" placeholder="100" />
+            <div class="form-group full-width">
+              <label>Blood Group Requirements <span style="color:var(--red)">*</span></label>
+              <div class="blood-group-selector" id="bloodGroupSelector">
+                <button type="button" class="blood-pill" data-group="A+">A+</button>
+                <button type="button" class="blood-pill" data-group="A-">A-</button>
+                <button type="button" class="blood-pill" data-group="B+">B+</button>
+                <button type="button" class="blood-pill" data-group="B-">B-</button>
+                <button type="button" class="blood-pill" data-group="AB+">AB+</button>
+                <button type="button" class="blood-pill" data-group="AB-">AB-</button>
+                <button type="button" class="blood-pill" data-group="O+">O+</button>
+                <button type="button" class="blood-pill" data-group="O-">O-</button>
+              </div>
+              <div class="field-note">Select one or more blood groups needed for this campaign.</div>
+              <div class="blood-units-container" id="bloodUnitsContainer"></div>
             </div>
             <div class="form-group full-width">
               <label for="campaignImage">Campaign Image <span style="color:var(--red)">*</span></label>
@@ -462,7 +631,6 @@
   <div class="campaign-detail-backdrop" id="campaignDetailBackdrop" aria-hidden="true">
     <div class="campaign-detail-card" role="dialog" aria-modal="true" aria-labelledby="campaignDetailTitle">
       <div class="campaign-detail-header">
-        <div class="campaign-detail-avatar" id="campaignDetailAvatar">C</div>
         <div class="campaign-detail-title">
           <h3 id="campaignDetailTitle">Campaign Details</h3>
           <p id="campaignDetailSubtitle">View campaign information and manage the campaign.</p>
@@ -474,6 +642,7 @@
       <div class="campaign-detail-actions">
         <div class="campaign-detail-actions-left">
           <button class="btn-outline" type="button" id="campaignDetailCloseBtn">Close</button>
+          <button class="btn-outline" type="button" id="campaignDetailEditBtn" style="display:none">Edit</button>
         </div>
         <div class="campaign-detail-actions-right">
           <button class="btn-outline" type="button" id="campaignDetailStopBtn">Stop Campaign</button>
@@ -583,11 +752,22 @@
       try {
         const savedUser = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
         const user = JSON.parse(savedUser || 'null');
+        if (user && user.role !== 'org') {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          sessionStorage.removeItem(AUTH_STORAGE_KEY);
+          location.replace('login.html?role=org');
+          return null;
+        }
+        if (!user) {
+          location.replace('login.html?role=org');
+          return null;
+        }
         if (user && !localStorage.getItem(AUTH_STORAGE_KEY)) {
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
         }
         return user;
       } catch (_error) {
+        location.replace('login.html?role=org');
         return null;
       }
     }
@@ -655,48 +835,281 @@
     }
 
     let currentCampaignDetail = null;
+    let campaignEditing = false;
+
+    function campaignInput(field, value, type='text'){
+      if (type === 'select') {
+        return `
+          <select class="campaign-edit-field" data-campaign-field="${field}" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.9rem;">
+            <option value="Drive" ${value === 'Drive' ? 'selected' : ''}>Drive</option>
+            <option value="Camp" ${value === 'Camp' ? 'selected' : ''}>Camp</option>
+            <option value="Emergency" ${value === 'Emergency' ? 'selected' : ''}>Emergency</option>
+          </select>
+        `;
+      }
+      return `<input class="campaign-edit-field" data-campaign-field="${field}" type="${type}" value="${escapeHtml(value ?? '')}" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.9rem;">`;
+    }
+
+    function campaignFieldMarkup(field, label, value, options = {}){
+      const editable = campaignEditing && !options.readonly;
+      const type = options.type || 'text';
+      const className = `campaign-detail-item${options.fullWidth ? ' full-width' : ''}`;
+
+      if (options.fullWidth && field === 'bloodRequirements') {
+        // Special handling for blood requirements table
+        return renderBloodRequirementsTable(value, editable);
+      }
+
+      return `
+        <div class="${className}">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${editable ? campaignInput(field, value, type) : escapeHtml(value)}</div>
+        </div>
+      `;
+    }
+
+    function renderBloodRequirementsTable(bloodRequirements, editable) {
+      if (!bloodRequirements || bloodRequirements.length === 0) {
+        return `
+          <div class="campaign-detail-item full-width">
+            <div class="label">Blood Requirements</div>
+            <div class="blood-table-wrapper">
+              <table class="blood-table">
+                <thead>
+                  <tr>
+                    <th>Blood Group</th>
+                    <th>Units</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="2" style="text-align:center;color:var(--soft);padding:12px;">No blood requirements specified</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      if (editable) {
+        let tableHtml = `
+          <div class="campaign-detail-item full-width">
+            <div class="label">Blood Requirements</div>
+            <div class="blood-table-wrapper">
+              <table class="blood-table">
+                <thead>
+                  <tr>
+                    <th>Blood Group</th>
+                    <th>Units</th>
+                    ${editable ? '<th>Action</th>' : ''}
+                  </tr>
+                </thead>
+                <tbody class="blood-requirements-tbody">
+        `;
+
+        bloodRequirements.forEach((r, index) => {
+          tableHtml += `
+            <tr data-index="${index}">
+              <td>
+                <select class="campaign-edit-blood-group" data-index="${index}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
+                  <option value="A+" ${r.bloodGroup === 'A+' ? 'selected' : ''}>A+</option>
+                  <option value="A-" ${r.bloodGroup === 'A-' ? 'selected' : ''}>A-</option>
+                  <option value="B+" ${r.bloodGroup === 'B+' ? 'selected' : ''}>B+</option>
+                  <option value="B-" ${r.bloodGroup === 'B-' ? 'selected' : ''}>B-</option>
+                  <option value="AB+" ${r.bloodGroup === 'AB+' ? 'selected' : ''}>AB+</option>
+                  <option value="AB-" ${r.bloodGroup === 'AB-' ? 'selected' : ''}>AB-</option>
+                  <option value="O+" ${r.bloodGroup === 'O+' ? 'selected' : ''}>O+</option>
+                  <option value="O-" ${r.bloodGroup === 'O-' ? 'selected' : ''}>O-</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" class="campaign-edit-units" data-index="${index}" value="${r.unitsRequired}" min="1" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
+              </td>
+              <td style="width:40px;text-align:center;">
+                <button type="button" class="remove-blood-req-btn" data-index="${index}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.2rem;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">&times;</button>
+              </td>
+            </tr>
+          `;
+        });
+
+        tableHtml += `
+                </tbody>
+              </table>
+              <button type="button" class="btn-outline add-blood-req-btn" style="margin-top:12px;font-size:.85rem;padding:6px 12px;">+ Add Blood Group</button>
+            </div>
+          </div>
+        `;
+
+        return tableHtml;
+      } else {
+        return `
+          <div class="campaign-detail-item full-width">
+            <div class="label">Blood Requirements</div>
+            <div class="blood-table-wrapper">
+              <table class="blood-table">
+                <thead>
+                  <tr>
+                    <th>Blood Group</th>
+                    <th>Units</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${bloodRequirements.map(r => `
+                    <tr>
+                      <td>${escapeHtml(r.bloodGroup)}</td>
+                      <td>${Number(r.unitsRequired)} ${Number(r.unitsRequired) === 1 ? 'Unit' : 'Units'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function buildCampaignRows(campaign){
+      const isBloodRequest = campaign.kind === 'blood-request';
+      const rows = [
+        { field: 'title', label: isBloodRequest ? 'Request' : 'Campaign', value: campaign.title },
+        { field: 'org', label: 'Organization', value: campaign.org || campaign.orgName, readonly: true },
+        { field: 'type', label: 'Type', value: campaign.type, type: 'select' },
+        { field: 'date', label: 'Date', value: campaign.date, type: 'date' },
+        { field: 'time', label: 'Time', value: campaign.time, type: 'text' },
+        { field: 'location', label: 'Location', value: campaign.location },
+      ];
+
+      if (isBloodRequest) {
+        rows.push({ field: 'urgency', label: 'Urgency', value: campaign.urgency, readonly: true });
+        rows.push({ field: 'contact', label: 'Contact', value: [campaign.contactPerson, campaign.contactNumber].filter(Boolean).join(' — '), readonly: true });
+      }
+
+      return rows;
+    }
 
     function openCampaignDetailModal(campaign){
       const backdrop = document.getElementById('campaignDetailBackdrop');
       const title = document.getElementById('campaignDetailTitle');
       const subtitle = document.getElementById('campaignDetailSubtitle');
-      const avatar = document.getElementById('campaignDetailAvatar');
       const grid = document.getElementById('campaignDetailGrid');
       const stopBtn = document.getElementById('campaignDetailStopBtn');
       const deleteBtn = document.getElementById('campaignDetailDeleteBtn');
+      const editBtn = document.getElementById('campaignDetailEditBtn');
 
-      if(!backdrop || !title || !subtitle || !avatar || !grid || !stopBtn || !deleteBtn){
+      if(!backdrop || !title || !subtitle || !grid || !stopBtn || !deleteBtn || !editBtn){
         return;
       }
 
       currentCampaignDetail = campaign;
+      campaignEditing = false;
       const isBloodRequest = campaign.kind === 'blood-request';
       title.textContent = campaign.title || (isBloodRequest ? 'Blood Request Details' : 'Campaign Details');
       subtitle.textContent = campaign.org || campaign.orgName || 'Campaign information';
-      avatar.textContent = initialForName(campaign.title);
-      grid.innerHTML = [
-        [isBloodRequest ? 'Request' : 'Campaign', campaign.title || '-'],
-        ['Organization', campaign.org || campaign.orgName || '-'],
-        ['Type', campaign.type || '-'],
-        ['Date', campaign.date || '-'],
-        ['Time', campaign.time || '-'],
-        ['Location', campaign.location || '-'],
-        [isBloodRequest ? 'Units needed' : 'Spots', isBloodRequest ? (campaign.spots ?? '-') : `${campaign.spots ?? '-'} / ${campaign.total ?? '-'}`],
-        ...(isBloodRequest ? [['Urgency', campaign.urgency || '-'], ['Contact', [campaign.contactPerson, campaign.contactNumber].filter(Boolean).join(' — ') || '-']] : []),
-      ].map(([label, value]) => `
-        <div class="campaign-detail-item">
-          <div class="label">${escapeHtml(label)}</div>
-          <div class="value">${escapeHtml(value)}</div>
-        </div>
-      `).join('');
+      
+      renderCampaignDetails(campaign);
 
       const isUpcoming = campaign.state !== 'completed';
       stopBtn.style.display = isUpcoming && !isBloodRequest ? 'inline-flex' : 'none';
       deleteBtn.style.display = isBloodRequest ? 'none' : 'inline-flex';
       deleteBtn.textContent = 'Delete Campaign';
+      editBtn.style.display = !isBloodRequest ? 'inline-flex' : 'none';
+      editBtn.textContent = 'Edit';
+      editBtn.classList.remove('btn-red');
+      editBtn.classList.add('btn-outline');
 
       backdrop.classList.add('open');
       backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function renderCampaignDetails(campaign){
+      const grid = document.getElementById('campaignDetailGrid');
+      if(!grid) return;
+
+      const rows = buildCampaignRows(campaign);
+      let gridHtml = rows.map((row) => campaignFieldMarkup(row.field, row.label, row.value, row)).join('');
+      
+      // Add blood requirements table
+      if(campaign.bloodRequirements && campaign.bloodRequirements.length){
+        gridHtml += renderBloodRequirementsTable(campaign.bloodRequirements, campaignEditing);
+      } else if (campaign.kind === 'blood-request' && campaign.bloodGroup) {
+        gridHtml += renderBloodRequirementsTable([{bloodGroup: campaign.bloodGroup, unitsRequired: campaign.spots || 1}], campaignEditing);
+      }
+
+      grid.innerHTML = gridHtml;
+
+      // Add event listeners for blood requirements editing
+      if (campaignEditing) {
+        setupBloodRequirementsListeners();
+      }
+
+      updateCampaignEditControls();
+    }
+
+    function setupBloodRequirementsListeners(){
+      const tbody = document.querySelector('.blood-requirements-tbody');
+      if (!tbody) return;
+
+      // Remove button listeners
+      tbody.querySelectorAll('.remove-blood-req-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.target.closest('tr').remove();
+        });
+      });
+
+      // Add button listener
+      const addBtn = document.querySelector('.add-blood-req-btn');
+      if (addBtn) {
+        addBtn.addEventListener('click', () => {
+          const rowCount = tbody.querySelectorAll('tr').length;
+          const newRow = document.createElement('tr');
+          newRow.dataset.index = rowCount;
+          newRow.innerHTML = `
+            <td>
+              <select class="campaign-edit-blood-group" data-index="${rowCount}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
+            </td>
+            <td>
+              <input type="number" class="campaign-edit-units" data-index="${rowCount}" value="1" min="1" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
+            </td>
+            <td style="width:40px;text-align:center;">
+              <button type="button" class="remove-blood-req-btn" data-index="${rowCount}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.2rem;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">&times;</button>
+            </td>
+          `;
+          tbody.appendChild(newRow);
+          
+          // Add remove button listener for new row
+          newRow.querySelector('.remove-blood-req-btn').addEventListener('click', (e) => {
+            e.target.closest('tr').remove();
+          });
+        });
+      }
+    }
+
+    function updateCampaignEditControls(){
+      const editBtn = document.getElementById('campaignDetailEditBtn');
+      const stopBtn = document.getElementById('campaignDetailStopBtn');
+      const deleteBtn = document.getElementById('campaignDetailDeleteBtn');
+      
+      if(editBtn) {
+        editBtn.textContent = campaignEditing ? 'Save' : 'Edit';
+        editBtn.classList.toggle('btn-red', campaignEditing);
+        editBtn.classList.toggle('btn-outline', !campaignEditing);
+      }
+      
+      const isUpcoming = currentCampaignDetail && currentCampaignDetail.state !== 'completed';
+      const isBloodRequest = currentCampaignDetail && currentCampaignDetail.kind === 'blood-request';
+      
+      if(stopBtn) stopBtn.style.display = campaignEditing ? 'none' : (isUpcoming && !isBloodRequest ? 'inline-flex' : 'none');
+      if(deleteBtn) deleteBtn.style.display = campaignEditing ? 'none' : (isBloodRequest ? 'none' : 'inline-flex');
     }
 
     function closeCampaignDetailModal(){
@@ -707,6 +1120,101 @@
       backdrop.classList.remove('open');
       backdrop.setAttribute('aria-hidden', 'true');
       currentCampaignDetail = null;
+      campaignEditing = false;
+    }
+
+    function toggleCampaignEditMode(){
+      campaignEditing = !campaignEditing;
+      renderCampaignDetails(currentCampaignDetail);
+    }
+
+    async function saveCampaignChanges(){
+      const user = getStoredUser();
+      if(!user || !currentCampaignDetail) return;
+
+      const grid = document.getElementById('campaignDetailGrid');
+      
+      // Collect field values
+      const titleInput = grid.querySelector('[data-campaign-field="title"]');
+      const typeInput = grid.querySelector('[data-campaign-field="type"]');
+      const dateInput = grid.querySelector('[data-campaign-field="date"]');
+      const timeInput = grid.querySelector('[data-campaign-field="time"]');
+      const locationInput = grid.querySelector('[data-campaign-field="location"]');
+
+      const title = titleInput ? String(titleInput.value || '').trim() : currentCampaignDetail.title;
+      const type = typeInput ? String(typeInput.value || '').trim() : currentCampaignDetail.type;
+      const date = dateInput ? String(dateInput.value || '').trim() : currentCampaignDetail.date;
+      const time = timeInput ? String(timeInput.value || '').trim() : currentCampaignDetail.time;
+      const location = locationInput ? String(locationInput.value || '').trim() : currentCampaignDetail.location;
+
+      // Collect blood requirements
+      const bloodGroupSelects = grid.querySelectorAll('.campaign-edit-blood-group');
+      const unitsInputs = grid.querySelectorAll('.campaign-edit-units');
+      const bloodRequirements = [];
+
+      if (bloodGroupSelects.length > 0 && unitsInputs.length > 0) {
+        bloodGroupSelects.forEach((select, index) => {
+          const unitsInput = unitsInputs[index];
+          if (unitsInput && Number(unitsInput.value) > 0) {
+            bloodRequirements.push({
+              bloodGroup: select.value,
+              unitsRequired: Number(unitsInput.value)
+            });
+          }
+        });
+      }
+
+      // Validation
+      if (!title || !date || !location) {
+        alert('Campaign name, date, and location are required.');
+        return;
+      }
+
+      if (bloodGroupSelects.length > 0 && bloodRequirements.length === 0) {
+        alert('At least one blood requirement with valid units is required.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/org/campaigns/${currentCampaignDetail.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            title: title,
+            type: type,
+            eventDate: date,
+            time: time,
+            location: location,
+            bloodRequirements: bloodRequirements.length > 0 ? bloodRequirements : undefined,
+            isCompleted: currentCampaignDetail.state === 'completed',
+          }),
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          alert(payload.message || 'Failed to update campaign.');
+          return;
+        }
+
+        // Update currentCampaignDetail with new values
+        currentCampaignDetail.title = title;
+        currentCampaignDetail.type = type;
+        currentCampaignDetail.date = date;
+        currentCampaignDetail.time = time;
+        currentCampaignDetail.location = location;
+        if (bloodRequirements.length > 0) {
+          currentCampaignDetail.bloodRequirements = bloodRequirements;
+        }
+
+        alert('Campaign updated successfully!');
+        campaignEditing = false;
+        renderCampaignDetails(currentCampaignDetail);
+        await loadDashboard();
+
+      } catch (error) {
+        alert(error.message || 'Failed to update campaign.');
+      }
     }
 
     async function modifyCampaign(action){
@@ -740,6 +1248,73 @@
       }
     }
 
+    const selectedBloodGroups = new Map();
+
+    function renderBloodUnitsInputs() {
+      const container = document.getElementById('bloodUnitsContainer');
+      if (!container) return;
+
+      Array.from(container.children).forEach(child => {
+        const group = child.dataset.bloodGroup;
+        if (!selectedBloodGroups.has(group)) {
+          child.style.opacity = '0';
+          child.style.transform = 'translateY(-6px) scale(0.95)';
+          setTimeout(() => child.remove(), 200);
+        }
+      });
+
+      selectedBloodGroups.forEach((units, group) => {
+        let card = container.querySelector(`[data-blood-group="${group}"]`);
+        if (!card) {
+          card = document.createElement('div');
+          card.className = 'blood-unit-card';
+          card.dataset.bloodGroup = group;
+          card.innerHTML = `
+            <header>
+              <label>🩸 ${escapeHtml(group)} Units Required</label>
+            </header>
+            <input type="number" min="1" step="1" value="${units}" data-unit-input="${escapeHtml(group)}" placeholder="Units needed (min 1)" />
+          `;
+          container.appendChild(card);
+
+          card.querySelector('input').addEventListener('input', (e) => {
+            const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+            selectedBloodGroups.set(group, val);
+          });
+        }
+      });
+    }
+
+    function initBloodGroupSelector() {
+      const selector = document.getElementById('bloodGroupSelector');
+      if (!selector) return;
+
+      selector.querySelectorAll('.blood-pill').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+          e.preventDefault();
+          const group = pill.dataset.group;
+          if (selectedBloodGroups.has(group)) {
+            selectedBloodGroups.delete(group);
+            pill.classList.remove('selected');
+          } else {
+            selectedBloodGroups.set(group, 1);
+            pill.classList.add('selected');
+          }
+          renderBloodUnitsInputs();
+        });
+      });
+    }
+
+    function resetBloodGroupSelector() {
+      selectedBloodGroups.clear();
+      const selector = document.getElementById('bloodGroupSelector');
+      if (selector) {
+        selector.querySelectorAll('.blood-pill').forEach(p => p.classList.remove('selected'));
+      }
+      const container = document.getElementById('bloodUnitsContainer');
+      if (container) container.innerHTML = '';
+    }
+
     function openCampaignModal(){
       const backdrop = document.getElementById('campaignBackdrop');
       const form = document.getElementById('campaignForm');
@@ -748,6 +1323,14 @@
       }
 
       form.reset();
+      resetBloodGroupSelector();
+      const today = new Date().toISOString().split('T')[0];
+
+      const dateInput = document.getElementById('campaignDate');
+      if (dateInput) {
+        dateInput.min = today;
+        dateInput.value = today;
+      }
       backdrop.classList.add('open');
       backdrop.setAttribute('aria-hidden', 'false');
     }
@@ -766,15 +1349,13 @@
   const user = getStoredUser();
   const org = dashboardState.org || {};
 
-  // Auto-fill from org profile
   document.getElementById('reqHospital').value = org.orgName || user?.fullName || '';
   document.getElementById('reqHospitalAddress').value = org.address || '';
   document.getElementById('reqContactPerson').value = org.managerName || user?.fullName || '';
   document.getElementById('reqContactNumber').value = org.contact || org.phone || user?.phone || '';
 
-  // Set default required-by to tomorrow
-  const tomorrow = new Date(Date.now() + 86400000);
-  document.getElementById('reqRequiredBy').value = tomorrow.toISOString().slice(0, 16);
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('reqRequiredBy').value = today;
 
   const backdrop = document.getElementById('requestBackdrop');
   backdrop.classList.add('open');
@@ -843,8 +1424,10 @@ async function publishBloodRequest() {
     await loadDashboard();
     setActiveTab('overview');
     alert(payload.message || 'Blood request published and donors notified.');
+    return true;
   } catch (error) {
     alert(error.message || 'Unable to publish blood request.');
+    return false;
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Publish Request & Notify Donors';
@@ -855,7 +1438,7 @@ async function publishBloodRequest() {
       const user = getStoredUser();
       if (!user || user.role !== 'org') {
         location.href = 'login.html?role=org';
-        return;
+        return false;
       }
 
       const title = String(document.getElementById('campaignName')?.value || '').trim();
@@ -863,12 +1446,23 @@ async function publishBloodRequest() {
       const eventDate = String(document.getElementById('campaignDate')?.value || '').trim();
       const timeRange = String(document.getElementById('campaignTime')?.value || '').trim();
       const locationValue = String(document.getElementById('campaignLocation')?.value || '').trim();
-      const spotsTotal = String(document.getElementById('campaignSpots')?.value || '').trim();
       const imageFile = document.getElementById('campaignImage')?.files?.[0];
 
-      if (!title || !eventType || !eventDate || !timeRange || !locationValue || !spotsTotal || !imageFile) {
+      const bloodRequirements = [];
+      selectedBloodGroups.forEach((units, bloodGroup) => {
+        const inputEl = document.querySelector(`[data-unit-input="${bloodGroup}"]`);
+        const val = inputEl ? (parseInt(inputEl.value, 10) || units) : units;
+        bloodRequirements.push({ bloodGroup, unitsRequired: Math.max(1, val) });
+      });
+
+      if (!title || !eventType || !eventDate || !timeRange || !locationValue || !imageFile) {
         alert('Please fill in all campaign fields and upload an image.');
-        return;
+        return false;
+      }
+
+      if (!bloodRequirements.length) {
+        alert('Please select at least one blood group requirement.');
+        return false;
       }
 
       try {
@@ -882,14 +1476,14 @@ async function publishBloodRequest() {
             eventDate,
             timeRange,
             location: locationValue,
-            spotsTotal,
+            bloodRequirements,
             imageData: await readFileAsDataUrl(imageFile),
           }),
         });
         const payload = await readJsonResponse(response);
         if (!response.ok) {
           alert(payload.message || 'Unable to create campaign.');
-          return;
+          return false;
         }
 
         closeCampaignModal();
@@ -897,22 +1491,37 @@ async function publishBloodRequest() {
         setActiveTab('upcoming');
         document.getElementById('panel-upcoming')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         alert(payload.message || 'Campaign created successfully.');
+        return true;
       } catch (error) {
         alert(error.message || 'Unable to create campaign.');
+        return false;
       }
     }
 
     function campaignCardMarkup(campaign, variant){
       const isBloodRequest = campaign.kind === 'blood-request';
-      const remaining = Number(campaign.spots ?? 0);
-      const total = Number(campaign.total ?? 0);
-      const filled = Math.max(total - remaining, 0);
       const badgeClass = variant === 'completed' ? 'completed' : 'secondary';
       const badgeLabel = isBloodRequest ? 'Blood Request' : variant === 'completed' ? 'Completed' : campaign.type || 'Upcoming';
-      const firstMetricLabel = isBloodRequest ? 'Units needed' : variant === 'completed' ? 'Spots used' : 'Open spots';
-      const firstMetricValue = isBloodRequest ? `${remaining} unit${remaining === 1 ? '' : 's'}` : variant === 'completed' ? `${filled} / ${total}` : `${remaining} left`;
-      const secondMetricLabel = isBloodRequest ? 'Urgency' : variant === 'completed' ? 'Collection rate' : 'Total spots';
-      const secondMetricValue = isBloodRequest ? (campaign.urgency || 'normal') : total > 0 ? `${Math.round((filled / total) * 100)}%` : '0%';
+
+      const bloodReqs = campaign.bloodRequirements || [];
+      const totalUnits = campaign.totalUnitsRequired || campaign.total || (isBloodRequest ? Number(campaign.spots ?? 0) : 0);
+
+      let chipsHtml = '';
+      if (isBloodRequest) {
+        chipsHtml = `
+          <div class="blood-chip">
+            <span class="chip-group">${escapeHtml(campaign.bloodGroup || 'Blood')}</span>
+          </div>
+        `;
+      } else if (bloodReqs.length) {
+        chipsHtml = bloodReqs.map(r => `
+          <div class="blood-chip">
+            <span class="chip-group">${escapeHtml(r.bloodGroup)}</span>
+          </div>
+        `).join('');
+      } else {
+        chipsHtml = `<span style="font-size:0.84rem;color:var(--mid)">All blood types welcomed</span>`;
+      }
 
       return `
         <article class="campaign-card">
@@ -922,17 +1531,36 @@ async function publishBloodRequest() {
           </div>
           <div class="body">
             <h3>${escapeHtml(campaign.title)}</h3>
-            <p style="color:var(--mid);font-size:.93rem">${escapeHtml(campaign.org || campaign.orgName || '')}</p>
+            <p style="color:var(--mid);font-size:.9rem;margin-bottom:4px">${escapeHtml(campaign.org || campaign.orgName || '')}</p>
+
             <div class="meta-row">
-              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>${escapeHtml(campaign.date || '-')}</span>
-              <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-7 7c0 4.2 4.3 8.7 6.3 10.5.4.4 1 .4 1.4 0C14.7 17.7 19 13.2 19 9a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(campaign.location || '-')}</span>
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+                ${escapeHtml(campaign.date || '-')}
+              </span>
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                ${escapeHtml(campaign.location || '-')}
+              </span>
             </div>
-            <div class="campaign-stats">
-              <div class="campaign-stat"><strong>${escapeHtml(firstMetricValue)}</strong><span>${escapeHtml(firstMetricLabel)}</span></div>
-              <div class="campaign-stat"><strong>${escapeHtml(secondMetricValue)}</strong><span>${escapeHtml(secondMetricLabel)}</span></div>
-              <div class="campaign-stat"><strong>${escapeHtml(campaign.time || '-')}</strong><span>Time range</span></div>
+
+            <div class="meta-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3,16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              ${isBloodRequest ? `<span style="font-weight:600">Blood Group: ${escapeHtml(campaign.bloodGroup || 'A+')}</span><span style="margin-left:12px;font-weight:600">Units Required: ${escapeHtml(campaign.spots || 1)} Units</span>` : (bloodReqs.length ? `Required: ${bloodReqs.map(r=>r.bloodGroup).join(', ')}` : 'All blood types welcomed')}
             </div>
-            <button class="btn-red" type="button" data-detail-kind="campaign" data-detail-data="${encodeDetailData({ ...campaign, state: variant })}">View Details</button>
+
+            <div class="campaign-metrics-bar">
+              <div class="metric-box">
+                <label>Time Range</label>
+                <strong>${escapeHtml(campaign.time || '-')}</strong>
+              </div>
+              <div class="metric-box">
+                <label>${isBloodRequest ? 'Urgency' : 'Status'}</label>
+                <strong>${escapeHtml(isBloodRequest ? (campaign.urgency || 'Normal') : (variant === 'completed' ? 'Completed' : 'Active'))}</strong>
+              </div>
+            </div>
+
+            <button class="btn-red" type="button" style="width:100%;justify-content:center;" data-detail-kind="campaign" data-detail-data="${encodeDetailData({ ...campaign, state: variant })}">View Details</button>
           </div>
         </article>
       `;
@@ -1138,6 +1766,15 @@ async function publishBloodRequest() {
       const campaignDetailCloseBtn = document.getElementById('campaignDetailCloseBtn');
       const campaignDetailStopBtn = document.getElementById('campaignDetailStopBtn');
       const campaignDetailDeleteBtn = document.getElementById('campaignDetailDeleteBtn');
+      const campaignDetailEditBtn = document.getElementById('campaignDetailEditBtn');
+
+      campaignDetailEditBtn?.addEventListener('click', () => {
+        if (campaignEditing) {
+          saveCampaignChanges();
+        } else {
+          toggleCampaignEditMode();
+        }
+      });
 
       function closeProfileMenu(){
         profileShell.classList.remove('open');
@@ -1174,6 +1811,8 @@ async function publishBloodRequest() {
         localStorage.removeItem(AUTH_STORAGE_KEY);
         location.replace('index.html');
       });
+
+      initBloodGroupSelector();
 
       startCampaignBtn?.addEventListener('click', openCampaignModal);
       document.getElementById('campaignForm')?.addEventListener('submit', (event) => {
@@ -1232,9 +1871,77 @@ async function publishBloodRequest() {
       });
     }
 
-    bindEvents();
-    setActiveTab('upcoming');
-    loadDashboard();
-  </script>
+    // ===== NOTIFICATION SYSTEM =====
+  // Broadcast notifications to donor dashboard and event/drive sections
+  // Also sends email notifications via backend API
+  async function sendEmailNotification(message, type = 'info') {
+    try {
+      const response = await fetch('/api/notifications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, type, timestamp: new Date().toISOString() })
+      });
+      // Backend should handle sending emails to all registered donors
+    } catch (e) {
+      console.warn('Email notification not sent:', e);
+    }
+  }
+
+  async function triggerNotification(message, type = 'info') {
+    // Dispatch custom event that other dashboards can listen for
+    const event = new CustomEvent('showNotification', {detail: {message, type}});
+    window.dispatchEvent(event);
+
+    // Send email notification to all donors
+    await sendEmailNotification(message, type);
+
+    // Update local notification bar if present on this page
+    const bar = document.getElementById('campaignNotificationBar');
+    if (bar) {
+      const div = document.createElement('div');
+      div.textContent = `${type === 'success' ? '✓' : '⚠'} ${message}`;
+      // Use theme colors from :root variables
+      div.style.background = type === 'success' ? 'var(--red)' : '#dc3545';
+      div.style.color = '#fff';
+      div.style.padding = '10px 14px';
+      div.style.margin = '6px 0';
+      div.style.borderRadius = '8px';
+      div.style.boxShadow = '0 2px 8px rgba(214, 43, 43, 0.2)';
+      div.style.fontFamily = 'var(--ff-body)';
+      div.style.fontSize = '0.92rem';
+      div.style.fontWeight = '500';
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.gap = '8px';
+      bar.prepend(div);
+      setTimeout(() => div.remove(), 5000);
+    }
+  }
+
+  // Wrap publishCampaign to broadcast notifications
+  const _originalPublishCampaign = publishCampaign;
+  publishCampaign = async function () {
+    const result = await _originalPublishCampaign();
+    if (result) {
+      const campaignTitle = document.getElementById('campaignName')?.value || 'Untitled Campaign';
+      await triggerNotification(`New Campaign Started: ${campaignTitle}`, 'success');
+    }
+    return result;
+  };
+
+  // Wrap publishBloodRequest to broadcast notifications
+  const _originalPublishBloodRequest = publishBloodRequest;
+  publishBloodRequest = async function () {
+    const result = await _originalPublishBloodRequest();
+    if (result) {
+      await triggerNotification('New Blood Request Published', 'success');
+    }
+    return result;
+  };
+
+  bindEvents();
+  setActiveTab('upcoming');
+  loadDashboard();
+</script>
 </body>
 </html>

@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Donor Dashboard — SaveABeat</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23D62B2B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --red:#D62B2B;
+      --red:#E3242B;
       --red-dark:#a81e1e;
       --red-light:#fdecea;
       --bg:#fafafa;
@@ -28,7 +28,7 @@
     /* NAV */
     nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
     .logo{display:flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.25rem;font-weight:700;color:var(--ink);text-decoration:none}
-    .logo svg{color:var(--red)}
+    .logo svg{color:#E3242B}
     .nav-links{display:flex;align-items:center;gap:32px}
     .nav-links button{text-decoration:none;color:var(--mid);font-size:.9rem;font-weight:500;display:flex;align-items:center;gap:6px;transition:color .2s;background:none;border:none;cursor:pointer;font-family:var(--ff-body);padding:0}
     .nav-links button:hover,.nav-links button.active{color:var(--ink)}
@@ -512,6 +512,78 @@
     .profile-card-actions{padding:18px 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
     .profile-actions-left,.profile-card-actions-right{display:flex;gap:10px;flex-wrap:wrap}
 
+    /* RESPONSE MODAL */
+    .response-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+    .response-backdrop.open{display:flex}
+    .response-card{width:100%;max-width:680px;max-height:calc(100vh - 40px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .response-card-header{padding:28px 24px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);border-bottom:1px solid var(--border)}
+    .response-card-header h3{font-family:var(--ff-head);font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:4px}
+    .response-card-header p{color:var(--mid);font-size:.88rem}
+    .response-card-body{padding:24px;overflow:auto;flex:1}
+    .response-section{margin-bottom:24px}
+    .response-section-title{font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .response-section-title svg{color:var(--red);width:18px;height:18px}
+    .response-radio-group{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+    .response-radio-option{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .2s,background .2s}
+    .response-radio-option:hover{border-color:var(--red);background:#fff7f7}
+    .response-radio-option.selected{border-color:var(--red);background:#fff5f5}
+    .response-radio-option input[type="radio"]{width:18px;height:18px;accent-color:var(--red);cursor:pointer}
+    .response-radio-option label{font-size:.95rem;font-weight:500;color:var(--ink);cursor:pointer;flex:1}
+    .response-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .response-form-group{display:flex;flex-direction:column;gap:6px}
+    .response-form-group.full-width{grid-column:1/-1}
+    .response-form-group label{font-size:.85rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.03em}
+    .response-form-group input,.response-form-group select,.response-form-group textarea{padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font:500 .95rem var(--ff-body);background:var(--white);color:var(--ink);outline:none;transition:border-color .2s}
+    .response-form-group input:focus,.response-form-group select:focus,.response-form-group textarea:focus{border-color:var(--red)}
+    .response-form-group input[readonly]{background:#f5f5f5;cursor:not-allowed}
+    .response-form-group textarea{resize:vertical;min-height:80px}
+    .response-note{font-size:.82rem;color:var(--soft);background:#fff9e6;border:1px solid #ffe58f;border-radius:8px;padding:10px 14px;margin-top:12px;line-height:1.5}
+    .response-card-actions{padding:18px 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
+    .response-actions-left,.response-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+    .response-form-fields{display:none}
+    .response-form-fields.active{display:block;animation:fadeIn .3s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    @media (max-width:768px){
+      .response-form-grid{grid-template-columns:1fr}
+    }
+
+    /* DONATION MODAL */
+    .donation-backdrop{position:fixed;inset:0;background:rgba(18,18,18,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
+    .donation-backdrop.open{display:flex}
+    .donation-card{width:100%;max-width:700px;max-height:calc(100vh - 40px);background:var(--white);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 26px 70px rgba(0,0,0,.24)}
+    .donation-card-header{padding:28px 24px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);border-bottom:1px solid var(--border)}
+    .donation-card-header h3{font-family:var(--ff-head);font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:4px}
+    .donation-card-header p{color:var(--mid);font-size:.88rem}
+    .donation-card-body{padding:24px;overflow:auto;flex:1}
+    .donation-section{margin-bottom:24px}
+    .donation-section-title{font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .donation-section-title svg{color:var(--red);width:18px;height:18px}
+    .donation-summary{background:#fafafa;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px}
+    .donation-summary-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+    .donation-summary-item:last-child{border-bottom:none}
+    .donation-summary-label{color:var(--mid);font-size:.88rem}
+    .donation-summary-value{color:var(--ink);font-weight:600;font-size:.9rem;text-align:right}
+    .donation-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .donation-form-group{display:flex;flex-direction:column;gap:6px}
+    .donation-form-group.full-width{grid-column:1/-1}
+    .donation-form-group label{font-size:.85rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.03em}
+    .donation-form-group input,.donation-form-group textarea{padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font:500 .95rem var(--ff-body);background:var(--white);color:var(--ink);outline:none;transition:border-color .2s}
+    .donation-form-group input:focus,.donation-form-group textarea:focus{border-color:var(--red)}
+    .donation-form-group input[readonly]{background:#f5f5f5;cursor:not-allowed}
+    .donation-checkbox-group{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+    .donation-checkbox-item{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .2s,background .2s}
+    .donation-checkbox-item:hover{border-color:var(--red);background:#fff7f7}
+    .donation-checkbox-item input[type="checkbox"]{width:18px;height:18px;accent-color:var(--red);cursor:pointer;margin-top:2px;flex-shrink:0}
+    .donation-checkbox-item label{font-size:.9rem;font-weight:500;color:var(--ink);cursor:pointer;line-height:1.4;flex:1}
+    .donation-eligibility-note{font-size:.82rem;color:var(--soft);background:#fff9e6;border:1px solid #ffe58f;border-radius:8px;padding:12px 14px;margin-top:12px;line-height:1.5}
+    .donation-eligibility-error{font-size:.9rem;color:#d32f2f;background:#ffebee;border:1px solid #ef9a9a;border-radius:8px;padding:12px 14px;margin-bottom:16px;line-height:1.5;display:none}
+    .donation-eligibility-error.show{display:block}
+    .donation-card-actions{padding:18px 24px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);background:#fff}
+    .donation-actions-left,.donation-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+    @media (max-width:768px){
+      .donation-form-grid{grid-template-columns:1fr}
+    }
+
     @media (max-width:768px){
       nav{padding:0 18px}
       .nav-links{display:none}
@@ -528,6 +600,7 @@
   <!-- NAV (Same design as landing index page) -->
   <nav>
     <a href="donor-dashboard.html" class="logo" aria-label="Donor dashboard home">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
       SaveABeat
     </a>
     <div class="nav-links" id="donorNavTabs" role="tablist" aria-label="Donor navigation">
@@ -663,8 +736,8 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <a href="donor-dashboard.html" class="logo" style="color:#fff" aria-label="Donor dashboard home">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
-          SaveABeat Nepal
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+          SaveABeat
         </a>
         <p>Connecting donors across Kathmandu Valley with those in need through technology and compassion. Every donation saves lives.</p>
       </div>
@@ -683,15 +756,269 @@
       </div>
       <div class="footer-col">
         <h4>Contact Us</h4>
-        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Emergency: 102</div>
-        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>+977-1-4221119</div>
-        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D62B2B" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>info@bloodcare.org.np</div>
+        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E3242B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Emergency: 102</div>
+        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E3242B" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>+977-1-4221119</div>
+        <div class="contact-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E3242B" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>info@bloodcare.org.np</div>
       </div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 SaveABeat Nepal. All rights reserved. Serving Kathmandu and beyond.</span>
     </div>
   </footer>
+
+  <!-- RESPONSE MODAL -->
+  <div class="response-backdrop" id="responseBackdrop" aria-hidden="true">
+    <div class="response-card" role="dialog" aria-modal="true" aria-labelledby="responseTitle">
+      <div class="response-card-header">
+        <h3 id="responseTitle">Respond to Blood Request</h3>
+        <p id="responseSubtitle">Provide your response details below</p>
+      </div>
+      <div class="response-card-body">
+        <form id="responseForm">
+          <input type="hidden" id="responseRequestId" name="requestId">
+          
+          <div class="response-section">
+            <div class="response-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              Who is Responding?
+            </div>
+            <div class="response-radio-group">
+              <div class="response-radio-option" onclick="selectResponseType('self')">
+                <input type="radio" id="responseTypeSelf" name="responseType" value="self">
+                <label for="responseTypeSelf">I am volunteering to donate blood myself</label>
+              </div>
+              <div class="response-radio-option" onclick="selectResponseType('referral')">
+                <input type="radio" id="responseTypeReferral" name="responseType" value="referral">
+                <label for="responseTypeReferral">I am referring someone else</label>
+              </div>
+            </div>
+          </div>
+
+          <div id="selfFormFields" class="response-form-fields">
+            <div class="response-section">
+              <div class="response-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Your Information
+              </div>
+              <div class="response-form-grid">
+                <div class="response-form-group full-width">
+                  <label for="selfFullName">Full Name</label>
+                  <input type="text" id="selfFullName" name="fullName" placeholder="Enter your full name">
+                </div>
+                <div class="response-form-group">
+                  <label for="selfPhone">Phone Number</label>
+                  <input type="tel" id="selfPhone" name="phone" placeholder="Enter phone number">
+                </div>
+                <div class="response-form-group">
+                  <label for="selfEmail">Email</label>
+                  <input type="email" id="selfEmail" name="email" placeholder="Enter email address">
+                </div>
+                <div class="response-form-group">
+                  <label for="selfBloodGroup">Blood Group</label>
+                  <input type="text" id="selfBloodGroup" name="bloodGroup" readonly placeholder="Blood group from profile">
+                </div>
+                <div class="response-form-group">
+                  <label for="selfAvailabilityDate">Availability Date</label>
+                  <input type="date" id="selfAvailabilityDate" name="availabilityDate" required>
+                </div>
+                <div class="response-form-group">
+                  <label for="selfAvailabilityTime">Availability Time</label>
+                  <input type="time" id="selfAvailabilityTime" name="availabilityTime" required>
+                </div>
+                <div class="response-form-group full-width">
+                  <label for="selfNotes">Optional Notes</label>
+                  <textarea id="selfNotes" name="notes" placeholder="Any additional information..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="referralFormFields" class="response-form-fields">
+            <div class="response-section">
+              <div class="response-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                Referred Person's Information
+              </div>
+              <div class="response-form-grid">
+                <div class="response-form-group full-width">
+                  <label for="referralFullName">Referred Person's Full Name</label>
+                  <input type="text" id="referralFullName" name="referralFullName" placeholder="Enter full name">
+                </div>
+                <div class="response-form-group">
+                  <label for="referralPhone">Phone Number</label>
+                  <input type="tel" id="referralPhone" name="referralPhone" placeholder="Enter phone number">
+                </div>
+                <div class="response-form-group">
+                  <label for="referralBloodGroup">Blood Group</label>
+                  <select id="referralBloodGroup" name="referralBloodGroup" required>
+                    <option value="">Select blood group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+                <div class="response-form-group">
+                  <label for="referralRelationship">Relationship to You</label>
+                  <select id="referralRelationship" name="referralRelationship" required>
+                    <option value="">Select relationship</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Family">Family</option>
+                    <option value="Colleague">Colleague</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="response-form-group">
+                  <label for="referralAvailabilityDate">Availability Date</label>
+                  <input type="date" id="referralAvailabilityDate" name="availabilityDate" required>
+                </div>
+                <div class="response-form-group">
+                  <label for="referralAvailabilityTime">Availability Time</label>
+                  <input type="time" id="referralAvailabilityTime" name="availabilityTime" required>
+                </div>
+                <div class="response-form-group full-width">
+                  <label for="referralNotes">Optional Notes</label>
+                  <textarea id="referralNotes" name="notes" placeholder="Any additional information..."></textarea>
+                </div>
+              </div>
+              <div class="response-note">
+                By submitting this form, you confirm that the referred person has agreed to be contacted regarding this urgent blood request.
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="response-card-actions">
+        <div class="response-actions-left">
+          <button class="btn-ghost" type="button" onclick="closeResponseModal()">Cancel</button>
+        </div>
+        <div class="response-actions-right">
+          <button class="btn-red" type="button" onclick="submitResponse()">Submit Response</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONATION MODAL -->
+  <div class="donation-backdrop" id="donationBackdrop" aria-hidden="true">
+    <div class="donation-card" role="dialog" aria-modal="true" aria-labelledby="donationTitle">
+      <div class="donation-card-header">
+        <h3 id="donationTitle">Donate Now</h3>
+        <p id="donationSubtitle">Complete your registration for this campaign</p>
+      </div>
+      <div class="donation-card-body">
+        <div id="donationEligibilityError" class="donation-eligibility-error"></div>
+        
+        <form id="donationForm">
+          <input type="hidden" id="donationCampaignId" name="campaignId">
+          <input type="hidden" id="donationOrganizationId" name="organizationId">
+          <input type="hidden" id="donationParticipationType" name="participationType">
+          
+          <div class="donation-section">
+            <div class="donation-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+              Campaign Summary
+            </div>
+            <div class="donation-summary" id="donationSummary">
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Campaign Name</span>
+                <span class="donation-summary-value" id="summaryCampaignName">-</span>
+              </div>
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Organization</span>
+                <span class="donation-summary-value" id="summaryOrganization">-</span>
+              </div>
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Date</span>
+                <span class="donation-summary-value" id="summaryDate">-</span>
+              </div>
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Time</span>
+                <span class="donation-summary-value" id="summaryTime">-</span>
+              </div>
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Location</span>
+                <span class="donation-summary-value" id="summaryLocation">-</span>
+              </div>
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Blood Groups Required</span>
+                <span class="donation-summary-value" id="summaryBloodGroups">-</span>
+              </div>
+              <div class="donation-summary-item">
+                <span class="donation-summary-label">Units Required</span>
+                <span class="donation-summary-value" id="summaryUnits">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="donation-section">
+            <div class="donation-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Donor Information
+            </div>
+            <div class="donation-form-grid">
+              <div class="donation-form-group full-width">
+                <label for="donationFullName">Full Name</label>
+                <input type="text" id="donationFullName" name="fullName" readonly>
+              </div>
+              <div class="donation-form-group">
+                <label for="donationEmail">Email</label>
+                <input type="email" id="donationEmail" name="email" readonly>
+              </div>
+              <div class="donation-form-group">
+                <label for="donationPhone">Phone Number</label>
+                <input type="tel" id="donationPhone" name="phone" readonly>
+              </div>
+              <div class="donation-form-group">
+                <label for="donationBloodGroup">Blood Group</label>
+                <input type="text" id="donationBloodGroup" name="bloodGroup" readonly>
+              </div>
+            </div>
+          </div>
+
+          <div class="donation-section">
+            <div class="donation-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Eligibility Confirmation
+            </div>
+            <div class="donation-checkbox-group">
+              <div class="donation-checkbox-item">
+                <input type="checkbox" id="confirmAge" name="confirmAge">
+                <label for="confirmAge">I confirm that I am at least 18 years old.</label>
+              </div>
+              <div class="donation-checkbox-item">
+                <input type="checkbox" id="confirmHealthy" name="confirmHealthy">
+                <label for="confirmHealthy">I confirm that I am currently feeling healthy and fit to donate blood.</label>
+              </div>
+              <div class="donation-checkbox-item">
+                <input type="checkbox" id="confirmInterval" name="confirmInterval">
+                <label for="confirmInterval">I confirm that I have not donated blood within the last 56 days (8 weeks), as recommended for whole blood donation.</label>
+              </div>
+              <div class="donation-checkbox-item">
+                <input type="checkbox" id="confirmMedicalScreening" name="confirmMedicalScreening">
+                <label for="confirmMedicalScreening">I understand that my final eligibility will be determined during the pre-donation health screening.</label>
+              </div>
+            </div>
+            <div class="donation-eligibility-note">
+              The recommended interval between whole blood donations is at least 56 days (8 weeks). Final eligibility will always be assessed by the medical team at the donation site.
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="donation-card-actions">
+        <div class="donation-actions-left">
+          <button class="btn-ghost" type="button" onclick="closeDonationModal()">Cancel</button>
+        </div>
+        <div class="donation-actions-right">
+          <button class="btn-red" type="button" id="donationSubmitBtn" onclick="submitDonation()">Confirm Participation</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- PROFILE MODAL (Same design as landing index page) -->
   <div class="profile-backdrop" id="profileBackdrop" aria-hidden="true">
@@ -726,9 +1053,19 @@
       try{
         const savedUser = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
         const user = JSON.parse(savedUser || 'null');
+        if(user && user.role !== 'donor'){
+          clearStoredUser();
+          location.replace('login.html?role=donor');
+          return null;
+        }
+        if(!user){
+          location.replace('login.html?role=donor');
+          return null;
+        }
         if(user && !localStorage.getItem(AUTH_STORAGE_KEY)) saveStoredUser(user);
         return user;
       }catch(error){
+        location.replace('login.html?role=donor');
         return null;
       }
     }
@@ -844,15 +1181,17 @@
         }).catch(error => console.warn('Unable to mark notification as read.', error));
       }
 
-      // Campaign notifications retain the created event id, so the donor lands
-      // directly on the matching listing instead of only the dashboard.
-      if(notification.eventId){
-        document.getElementById('eventSearch').value = '';
-        document.getElementById('typeFilter').value = '';
+      document.querySelector('#donorNavTabs [data-tab="browse"]')?.click();
+
+      if(notification.eventId || notification.requestId){
+        const targetId = notification.eventId ? `event-${notification.eventId}` : `event-${notification.requestId}`;
+        const searchEl = document.getElementById('eventSearch');
+        const typeEl = document.getElementById('typeFilter');
+        if (searchEl) searchEl.value = '';
+        if (typeEl) typeEl.value = '';
         renderDrives(EVENTS);
-        document.querySelector('#donorNavTabs [data-tab="browse"]')?.click();
         window.requestAnimationFrame(() => {
-          document.getElementById(`event-${notification.eventId}`)?.scrollIntoView({behavior:'smooth', block:'center'});
+          document.getElementById(targetId)?.scrollIntoView({behavior:'smooth', block:'center'});
         });
       }
     }
@@ -1222,7 +1561,7 @@
       }
       
       drivesNode.innerHTML = list.map(d=>`
-        <div class="event-card" id="event-${d.id}">
+        <div class="event-card" id="event-${d.kind === 'blood-request' ? d.requestId : d.id}">
           <div class="card-img">
             <img src="${d.img || 'https://picsum.photos/600/400?random'}" alt="${d.title}" loading="lazy"/>
             <span class="badge ${badgeClass(d.type)}">${d.type}</span>
@@ -1244,8 +1583,8 @@
                 ${d.location || 'Location not specified'}
               </div>
               <div class="card-meta-row">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                ${d.spots || 0} spots available out of ${d.total || 0}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3,16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                ${d.kind === 'blood-request' ? `<span style="font-weight:600">Blood Group: ${escapeHtml(d.bloodGroup || 'A+')}</span><span style="margin-left:12px;font-weight:600">Units Required: ${escapeHtml(d.spots || 1)} Units</span>` : (d.bloodRequirements && d.bloodRequirements.length ? `Required: ${d.bloodRequirements.map(r=>r.bloodGroup).join(', ')}` : `${d.totalUnitsRequired || d.spots || 0} units required`)}
               </div>
             </div>
             ${d.kind === 'blood-request'
@@ -1352,19 +1691,410 @@
     async function apply(id){
       const user = getStoredUser();
       if(!user || !user.email){location.href='login.html?role=donor';return}
-      try{
-        const res = await fetch(`/api/events/${id}/apply`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:user.email,units:1})});
-        const payload = await (res.headers.get('content-type')||'').includes('application/json') ? await res.json() : null;
-        if(!res.ok){alert(payload?.message||'Unable to apply');return}
-        alert(payload?.message||'Applied — donation recorded');
+      
+      const campaign = EVENTS.find((event) => event.id === id);
+      if (!campaign) {
+        alert('Campaign not found.');
+        return;
+      }
+      
+      await openDonationModal(campaign);
+    }
+
+    async function openDonationModal(campaign){
+      const backdrop = document.getElementById('donationBackdrop');
+      const errorDiv = document.getElementById('donationEligibilityError');
+      
+      if (!backdrop) {
+        return;
+      }
+      
+      errorDiv.classList.remove('show');
+      errorDiv.textContent = '';
+      
+      const user = getStoredUser();
+      if (!user) {
+        alert('Please log in to continue.');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/donor/eligibility', {
+          headers: {
+            'Authorization': `Bearer ${user.token || user.email}`
+          }
+        });
+        
+        const eligibility = await response.json();
+        
+        if (eligibility.eligibilityStatus === 'ineligible') {
+          errorDiv.innerHTML = `
+            <strong>You donated blood through SaveABeat on ${formatDate(eligibility.lastDonationDate)}.</strong><br><br>
+            For your safety, the recommended interval between whole blood donations is 56 days (8 weeks).<br><br>
+            You will be eligible to donate again on <strong>${formatDate(eligibility.eligibleDate)}</strong>.
+          `;
+          errorDiv.classList.add('show');
+          document.getElementById('donationSubmitBtn').disabled = true;
+        } else if (eligibility.eligibilityStatus === 'has_active_registration') {
+          errorDiv.innerHTML = `
+            <strong>You already have an active donation registration for another campaign.</strong><br><br>
+            Please complete or cancel your existing participation before registering again.
+          `;
+          errorDiv.classList.add('show');
+          document.getElementById('donationSubmitBtn').disabled = true;
+        } else {
+          document.getElementById('donationSubmitBtn').disabled = false;
+        }
+      } catch (error) {
+        console.error('Eligibility check failed:', error);
+      }
+      
+      document.getElementById('summaryCampaignName').textContent = campaign.title || '-';
+      document.getElementById('summaryOrganization').textContent = campaign.org || '-';
+      document.getElementById('summaryDate').textContent = campaign.date || '-';
+      document.getElementById('summaryTime').textContent = campaign.time || '-';
+      document.getElementById('summaryLocation').textContent = campaign.location || '-';
+      
+      const bloodGroups = campaign.bloodRequirements && campaign.bloodRequirements.length 
+        ? campaign.bloodRequirements.map(r => r.bloodGroup).join(', ') 
+        : 'All';
+      document.getElementById('summaryBloodGroups').textContent = bloodGroups;
+      
+      const units = campaign.totalUnitsRequired || campaign.spots || campaign.total || 0;
+      document.getElementById('summaryUnits').textContent = units + ' Units';
+      
+      document.getElementById('donationCampaignId').value = campaign.id;
+      document.getElementById('donationOrganizationId').value = campaign.orgId || '';
+      document.getElementById('donationParticipationType').value = campaign.kind === 'blood-request' ? 'event' : 'drive';
+      
+      autoFillDonationForm();
+      
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDonationModal(){
+      const backdrop = document.getElementById('donationBackdrop');
+      if (!backdrop) {
+        return;
+      }
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      resetDonationForm();
+    }
+
+    function resetDonationForm(){
+      const form = document.getElementById('donationForm');
+      if (form) {
+        form.reset();
+      }
+      
+      document.querySelectorAll('.donation-checkbox-item input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+      });
+      
+      const errorDiv = document.getElementById('donationEligibilityError');
+      if (errorDiv) {
+        errorDiv.classList.remove('show');
+        errorDiv.textContent = '';
+      }
+      
+      document.getElementById('donationSubmitBtn').disabled = false;
+    }
+
+    function autoFillDonationForm(){
+      const user = getStoredUser();
+      if (!user) {
+        return;
+      }
+      
+      const fullNameInput = document.getElementById('donationFullName');
+      const emailInput = document.getElementById('donationEmail');
+      const phoneInput = document.getElementById('donationPhone');
+      const bloodGroupInput = document.getElementById('donationBloodGroup');
+      
+      if (fullNameInput && user.fullName) {
+        fullNameInput.value = user.fullName;
+      }
+      if (emailInput && user.email) {
+        emailInput.value = user.email;
+      }
+      if (phoneInput && user.phone) {
+        phoneInput.value = user.phone;
+      }
+      if (bloodGroupInput && user.donorProfile?.blood_group) {
+        bloodGroupInput.value = user.donorProfile.blood_group;
+      } else if (bloodGroupInput && user.donorProfile?.bloodGroup) {
+        bloodGroupInput.value = user.donorProfile.bloodGroup;
+      }
+    }
+
+    async function submitDonation(){
+      const user = getStoredUser();
+      if (!user) {
+        alert('Please log in to continue.');
+        return;
+      }
+      
+      const campaignId = document.getElementById('donationCampaignId').value;
+      const organizationId = document.getElementById('donationOrganizationId').value;
+      const participationType = document.getElementById('donationParticipationType').value;
+      const fullName = document.getElementById('donationFullName').value;
+      const email = document.getElementById('donationEmail').value;
+      const phone = document.getElementById('donationPhone').value;
+      const bloodGroup = document.getElementById('donationBloodGroup').value;
+      
+      const confirmAge = document.getElementById('confirmAge').checked;
+      const confirmHealthy = document.getElementById('confirmHealthy').checked;
+      const confirmInterval = document.getElementById('confirmInterval').checked;
+      const confirmMedicalScreening = document.getElementById('confirmMedicalScreening').checked;
+      
+      if (!confirmAge || !confirmHealthy || !confirmInterval || !confirmMedicalScreening) {
+        alert('Please confirm all eligibility requirements before proceeding.');
+        return;
+      }
+      
+      const submitBtn = document.getElementById('donationSubmitBtn');
+      submitBtn.disabled = true;
+      
+      try {
+        const response = await fetch('/api/participation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          },
+          body: JSON.stringify({
+            campaignId: Number(campaignId),
+            organizationId: Number(organizationId),
+            participationType,
+            fullName,
+            email,
+            phone,
+            bloodGroup,
+            confirmAge,
+            confirmHealthy,
+            confirmInterval,
+            confirmMedicalScreening
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          if (response.status === 403 && result.eligibleDate) {
+            alert(`You are not yet eligible to donate. You will be eligible on ${formatDate(result.eligibleDate)}.`);
+          } else if (response.status === 409) {
+            alert(result.message || 'You already have an active donation registration.');
+          } else {
+            alert(result.message || 'Unable to register for donation.');
+          }
+          submitBtn.disabled = false;
+          return;
+        }
+        
+        alert('Participation registered successfully! The organization will contact you with further details.');
+        closeDonationModal();
         await loadData();
-      }catch(e){console.error(e);alert('Unable to apply at the moment');}
+      } catch (error) {
+        console.error(error);
+        alert('Network error. Please try again.');
+        submitBtn.disabled = false;
+      }
+    }
+
+    function formatDate(dateStr){
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 
     function respondToRequest(requestId){
       const request = EVENTS.find((event) => event.kind === 'blood-request' && Number(event.requestId) === Number(requestId));
-      const contact = [request?.contactPerson, request?.contactNumber].filter(Boolean).join(' — ');
-      alert(contact ? `Please contact ${contact} to respond to this blood request.` : 'Please contact the requesting organization to respond.');
+      if (!request) {
+        alert('Request not found.');
+        return;
+      }
+      
+      const backdrop = document.getElementById('responseBackdrop');
+      const titleEl = document.getElementById('responseTitle');
+      const subtitleEl = document.getElementById('responseSubtitle');
+      const requestIdInput = document.getElementById('responseRequestId');
+      
+      if (!backdrop || !titleEl || !subtitleEl || !requestIdInput) {
+        return;
+      }
+      
+      titleEl.textContent = `Respond to Blood Request - ${request.bloodGroup || 'A+'}`;
+      subtitleEl.textContent = `Location: ${request.location || 'Not specified'} | Units Required: ${request.spots || 1}`;
+      requestIdInput.value = requestId;
+      
+      resetResponseForm();
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeResponseModal(){
+      const backdrop = document.getElementById('responseBackdrop');
+      if (!backdrop) {
+        return;
+      }
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      resetResponseForm();
+    }
+
+    function resetResponseForm(){
+      const form = document.getElementById('responseForm');
+      if (form) {
+        form.reset();
+      }
+      
+      document.querySelectorAll('.response-radio-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      
+      document.querySelectorAll('.response-form-fields').forEach(fields => {
+        fields.classList.remove('active');
+      });
+      
+      const selfRadio = document.getElementById('responseTypeSelf');
+      const referralRadio = document.getElementById('responseTypeReferral');
+      if (selfRadio) selfRadio.checked = false;
+      if (referralRadio) referralRadio.checked = false;
+    }
+
+    function selectResponseType(type){
+      const selfRadio = document.getElementById('responseTypeSelf');
+      const referralRadio = document.getElementById('responseTypeReferral');
+      const selfFields = document.getElementById('selfFormFields');
+      const referralFields = document.getElementById('referralFormFields');
+      
+      document.querySelectorAll('.response-radio-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      
+      if (type === 'self') {
+        selfRadio.checked = true;
+        selfRadio.closest('.response-radio-option').classList.add('selected');
+        if (selfFields) selfFields.classList.add('active');
+        if (referralFields) referralFields.classList.remove('active');
+        autoFillSelfForm();
+      } else if (type === 'referral') {
+        referralRadio.checked = true;
+        referralRadio.closest('.response-radio-option').classList.add('selected');
+        if (selfFields) selfFields.classList.remove('active');
+        if (referralFields) referralFields.classList.add('active');
+      }
+    }
+
+    function autoFillSelfForm(){
+      const user = getStoredUser();
+      if (!user) {
+        return;
+      }
+      
+      const fullNameInput = document.getElementById('selfFullName');
+      const phoneInput = document.getElementById('selfPhone');
+      const emailInput = document.getElementById('selfEmail');
+      const bloodGroupInput = document.getElementById('selfBloodGroup');
+      
+      if (fullNameInput && user.fullName) {
+        fullNameInput.value = user.fullName;
+      }
+      if (phoneInput && user.phone) {
+        phoneInput.value = user.phone;
+      }
+      if (emailInput && user.email) {
+        emailInput.value = user.email;
+      }
+      if (bloodGroupInput && user.donorProfile?.blood_group) {
+        bloodGroupInput.value = user.donorProfile.blood_group;
+      }
+    }
+
+    async function submitResponse(){
+      const form = document.getElementById('responseForm');
+      const requestId = document.getElementById('responseRequestId').value;
+      const responseType = document.querySelector('input[name="responseType"]:checked')?.value;
+      
+      if (!responseType) {
+        alert('Please select who is responding.');
+        return;
+      }
+      
+      let payload = {
+        requestId: Number(requestId),
+        responseType: responseType,
+        availabilityDate: null,
+        availabilityTime: null,
+        notes: ''
+      };
+      
+      if (responseType === 'self') {
+        const fullName = document.getElementById('selfFullName').value.trim();
+        const phone = document.getElementById('selfPhone').value.trim();
+        const email = document.getElementById('selfEmail').value.trim();
+        const bloodGroup = document.getElementById('selfBloodGroup').value.trim();
+        const availabilityDate = document.getElementById('selfAvailabilityDate').value;
+        const availabilityTime = document.getElementById('selfAvailabilityTime').value;
+        const notes = document.getElementById('selfNotes').value.trim();
+        
+        if (!fullName || !phone || !availabilityDate || !availabilityTime) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+        
+        payload.fullName = fullName;
+        payload.phone = phone;
+        payload.email = email;
+        payload.bloodGroup = bloodGroup;
+        payload.availabilityDate = availabilityDate;
+        payload.availabilityTime = availabilityTime;
+        payload.notes = notes;
+      } else {
+        const referralFullName = document.getElementById('referralFullName').value.trim();
+        const referralPhone = document.getElementById('referralPhone').value.trim();
+        const referralBloodGroup = document.getElementById('referralBloodGroup').value;
+        const referralRelationship = document.getElementById('referralRelationship').value;
+        const availabilityDate = document.getElementById('referralAvailabilityDate').value;
+        const availabilityTime = document.getElementById('referralAvailabilityTime').value;
+        const notes = document.getElementById('referralNotes').value.trim();
+        
+        if (!referralFullName || !referralPhone || !referralBloodGroup || !referralRelationship || !availabilityDate || !availabilityTime) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+        
+        payload.referralFullName = referralFullName;
+        payload.referralPhone = referralPhone;
+        payload.referralBloodGroup = referralBloodGroup;
+        payload.referralRelationship = referralRelationship;
+        payload.availabilityDate = availabilityDate;
+        payload.availabilityTime = availabilityTime;
+        payload.notes = notes;
+      }
+      
+      try {
+        const response = await fetch('/api/responses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          alert(result.message || 'Unable to submit response.');
+          return;
+        }
+        
+        alert('Response submitted successfully! The organization will contact you shortly.');
+        closeResponseModal();
+      } catch (error) {
+        console.error(error);
+        alert('Network error. Please try again.');
+      }
     }
 
     function setupTabs(){
@@ -1396,6 +2126,58 @@
       if(notificationShell && !notificationShell.contains(event.target)){
         document.getElementById('notificationMenu')?.classList.remove('open');
         document.getElementById('notificationTrigger')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Listen for notifications from org dashboard
+    window.addEventListener('showNotification', function(event) {
+      if (event.detail && event.detail.message) {
+        const message = event.detail.message;
+        const type = event.detail.type || 'info';
+
+        // Add to local notifications array
+        const newNotification = {
+          id: Date.now(),
+          message: message,
+          sentAt: new Date().toISOString(),
+          isRead: false,
+          eventId: null
+        };
+
+        notifications.unshift(newNotification);
+        renderNotifications();
+
+        // Also trigger browser notification if permission granted
+        if (Notification.permission === 'granted') {
+          new Notification('SaveABeat', {
+            body: message,
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="%23E3242B" d="M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z"/></svg>'
+          });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification('SaveABeat', {
+                body: message,
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="%23E3242B" d="M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z"/></svg>'
+              });
+            }
+          });
+        }
+
+        // Auto-refresh events grid to show new campaigns
+        if (typeof EVENTS !== 'undefined' && Array.isArray(EVENTS)) {
+          // Reload events data to get new campaigns
+          fetch('/api/events')
+            .then(res => res.ok ? res.json() : { data: [] })
+            .then(data => {
+              if (data.data) {
+                EVENTS = data.data;
+                // Re-render current filtered view
+                filterDrives();
+              }
+            })
+            .catch(err => console.warn('Failed to refresh events:', err));
+        }
       }
     });
 
