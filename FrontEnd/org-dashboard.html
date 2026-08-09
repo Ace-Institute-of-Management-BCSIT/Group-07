@@ -643,6 +643,8 @@
         <div class="campaign-detail-actions-left">
           <button class="btn-outline" type="button" id="campaignDetailCloseBtn">Close</button>
           <button class="btn-outline" type="button" id="campaignDetailEditBtn" style="display:none">Edit</button>
+          <button class="btn-red" type="button" id="campaignDetailSaveBtn" style="display:none">Save</button>
+          <button class="btn-outline" type="button" id="campaignDetailCancelBtn" style="display:none">Cancel</button>
         </div>
         <div class="campaign-detail-actions-right">
           <button class="btn-outline" type="button" id="campaignDetailStopBtn">Stop Campaign</button>
@@ -836,6 +838,113 @@
 
     let currentCampaignDetail = null;
     let campaignEditing = false;
+    let campaignSaving = false;
+    const VALID_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+    function renderBloodGroupOptions(selectedValue = ''){
+      return VALID_BLOOD_GROUPS.map((bloodGroup) => (
+        `<option value="${bloodGroup}" ${bloodGroup === selectedValue ? 'selected' : ''}>${bloodGroup}</option>`
+      )).join('');
+    }
+
+    function renderBloodRequirementRow(requirement = {}, index = 0){
+      const bloodGroup = VALID_BLOOD_GROUPS.includes(String(requirement.bloodGroup || '').trim())
+        ? String(requirement.bloodGroup || '').trim()
+        : VALID_BLOOD_GROUPS[0];
+      const unitsRequired = Number.parseInt(requirement.unitsRequired, 10);
+      const unitsValue = Number.isInteger(unitsRequired) && unitsRequired > 0 ? unitsRequired : 1;
+
+      return `
+        <tr class="campaign-blood-requirement-row" data-index="${index}">
+          <td>
+            <select class="campaign-edit-blood-group" data-index="${index}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
+              ${renderBloodGroupOptions(bloodGroup)}
+            </select>
+          </td>
+          <td>
+            <input type="number" class="campaign-edit-units" data-index="${index}" value="${unitsValue}" min="1" step="1" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
+          </td>
+          <td style="width:40px;text-align:center;">
+            <button type="button" class="remove-blood-req-btn" data-index="${index}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.2rem;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">&times;</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    function syncBloodRequirementSelectStates(){
+      const grid = document.getElementById('campaignDetailGrid');
+      const tbody = grid?.querySelector('.blood-requirements-tbody');
+      if (!tbody) {
+        return;
+      }
+
+      const selects = Array.from(tbody.querySelectorAll('.campaign-edit-blood-group'));
+      const selectedValues = selects
+        .map((select) => String(select.value || '').trim())
+        .filter(Boolean);
+      const uniqueSelectedValues = new Set(selectedValues);
+
+      selects.forEach((select) => {
+        const currentValue = String(select.value || '').trim();
+        Array.from(select.options).forEach((option) => {
+          const optionValue = String(option.value || '').trim();
+          option.disabled = Boolean(optionValue && optionValue !== currentValue && selectedValues.includes(optionValue));
+        });
+      });
+
+      const addButton = grid.querySelector('.add-blood-req-btn');
+      if (addButton) {
+        addButton.disabled = uniqueSelectedValues.size >= VALID_BLOOD_GROUPS.length;
+        addButton.title = addButton.disabled ? 'All blood groups are already in use.' : '';
+      }
+    }
+
+    function bindBloodRequirementRow(row){
+      if (!row) {
+        return;
+      }
+
+      row.querySelector('.remove-blood-req-btn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        row.remove();
+        syncBloodRequirementSelectStates();
+      });
+
+      row.querySelector('.campaign-edit-blood-group')?.addEventListener('change', syncBloodRequirementSelectStates);
+    }
+
+    function collectBloodRequirementsFromEditor(grid){
+      const rows = Array.from(grid.querySelectorAll('.campaign-blood-requirement-row'));
+      if (!rows.length) {
+        return { error: 'Please add at least one blood requirement.' };
+      }
+
+      const bloodRequirements = [];
+      const seenGroups = new Set();
+
+      for (const row of rows) {
+        const bloodGroup = String(row.querySelector('.campaign-edit-blood-group')?.value || '').trim().toUpperCase();
+        const unitsValue = String(row.querySelector('.campaign-edit-units')?.value || '').trim();
+        const unitsRequired = Number(unitsValue);
+
+        if (!VALID_BLOOD_GROUPS.includes(bloodGroup)) {
+          return { error: 'Please choose a valid blood group for each requirement.' };
+        }
+
+        if (!Number.isInteger(unitsRequired) || unitsRequired < 1) {
+          return { error: `Units required for ${bloodGroup} must be a whole number of at least 1.` };
+        }
+
+        if (seenGroups.has(bloodGroup)) {
+          return { error: 'Duplicate blood groups are not allowed in the same campaign.' };
+        }
+
+        seenGroups.add(bloodGroup);
+        bloodRequirements.push({ bloodGroup, unitsRequired });
+      }
+
+      return { bloodRequirements };
+    }
 
     function campaignInput(field, value, type='text'){
       if (type === 'select') {
@@ -869,7 +978,33 @@
     }
 
     function renderBloodRequirementsTable(bloodRequirements, editable) {
-      if (!bloodRequirements || bloodRequirements.length === 0) {
+      const requirements = Array.isArray(bloodRequirements) ? bloodRequirements : [];
+
+      if (editable) {
+        return `
+          <div class="campaign-detail-item full-width">
+            <div class="label">Blood Requirements</div>
+            <div class="blood-table-wrapper">
+              <table class="blood-table">
+                <thead>
+                  <tr>
+                    <th>Blood Group</th>
+                    <th>Units</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody class="blood-requirements-tbody">
+                  ${requirements.map((requirement, index) => renderBloodRequirementRow(requirement, index)).join('')}
+                </tbody>
+              </table>
+              <div class="field-note" style="margin-top:8px">Only blood group and units are editable. Use Add Blood Group to add another requirement.</div>
+              <button type="button" class="btn-outline add-blood-req-btn" style="margin-top:12px;font-size:.85rem;padding:6px 12px;">+ Add Blood Group</button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!requirements.length) {
         return `
           <div class="campaign-detail-item full-width">
             <div class="label">Blood Requirements</div>
@@ -892,92 +1027,40 @@
         `;
       }
 
-      if (editable) {
-        let tableHtml = `
-          <div class="campaign-detail-item full-width">
-            <div class="label">Blood Requirements</div>
-            <div class="blood-table-wrapper">
-              <table class="blood-table">
-                <thead>
+      return `
+        <div class="campaign-detail-item full-width">
+          <div class="label">Blood Requirements</div>
+          <div class="blood-table-wrapper">
+            <table class="blood-table">
+              <thead>
+                <tr>
+                  <th>Blood Group</th>
+                  <th>Units</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${requirements.map((requirement) => `
                   <tr>
-                    <th>Blood Group</th>
-                    <th>Units</th>
-                    ${editable ? '<th>Action</th>' : ''}
+                    <td>${escapeHtml(requirement.bloodGroup)}</td>
+                    <td>${Number(requirement.unitsRequired)} ${Number(requirement.unitsRequired) === 1 ? 'Unit' : 'Units'}</td>
                   </tr>
-                </thead>
-                <tbody class="blood-requirements-tbody">
-        `;
-
-        bloodRequirements.forEach((r, index) => {
-          tableHtml += `
-            <tr data-index="${index}">
-              <td>
-                <select class="campaign-edit-blood-group" data-index="${index}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
-                  <option value="A+" ${r.bloodGroup === 'A+' ? 'selected' : ''}>A+</option>
-                  <option value="A-" ${r.bloodGroup === 'A-' ? 'selected' : ''}>A-</option>
-                  <option value="B+" ${r.bloodGroup === 'B+' ? 'selected' : ''}>B+</option>
-                  <option value="B-" ${r.bloodGroup === 'B-' ? 'selected' : ''}>B-</option>
-                  <option value="AB+" ${r.bloodGroup === 'AB+' ? 'selected' : ''}>AB+</option>
-                  <option value="AB-" ${r.bloodGroup === 'AB-' ? 'selected' : ''}>AB-</option>
-                  <option value="O+" ${r.bloodGroup === 'O+' ? 'selected' : ''}>O+</option>
-                  <option value="O-" ${r.bloodGroup === 'O-' ? 'selected' : ''}>O-</option>
-                </select>
-              </td>
-              <td>
-                <input type="number" class="campaign-edit-units" data-index="${index}" value="${r.unitsRequired}" min="1" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
-              </td>
-              <td style="width:40px;text-align:center;">
-                <button type="button" class="remove-blood-req-btn" data-index="${index}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.2rem;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">&times;</button>
-              </td>
-            </tr>
-          `;
-        });
-
-        tableHtml += `
-                </tbody>
-              </table>
-              <button type="button" class="btn-outline add-blood-req-btn" style="margin-top:12px;font-size:.85rem;padding:6px 12px;">+ Add Blood Group</button>
-            </div>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
-        `;
-
-        return tableHtml;
-      } else {
-        return `
-          <div class="campaign-detail-item full-width">
-            <div class="label">Blood Requirements</div>
-            <div class="blood-table-wrapper">
-              <table class="blood-table">
-                <thead>
-                  <tr>
-                    <th>Blood Group</th>
-                    <th>Units</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${bloodRequirements.map(r => `
-                    <tr>
-                      <td>${escapeHtml(r.bloodGroup)}</td>
-                      <td>${Number(r.unitsRequired)} ${Number(r.unitsRequired) === 1 ? 'Unit' : 'Units'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-      }
+        </div>
+      `;
     }
 
     function buildCampaignRows(campaign){
       const isBloodRequest = campaign.kind === 'blood-request';
       const rows = [
-        { field: 'title', label: isBloodRequest ? 'Request' : 'Campaign', value: campaign.title },
+        { field: 'title', label: isBloodRequest ? 'Request' : 'Campaign', value: campaign.title, readonly: true },
         { field: 'org', label: 'Organization', value: campaign.org || campaign.orgName, readonly: true },
-        { field: 'type', label: 'Type', value: campaign.type, type: 'select' },
-        { field: 'date', label: 'Date', value: campaign.date, type: 'date' },
-        { field: 'time', label: 'Time', value: campaign.time, type: 'text' },
-        { field: 'location', label: 'Location', value: campaign.location },
+        { field: 'type', label: 'Type', value: campaign.type, type: 'select', readonly: true },
+        { field: 'date', label: 'Date', value: campaign.date, type: 'date', readonly: true },
+        { field: 'time', label: 'Time', value: campaign.time, type: 'text', readonly: true },
+        { field: 'location', label: 'Location', value: campaign.location, readonly: true },
       ];
 
       if (isBloodRequest) {
@@ -996,27 +1079,22 @@
       const stopBtn = document.getElementById('campaignDetailStopBtn');
       const deleteBtn = document.getElementById('campaignDetailDeleteBtn');
       const editBtn = document.getElementById('campaignDetailEditBtn');
+      const saveBtn = document.getElementById('campaignDetailSaveBtn');
+      const cancelBtn = document.getElementById('campaignDetailCancelBtn');
 
-      if(!backdrop || !title || !subtitle || !grid || !stopBtn || !deleteBtn || !editBtn){
+      if(!backdrop || !title || !subtitle || !grid || !stopBtn || !deleteBtn || !editBtn || !saveBtn || !cancelBtn){
         return;
       }
 
       currentCampaignDetail = campaign;
       campaignEditing = false;
+      campaignSaving = false;
       const isBloodRequest = campaign.kind === 'blood-request';
       title.textContent = campaign.title || (isBloodRequest ? 'Blood Request Details' : 'Campaign Details');
       subtitle.textContent = campaign.org || campaign.orgName || 'Campaign information';
       
       renderCampaignDetails(campaign);
-
-      const isUpcoming = campaign.state !== 'completed';
-      stopBtn.style.display = isUpcoming && !isBloodRequest ? 'inline-flex' : 'none';
-      deleteBtn.style.display = isBloodRequest ? 'none' : 'inline-flex';
-      deleteBtn.textContent = 'Delete Campaign';
-      editBtn.style.display = !isBloodRequest ? 'inline-flex' : 'none';
-      editBtn.textContent = 'Edit';
-      editBtn.classList.remove('btn-red');
-      editBtn.classList.add('btn-outline');
+      updateCampaignEditControls();
 
       backdrop.classList.add('open');
       backdrop.setAttribute('aria-hidden', 'false');
@@ -1029,11 +1107,13 @@
       const rows = buildCampaignRows(campaign);
       let gridHtml = rows.map((row) => campaignFieldMarkup(row.field, row.label, row.value, row)).join('');
       
+      const bloodRequirements = Array.isArray(campaign.bloodRequirements) ? campaign.bloodRequirements : [];
+
       // Add blood requirements table
-      if(campaign.bloodRequirements && campaign.bloodRequirements.length){
-        gridHtml += renderBloodRequirementsTable(campaign.bloodRequirements, campaignEditing);
-      } else if (campaign.kind === 'blood-request' && campaign.bloodGroup) {
+      if (campaign.kind === 'blood-request' && campaign.bloodGroup) {
         gridHtml += renderBloodRequirementsTable([{bloodGroup: campaign.bloodGroup, unitsRequired: campaign.spots || 1}], campaignEditing);
+      } else {
+        gridHtml += renderBloodRequirementsTable(bloodRequirements, campaignEditing);
       }
 
       grid.innerHTML = gridHtml;
@@ -1047,133 +1127,117 @@
     }
 
     function setupBloodRequirementsListeners(){
-      const tbody = document.querySelector('.blood-requirements-tbody');
+      const grid = document.getElementById('campaignDetailGrid');
+      const tbody = grid?.querySelector('.blood-requirements-tbody');
       if (!tbody) return;
 
-      // Remove button listeners
-      tbody.querySelectorAll('.remove-blood-req-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.target.closest('tr').remove();
-        });
-      });
+      tbody.querySelectorAll('.campaign-blood-requirement-row').forEach((row) => bindBloodRequirementRow(row));
 
-      // Add button listener
-      const addBtn = document.querySelector('.add-blood-req-btn');
+      const addBtn = grid.querySelector('.add-blood-req-btn');
       if (addBtn) {
         addBtn.addEventListener('click', () => {
-          const rowCount = tbody.querySelectorAll('tr').length;
-          const newRow = document.createElement('tr');
-          newRow.dataset.index = rowCount;
-          newRow.innerHTML = `
-            <td>
-              <select class="campaign-edit-blood-group" data-index="${rowCount}" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-            </td>
-            <td>
-              <input type="number" class="campaign-edit-units" data-index="${rowCount}" value="1" min="1" style="width:80px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:.85rem;">
-            </td>
-            <td style="width:40px;text-align:center;">
-              <button type="button" class="remove-blood-req-btn" data-index="${rowCount}" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1.2rem;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">&times;</button>
-            </td>
-          `;
-          tbody.appendChild(newRow);
-          
-          // Add remove button listener for new row
-          newRow.querySelector('.remove-blood-req-btn').addEventListener('click', (e) => {
-            e.target.closest('tr').remove();
-          });
+          const selectedGroups = Array.from(tbody.querySelectorAll('.campaign-edit-blood-group'))
+            .map((select) => String(select.value || '').trim())
+            .filter(Boolean);
+          const nextGroup = VALID_BLOOD_GROUPS.find((group) => !selectedGroups.includes(group)) || VALID_BLOOD_GROUPS[0];
+          const rowCount = tbody.querySelectorAll('.campaign-blood-requirement-row').length;
+          tbody.insertAdjacentHTML('beforeend', renderBloodRequirementRow({ bloodGroup: nextGroup, unitsRequired: 1 }, rowCount));
+          const newRow = tbody.lastElementChild;
+          bindBloodRequirementRow(newRow);
+          syncBloodRequirementSelectStates();
         });
       }
+
+      syncBloodRequirementSelectStates();
     }
 
     function updateCampaignEditControls(){
       const editBtn = document.getElementById('campaignDetailEditBtn');
+      const saveBtn = document.getElementById('campaignDetailSaveBtn');
+      const cancelBtn = document.getElementById('campaignDetailCancelBtn');
+      const closeBtn = document.getElementById('campaignDetailCloseBtn');
       const stopBtn = document.getElementById('campaignDetailStopBtn');
       const deleteBtn = document.getElementById('campaignDetailDeleteBtn');
+      const canEditCampaign = Boolean(currentCampaignDetail && currentCampaignDetail.kind !== 'blood-request');
       
       if(editBtn) {
-        editBtn.textContent = campaignEditing ? 'Save' : 'Edit';
-        editBtn.classList.toggle('btn-red', campaignEditing);
-        editBtn.classList.toggle('btn-outline', !campaignEditing);
+        editBtn.style.display = !campaignEditing && canEditCampaign ? 'inline-flex' : 'none';
+        editBtn.disabled = campaignSaving;
+      }
+
+      if(saveBtn) {
+        saveBtn.style.display = campaignEditing && canEditCampaign ? 'inline-flex' : 'none';
+        saveBtn.disabled = campaignSaving;
+        saveBtn.textContent = campaignSaving ? 'Saving...' : 'Save';
+      }
+
+      if(cancelBtn) {
+        cancelBtn.style.display = campaignEditing && canEditCampaign ? 'inline-flex' : 'none';
+        cancelBtn.disabled = campaignSaving;
       }
       
       const isUpcoming = currentCampaignDetail && currentCampaignDetail.state !== 'completed';
       const isBloodRequest = currentCampaignDetail && currentCampaignDetail.kind === 'blood-request';
-      
-      if(stopBtn) stopBtn.style.display = campaignEditing ? 'none' : (isUpcoming && !isBloodRequest ? 'inline-flex' : 'none');
-      if(deleteBtn) deleteBtn.style.display = campaignEditing ? 'none' : (isBloodRequest ? 'none' : 'inline-flex');
+
+      if(closeBtn) closeBtn.disabled = campaignSaving;
+      if(stopBtn) {
+        stopBtn.style.display = campaignEditing ? 'none' : (isUpcoming && !isBloodRequest ? 'inline-flex' : 'none');
+        stopBtn.disabled = campaignSaving;
+      }
+      if(deleteBtn) {
+        deleteBtn.style.display = campaignEditing ? 'none' : (isBloodRequest ? 'none' : 'inline-flex');
+        deleteBtn.disabled = campaignSaving;
+      }
     }
 
     function closeCampaignDetailModal(){
       const backdrop = document.getElementById('campaignDetailBackdrop');
-      if(!backdrop){
+      if(!backdrop || campaignSaving){
         return;
       }
       backdrop.classList.remove('open');
       backdrop.setAttribute('aria-hidden', 'true');
       currentCampaignDetail = null;
       campaignEditing = false;
+      campaignSaving = false;
+      updateCampaignEditControls();
     }
 
     function toggleCampaignEditMode(){
-      campaignEditing = !campaignEditing;
+      if (!currentCampaignDetail || campaignSaving || currentCampaignDetail.kind === 'blood-request') {
+        return;
+      }
+      campaignEditing = true;
+      campaignSaving = false;
+      renderCampaignDetails(currentCampaignDetail);
+    }
+
+    function cancelCampaignEdit(){
+      if (!currentCampaignDetail || campaignSaving) {
+        return;
+      }
+      campaignEditing = false;
+      campaignSaving = false;
       renderCampaignDetails(currentCampaignDetail);
     }
 
     async function saveCampaignChanges(){
       const user = getStoredUser();
-      if(!user || !currentCampaignDetail) return;
+      if(!user || !currentCampaignDetail || campaignSaving) return;
 
       const grid = document.getElementById('campaignDetailGrid');
-      
-      // Collect field values
-      const titleInput = grid.querySelector('[data-campaign-field="title"]');
-      const typeInput = grid.querySelector('[data-campaign-field="type"]');
-      const dateInput = grid.querySelector('[data-campaign-field="date"]');
-      const timeInput = grid.querySelector('[data-campaign-field="time"]');
-      const locationInput = grid.querySelector('[data-campaign-field="location"]');
-
-      const title = titleInput ? String(titleInput.value || '').trim() : currentCampaignDetail.title;
-      const type = typeInput ? String(typeInput.value || '').trim() : currentCampaignDetail.type;
-      const date = dateInput ? String(dateInput.value || '').trim() : currentCampaignDetail.date;
-      const time = timeInput ? String(timeInput.value || '').trim() : currentCampaignDetail.time;
-      const location = locationInput ? String(locationInput.value || '').trim() : currentCampaignDetail.location;
-
-      // Collect blood requirements
-      const bloodGroupSelects = grid.querySelectorAll('.campaign-edit-blood-group');
-      const unitsInputs = grid.querySelectorAll('.campaign-edit-units');
-      const bloodRequirements = [];
-
-      if (bloodGroupSelects.length > 0 && unitsInputs.length > 0) {
-        bloodGroupSelects.forEach((select, index) => {
-          const unitsInput = unitsInputs[index];
-          if (unitsInput && Number(unitsInput.value) > 0) {
-            bloodRequirements.push({
-              bloodGroup: select.value,
-              unitsRequired: Number(unitsInput.value)
-            });
-          }
-        });
-      }
-
-      // Validation
-      if (!title || !date || !location) {
-        alert('Campaign name, date, and location are required.');
+      if (!grid) {
         return;
       }
 
-      if (bloodGroupSelects.length > 0 && bloodRequirements.length === 0) {
-        alert('At least one blood requirement with valid units is required.');
+      const parsedRequirements = collectBloodRequirementsFromEditor(grid);
+      if (parsedRequirements.error) {
+        alert(parsedRequirements.error);
         return;
       }
+
+      campaignSaving = true;
+      updateCampaignEditControls();
 
       try {
         const response = await fetch(`/api/org/campaigns/${currentCampaignDetail.id}`, {
@@ -1181,39 +1245,42 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: user.email,
-            title: title,
-            type: type,
-            eventDate: date,
-            time: time,
-            location: location,
-            bloodRequirements: bloodRequirements.length > 0 ? bloodRequirements : undefined,
+            title: currentCampaignDetail.title,
+            type: currentCampaignDetail.type,
+            eventDate: currentCampaignDetail.date,
+            time: currentCampaignDetail.time,
+            location: currentCampaignDetail.location,
+            bloodRequirements: parsedRequirements.bloodRequirements,
             isCompleted: currentCampaignDetail.state === 'completed',
           }),
         });
 
-        const payload = await response.json();
+        const payload = await readJsonResponse(response);
         if (!response.ok) {
           alert(payload.message || 'Failed to update campaign.');
           return;
         }
 
-        // Update currentCampaignDetail with new values
-        currentCampaignDetail.title = title;
-        currentCampaignDetail.type = type;
-        currentCampaignDetail.date = date;
-        currentCampaignDetail.time = time;
-        currentCampaignDetail.location = location;
-        if (bloodRequirements.length > 0) {
-          currentCampaignDetail.bloodRequirements = bloodRequirements;
-        }
-
-        alert('Campaign updated successfully!');
+        currentCampaignDetail = {
+          ...currentCampaignDetail,
+          ...(payload.campaign || {}),
+          state: currentCampaignDetail.state,
+        };
         campaignEditing = false;
         renderCampaignDetails(currentCampaignDetail);
-        await loadDashboard();
 
+        try {
+          await loadDashboard();
+        } catch (refreshError) {
+          console.warn('Dashboard refresh failed after campaign save:', refreshError);
+        }
+
+        alert(payload.message || 'Campaign updated successfully!');
       } catch (error) {
         alert(error.message || 'Failed to update campaign.');
+      } finally {
+        campaignSaving = false;
+        updateCampaignEditControls();
       }
     }
 
@@ -1767,13 +1834,19 @@ async function publishBloodRequest() {
       const campaignDetailStopBtn = document.getElementById('campaignDetailStopBtn');
       const campaignDetailDeleteBtn = document.getElementById('campaignDetailDeleteBtn');
       const campaignDetailEditBtn = document.getElementById('campaignDetailEditBtn');
+      const campaignDetailSaveBtn = document.getElementById('campaignDetailSaveBtn');
+      const campaignDetailCancelBtn = document.getElementById('campaignDetailCancelBtn');
 
       campaignDetailEditBtn?.addEventListener('click', () => {
-        if (campaignEditing) {
-          saveCampaignChanges();
-        } else {
-          toggleCampaignEditMode();
-        }
+        toggleCampaignEditMode();
+      });
+
+      campaignDetailSaveBtn?.addEventListener('click', () => {
+        saveCampaignChanges();
+      });
+
+      campaignDetailCancelBtn?.addEventListener('click', () => {
+        cancelCampaignEdit();
       });
 
       function closeProfileMenu(){

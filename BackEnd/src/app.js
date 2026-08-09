@@ -355,6 +355,65 @@ async function getCampaignBloodRequirementsMap(eventIds) {
   }
 }
 
+const VALID_CAMPAIGN_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const VALID_CAMPAIGN_TYPES = ['Drive', 'Camp', 'Emergency'];
+
+function parseCampaignBloodRequirements(rawRequirements, { requireAtLeastOne = true } = {}) {
+  if (!Array.isArray(rawRequirements)) {
+    return {
+      requirements: [],
+      error: requireAtLeastOne
+        ? 'Please select at least one blood group requirement with a minimum of 1 unit.'
+        : null,
+    };
+  }
+
+  const requirements = [];
+  const seenGroups = new Set();
+
+  for (const rawItem of rawRequirements) {
+    if (!rawItem) {
+      continue;
+    }
+
+    const bloodGroup = String(rawItem.bloodGroup || '').trim().toUpperCase();
+    const unitsRequired = Number(rawItem.unitsRequired);
+
+    if (!VALID_CAMPAIGN_BLOOD_GROUPS.includes(bloodGroup)) {
+      return {
+        requirements: [],
+        error: 'Each blood requirement must use a valid blood group.',
+      };
+    }
+
+    if (!Number.isInteger(unitsRequired) || unitsRequired < 1) {
+      return {
+        requirements: [],
+        error: `Units required for ${bloodGroup} must be a whole number of at least 1.`,
+      };
+    }
+
+    if (seenGroups.has(bloodGroup)) {
+      return {
+        requirements: [],
+        error: 'Duplicate blood groups are not allowed in the same campaign.',
+      };
+    }
+
+    seenGroups.add(bloodGroup);
+    requirements.push({ bloodGroup, unitsRequired });
+  }
+
+  if (requireAtLeastOne && requirements.length === 0) {
+    return {
+      requirements: [],
+      error: 'Please select at least one blood group requirement with a minimum of 1 unit.',
+    };
+  }
+
+  return { requirements, error: null };
+}
+
 function mapCampaignRow(row, reqMap = {}) {
   const bloodReqs = reqMap[row.event_id] || row.bloodRequirements || [];
   const totalUnitsRequired = bloodReqs.reduce((sum, r) => sum + Number(r.unitsRequired || 0), 0);
@@ -531,21 +590,15 @@ app.post('/api/org/campaigns', async (req, res) => {
     return res.status(400).json({ message: 'Title, date, time, location, and campaign image are required.' });
   }
 
-  if (!['Drive', 'Camp', 'Emergency'].includes(eventType)) {
+  if (!VALID_CAMPAIGN_TYPES.includes(eventType)) {
     return res.status(400).json({ message: 'Campaign type must be Drive, Camp, or Emergency.' });
   }
 
-  const validBloodGroups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
-  const bloodRequirements = rawRequirements.filter((reqItem) => (
-    reqItem && validBloodGroups.includes(String(reqItem.bloodGroup || '').trim()) && Number.parseInt(reqItem.unitsRequired, 10) >= 1
-  )).map((reqItem) => ({
-    bloodGroup: String(reqItem.bloodGroup).trim(),
-    unitsRequired: Number.parseInt(reqItem.unitsRequired, 10)
-  }));
-
-  if (!bloodRequirements.length) {
-    return res.status(400).json({ message: 'Please select at least one blood group requirement with a minimum of 1 unit.' });
+  const parsedRequirements = parseCampaignBloodRequirements(rawRequirements);
+  if (parsedRequirements.error) {
+    return res.status(400).json({ message: parsedRequirements.error });
   }
+  const bloodRequirements = parsedRequirements.requirements;
 
   const totalUnitsRequired = bloodRequirements.reduce((sum, r) => sum + r.unitsRequired, 0);
 
@@ -697,33 +750,12 @@ app.get('/api/org/campaigns', async (req, res) => {
 app.put('/api/org/campaigns/:eventId', async (req, res) => {
   const eventId = Number.parseInt(req.params.eventId, 10);
   const email = String(req.body.email || '').trim().toLowerCase();
-  const title = String(req.body.title || '').trim();
-  const eventType = String(req.body.type || '').trim();
-  const eventDate = String(req.body.eventDate || '').trim();
-  const time = String(req.body.time || '').trim();
-  const location = String(req.body.location || '').trim();
-  const rawRequirements = Array.isArray(req.body.bloodRequirements) ? req.body.bloodRequirements : [];
+  const hasBloodRequirements = Object.prototype.hasOwnProperty.call(req.body, 'bloodRequirements');
+  const rawRequirements = hasBloodRequirements ? req.body.bloodRequirements : null;
   const isCompleted = req.body.isCompleted === true;
 
   if (!eventId || !email) {
     return res.status(400).json({ message: 'Campaign id and organization email are required.' });
-  }
-
-  if (!title || !eventDate || !location) {
-    return res.status(400).json({ message: 'Title, date, and location are required.' });
-  }
-
-  if (!['Drive', 'Camp', 'Emergency'].includes(eventType)) {
-    return res.status(400).json({ message: 'Campaign type must be Drive, Camp, or Emergency.' });
-  }
-
-  const validBloodGroups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
-  const bloodRequirements = rawRequirements.filter((r) => {
-    return validBloodGroups.includes(r.bloodGroup) && Number(r.unitsRequired) > 0;
-  });
-
-  if (bloodRequirements.length === 0) {
-    return res.status(400).json({ message: 'At least one valid blood requirement is required.' });
   }
 
   try {
@@ -733,43 +765,73 @@ app.put('/api/org/campaigns/:eventId', async (req, res) => {
     }
 
     const campaignRows = await query(
-      `SELECT event_id FROM blood_drive_listings WHERE event_id = ? AND org_id = ? LIMIT 1`,
+      `SELECT event_id, title, event_type, event_date, time_range, location, status
+       FROM blood_drive_listings
+       WHERE event_id = ? AND org_id = ?
+       LIMIT 1`,
       [eventId, org.org_id]
     );
 
     if (!campaignRows.length) {
-      return res.status(404).json({ message: 'Campaign not found.' });
+      return res.status(404).json({ message: 'Campaign not found or you do not have permission to update it.' });
     }
 
-    const status = isCompleted ? 'completed' : 'active';
+    const currentCampaign = campaignRows[0];
+    const title = String(req.body.title || currentCampaign.title || '').trim();
+    const eventType = String(req.body.type || currentCampaign.event_type || 'Drive').trim();
+    const eventDate = String(req.body.eventDate || currentCampaign.event_date || '').trim();
+    const time = String(req.body.time || currentCampaign.time_range || '').trim();
+    const location = String(req.body.location || currentCampaign.location || '').trim();
+
+    if (!title || !eventDate || !location) {
+      return res.status(400).json({ message: 'Campaign name, date, and location are required.' });
+    }
+
+    if (!VALID_CAMPAIGN_TYPES.includes(eventType)) {
+      return res.status(400).json({ message: 'Campaign type must be Drive, Camp, or Emergency.' });
+    }
+
+    let bloodRequirements = null;
+    if (hasBloodRequirements) {
+      const parsedRequirements = parseCampaignBloodRequirements(rawRequirements);
+      if (parsedRequirements.error) {
+        return res.status(400).json({ message: parsedRequirements.error });
+      }
+      bloodRequirements = parsedRequirements.requirements;
+    }
+
+    const status = isCompleted ? 'completed' : currentCampaign.status || 'active';
 
     await query(
       `UPDATE blood_drive_listings
        SET title = ?, event_date = ?, time_range = ?, location = ?, event_type = ?, status = ?
        WHERE event_id = ? AND org_id = ?`,
-      [title, eventDate, time, location, eventType, status, eventId, org.org_id]
+      [title, eventDate, time || '', location, eventType, status, eventId, org.org_id]
     );
 
-    await query(
-      `DELETE FROM campaign_blood_requirements WHERE event_id = ?`,
-      [eventId]
-    );
-
-    for (const reqItem of bloodRequirements) {
+    if (bloodRequirements) {
       await query(
-        `INSERT INTO campaign_blood_requirements (event_id, blood_group, units_required)
-         VALUES (?, ?, ?)`,
-        [eventId, reqItem.bloodGroup, reqItem.unitsRequired]
+        `DELETE FROM campaign_blood_requirements WHERE event_id = ?`,
+        [eventId]
       );
+
+      for (const reqItem of bloodRequirements) {
+        await query(
+          `INSERT INTO campaign_blood_requirements (event_id, blood_group, units_required)
+           VALUES (?, ?, ?)`,
+          [eventId, reqItem.bloodGroup, reqItem.unitsRequired]
+        );
+      }
     }
 
-    const reqMap = { [eventId]: bloodRequirements };
+    const reqMap = bloodRequirements ? { [eventId]: bloodRequirements } : await getCampaignBloodRequirementsMap([eventId]);
     const rows = await query(
       `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
               bl.time_range, bl.location, bl.event_type, bl.status AS campaign_status, bl.image_url
        FROM blood_drive_listings bl
        INNER JOIN organizations o ON o.org_id = bl.org_id
-       WHERE bl.event_id = ?`,
+       WHERE bl.event_id = ?
+       LIMIT 1`,
       [eventId]
     );
 
@@ -1288,50 +1350,95 @@ app.delete('/api/org/campaigns/:eventId', async (req, res) => {
 app.put('/api/org/campaigns/:eventId', async (req, res) => {
   const eventId = Number.parseInt(req.params.eventId, 10);
   const email = String(req.body.email || '').trim().toLowerCase();
-  const { title, type, eventDate, time, location, bloodRequirements, isCompleted } = req.body;
-  
+  const hasBloodRequirements = Object.prototype.hasOwnProperty.call(req.body, 'bloodRequirements');
+  const rawRequirements = hasBloodRequirements ? req.body.bloodRequirements : null;
+  const isCompleted = req.body.isCompleted === true;
+
   if (!eventId || !email) {
     return res.status(400).json({ message: 'Campaign id and organization email are required.' });
   }
-  
-  if (!title || !eventDate || !location) {
-    return res.status(400).json({ message: 'Campaign name, date, and location are required.' });
-  }
-  
+
   try {
     const organization = await getOrganizationForCampaignAction(email);
     if (!organization) {
       return res.status(403).json({ message: 'Organization account not found.' });
     }
-    
-    // Update main campaign fields using correct database column names
+
+    const campaignRows = await query(
+      `SELECT event_id, title, event_type, event_date, time_range, location, status
+       FROM blood_drive_listings
+       WHERE event_id = ? AND org_id = ?
+       LIMIT 1`,
+      [eventId, organization.org_id]
+    );
+
+    if (!campaignRows.length) {
+      return res.status(404).json({ message: 'Campaign not found or you do not have permission to update it.' });
+    }
+
+    const currentCampaign = campaignRows[0];
+    const title = String(req.body.title || currentCampaign.title || '').trim();
+    const type = String(req.body.type || currentCampaign.event_type || 'Drive').trim();
+    const eventDate = String(req.body.eventDate || currentCampaign.event_date || '').trim();
+    const time = String(req.body.time || currentCampaign.time_range || '').trim();
+    const location = String(req.body.location || currentCampaign.location || '').trim();
+
+    if (!title || !eventDate || !location) {
+      return res.status(400).json({ message: 'Campaign name, date, and location are required.' });
+    }
+
+    if (!VALID_CAMPAIGN_TYPES.includes(type)) {
+      return res.status(400).json({ message: 'Campaign type must be Drive, Camp, or Emergency.' });
+    }
+
+    let bloodRequirements = null;
+    if (hasBloodRequirements) {
+      const parsedRequirements = parseCampaignBloodRequirements(rawRequirements);
+      if (parsedRequirements.error) {
+        return res.status(400).json({ message: parsedRequirements.error });
+      }
+      bloodRequirements = parsedRequirements.requirements;
+    }
+
+    const status = isCompleted ? 'completed' : currentCampaign.status || 'active';
+
     const result = await query(
       `UPDATE blood_drive_listings 
-       SET title = ?, event_type = ?, event_date = ?, time_range = ?, location = ?
+       SET title = ?, event_type = ?, event_date = ?, time_range = ?, location = ?, status = ?
        WHERE event_id = ? AND org_id = ?`,
-      [title, type || 'Drive', eventDate, time || '', location, eventId, organization.org_id]
+      [title, type, eventDate, time || '', location, status, eventId, organization.org_id]
     );
-    
+
     if (!result.affectedRows) {
       return res.status(404).json({ message: 'Campaign not found or you do not have permission to update it.' });
     }
-    
-    // Update blood requirements if provided
-    // Allow editing for both upcoming and completed campaigns
-    if (bloodRequirements && Array.isArray(bloodRequirements) && bloodRequirements.length > 0) {
-      // Delete existing blood requirements for this campaign
+
+    if (bloodRequirements) {
       await query('DELETE FROM campaign_blood_requirements WHERE event_id = ?', [eventId]);
-      
-      // Insert new blood requirements
-      for (const req of bloodRequirements) {
+
+      for (const reqItem of bloodRequirements) {
         await query(
           'INSERT INTO campaign_blood_requirements (event_id, blood_group, units_required) VALUES (?, ?, ?)',
-          [eventId, req.bloodGroup, req.unitsRequired]
+          [eventId, reqItem.bloodGroup, reqItem.unitsRequired]
         );
       }
     }
-    
-    res.json({ message: 'Campaign updated successfully.' });
+
+    const reqMap = bloodRequirements ? { [eventId]: bloodRequirements } : await getCampaignBloodRequirementsMap([eventId]);
+    const rows = await query(
+      `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
+              bl.time_range, bl.location, bl.event_type, bl.status AS campaign_status, bl.image_url
+       FROM blood_drive_listings bl
+       INNER JOIN organizations o ON o.org_id = bl.org_id
+       WHERE bl.event_id = ?
+       LIMIT 1`,
+      [eventId]
+    );
+
+    res.json({
+      message: 'Campaign updated successfully.',
+      campaign: mapCampaignRow(rows[0], reqMap),
+    });
   } catch (error) {
     sendDbError(res, error);
   }
