@@ -638,6 +638,7 @@
       </div>
       <div class="campaign-detail-body">
         <div class="campaign-detail-grid" id="campaignDetailGrid"></div>
+        <div class="campaign-detail-registrations" id="campaignDetailRegistrations"></div>
       </div>
       <div class="campaign-detail-actions">
         <div class="campaign-detail-actions-left">
@@ -1087,6 +1088,7 @@
       }
 
       currentCampaignDetail = campaign;
+      currentCampaignDetail.registrations = currentCampaignDetail.registrations ?? null;
       campaignEditing = false;
       campaignSaving = false;
       const isBloodRequest = campaign.kind === 'blood-request';
@@ -1098,6 +1100,13 @@
 
       backdrop.classList.add('open');
       backdrop.setAttribute('aria-hidden', 'false');
+
+      loadCampaignRegistrations(campaign.id).then((registrations) => {
+        if (currentCampaignDetail && currentCampaignDetail.id === campaign.id) {
+          currentCampaignDetail.registrations = registrations;
+          renderCampaignRegistrationsSection(currentCampaignDetail);
+        }
+      });
     }
 
     function renderCampaignDetails(campaign){
@@ -1117,6 +1126,7 @@
       }
 
       grid.innerHTML = gridHtml;
+      renderCampaignRegistrationsSection(campaign);
 
       // Add event listeners for blood requirements editing
       if (campaignEditing) {
@@ -1124,6 +1134,44 @@
       }
 
       updateCampaignEditControls();
+    }
+
+    async function loadCampaignRegistrations(eventId) {
+      const user = getStoredUser();
+      if (!user || !user.token) {
+        return [];
+      }
+      try {
+        const response = await fetch(`/api/organization/campaigns/${eventId}/participations`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const payload = await readJsonResponse(response);
+        if (!response.ok) {
+          throw new Error(payload.message || 'Unable to load registrations.');
+        }
+        return payload.registrations || [];
+      } catch (error) {
+        console.warn('Failed to load campaign registrations:', error.message || error);
+        return [];
+      }
+    }
+
+    function renderCampaignRegistrationsSection(campaign) {
+      const container = document.getElementById('campaignDetailRegistrations');
+      if (!container) return;
+
+      if (campaign.registrations == null) {
+        container.innerHTML = `<div class="campaign-registration-loading">Loading donor registrations...</div>`;
+        return;
+      }
+
+      const registrations = Array.isArray(campaign.registrations) ? campaign.registrations : [];
+      const total = registrations.length;
+      container.innerHTML = `
+        <div class="campaign-registration-summary" style="margin-top:18px;padding:18px;border:1px solid #ececec;border-radius:14px;background:#fafafa;">
+          <strong style="font-size:1rem;color:#111;">${total}</strong> donor${total === 1 ? '' : 's'} registered for this campaign
+        </div>
+      `;
     }
 
     function setupBloodRequirementsListeners(){
@@ -1421,8 +1469,13 @@
   document.getElementById('reqContactPerson').value = org.managerName || user?.fullName || '';
   document.getElementById('reqContactNumber').value = org.contact || org.phone || user?.phone || '';
 
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('reqRequiredBy').value = today;
+  const now = new Date();
+  const localDateTime = now.toISOString().slice(0, 16);
+  const requestInput = document.getElementById('reqRequiredBy');
+  if (requestInput) {
+    requestInput.min = localDateTime;
+    requestInput.value = localDateTime;
+  }
 
   const backdrop = document.getElementById('requestBackdrop');
   backdrop.classList.add('open');

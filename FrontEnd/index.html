@@ -193,7 +193,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
     <h1>Save Lives Through<br><span>Blood Donation</span></h1>
     <p>Connect with donation centers and join upcoming drives. Every donation can save up to 3 lives.</p>
     <div class="hero-btns">
-      <button class="btn-red" onclick="document.getElementById('events').scrollIntoView({behavior:'smooth'})">
+      <button class="btn-red" onclick="const user=getStoredUser(); const link=getDashboardLink(user); if(user && user.role === 'donor'){ location.href=link; } else if(user){ location.href=link; } else { document.getElementById('events').scrollIntoView({behavior:'smooth'}); }">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
         Find Donation Events
       </button>
@@ -330,6 +330,7 @@ function getStoredUser(){
 
 function saveStoredUser(user){
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+  sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
 }
 
 function clearStoredUser(){
@@ -369,15 +370,53 @@ function getAvatarMarkup(user, isLarge = false){
   return `<span class="${isLarge ? 'profile-avatar' : 'profile-initial'}">${initials}</span>`;
 }
 
+function getDashboardLink(user){
+  if(!user){
+    return 'login.html';
+  }
+  if(user.role === 'donor'){
+    return 'donor-dashboard.html';
+  }
+  if(user.role === 'org'){
+    return 'org-dashboard.html#panel-upcoming';
+  }
+  if(user.role === 'admin'){
+    return 'admin-dashboard.html';
+  }
+  return 'login.html';
+}
+
 function renderAuthArea(user){
   const host=document.getElementById('navAuth');
   if(!host){
     return;
   }
 
+  if(!user){
+    host.innerHTML=`
+      <button class="btn-ghost" type="button" onclick="location.href='login.html'">Login</button>
+      <button class="btn-red" type="button" onclick="location.href='register.html'">Sign Up</button>
+    `;
+    return;
+  }
+
   host.innerHTML=`
-    <button class="btn-ghost" type="button" onclick="location.href='login.html'">Login</button>
-    <button class="btn-red" type="button" onclick="location.href='register.html'">Sign Up</button>
+    <div class="profile-shell" id="profileShell">
+      <button class="profile-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleProfileMenu()">
+        <span class="profile-trigger-left">
+          ${getAvatarMarkup(user)}
+          <span class="profile-name">${escapeHtml(user.fullName || 'My Profile')}</span>
+        </span>
+        <span class="profile-arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </button>
+      <div class="profile-menu" id="profileMenu" role="menu" aria-label="Account menu">
+        <button type="button" role="menuitem" onclick="openProfileModal()">My Profile</button>
+        <div class="menu-sep"></div>
+        <button type="button" role="menuitem" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
   `;
 }
 
@@ -673,7 +712,7 @@ async function hydrateUser(user){
       return user;
     }
     const payload = await response.json();
-    return payload.user || user;
+    return payload.user ? { ...payload.user, token: user.token } : user;
   }catch(error){
     return user;
   }
@@ -686,14 +725,38 @@ async function restoreAuthState(){
     return;
   }
 
+  renderAuthArea(stored);
+
   const hydrated = await hydrateUser(stored);
-  saveStoredUser(hydrated);
-  renderAuthArea(null);
+  if(hydrated && hydrated.email){
+    saveStoredUser(hydrated);
+    renderAuthArea(hydrated);
+  }
+}
+
+function redirectLoggedInUser(){
+  const user = getStoredUser();
+  if(!user){
+    return;
+  }
+
+  const path = window.location.pathname.toLowerCase();
+  const isIndex = path.endsWith('/index.html') || path.endsWith('/') || path === '';
+  if(!isIndex){
+    return;
+  }
+
+  const dashboardLink = getDashboardLink(user);
+  if(dashboardLink && dashboardLink !== 'login.html'){
+    window.location.replace(dashboardLink);
+  }
 }
 
 function renderEvents(list){
   const g=document.getElementById("eventsGrid");
   if(!list.length){g.innerHTML='<p style="color:#888;grid-column:1/-1;text-align:center;padding:40px 0">No events found.</p>';return}
+  const currentUser = getStoredUser();
+  const dashboardLink = getDashboardLink(currentUser);
   g.innerHTML=list.map(e=>`
   <div class="event-card">
     <div class="card-img">
@@ -709,7 +772,7 @@ function renderEvents(list){
         <div class="card-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${e.location}</div>
         <div class="card-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>${e.spots} spots available out of ${e.total}</div>
       </div>
-        <button class="btn-register" onclick="${getStoredUser() ? "openProfileModal()" : "location.href='login.html'"}">${getStoredUser() ? 'View Details' : 'Login to Register'}</button>
+        <button class="btn-register" type="button" onclick="location.href='${currentUser ? dashboardLink : 'login.html'}'">${currentUser ? 'Go to Dashboard' : 'Login to Register'}</button>
     </div>
   </div>`).join("")
 }
@@ -763,6 +826,7 @@ window.addEventListener('showNotification', function(event) {
 loadEvents();
 loadStats();
 restoreAuthState();
+redirectLoggedInUser();
 
 document.addEventListener('click', (event) => {
   const authArea = document.getElementById('navAuth');

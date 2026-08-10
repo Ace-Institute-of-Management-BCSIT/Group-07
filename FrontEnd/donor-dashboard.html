@@ -815,7 +815,7 @@
                 </div>
                 <div class="response-form-group">
                   <label for="selfBloodGroup">Blood Group</label>
-                  <input type="text" id="selfBloodGroup" name="bloodGroup" readonly placeholder="Blood group from profile">
+                  <input type="text" id="selfBloodGroup" name="bloodGroup" readonly placeholder="">
                 </div>
                 <div class="response-form-group">
                   <label for="selfAvailabilityDate">Availability Date</label>
@@ -1058,7 +1058,8 @@
           location.replace('login.html?role=donor');
           return null;
         }
-        if(!user){
+        if(!user || !user.token){
+          clearStoredUser();
           location.replace('login.html?role=donor');
           return null;
         }
@@ -1071,7 +1072,18 @@
     }
 
     function saveStoredUser(user){
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      try {
+        const existing = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null') || {};
+        const merged = { ...existing, ...user };
+        if (!merged.token && existing.token) {
+          merged.token = existing.token;
+        }
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(merged));
+        sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(merged));
+      } catch (e) {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      }
     }
 
     function clearStoredUser(){
@@ -1477,9 +1489,10 @@
         renderHistory(historyJson.data || [], meJson.user);
         
         if (meJson.user) {
-          saveStoredUser(meJson.user);
-          renderAuthArea(meJson.user);
-          renderDashboardWelcome(meJson.user);
+          const hydratedUser = { ...meJson.user, token: user.token };
+          saveStoredUser(hydratedUser);
+          renderAuthArea(hydratedUser);
+          renderDashboardWelcome(hydratedUser);
         }
 
         loadNotifications(email);
@@ -1718,21 +1731,37 @@
         return;
       }
       
+      if (!user.token) {
+        alert('Your session is no longer valid. Please sign in again.');
+        location.href = 'login.html?role=donor';
+        return;
+      }
       try {
-        const response = await fetch('/api/donor/eligibility', {
+        const response = await fetch(`/api/donor/eligibility?campaignId=${encodeURIComponent(campaign.id)}`, {
           headers: {
-            'Authorization': `Bearer ${user.token || user.email}`
+            'Authorization': `Bearer ${user.token}`
           }
         });
         
         const eligibility = await response.json();
         
         if (eligibility.eligibilityStatus === 'ineligible') {
-          errorDiv.innerHTML = `
-            <strong>You donated blood through SaveABeat on ${formatDate(eligibility.lastDonationDate)}.</strong><br><br>
-            For your safety, the recommended interval between whole blood donations is 56 days (8 weeks).<br><br>
-            You will be eligible to donate again on <strong>${formatDate(eligibility.eligibleDate)}</strong>.
-          `;
+          let messageHtml = '';
+          if (eligibility.bloodGroupMismatch && eligibility.requiredBloodGroups?.length) {
+            messageHtml = `
+              <strong>Your blood group (${escapeHtml(eligibility.donorBloodGroup || 'Unknown')}) does not match this campaign's requirements (${escapeHtml(eligibility.requiredBloodGroups.join(', '))}).</strong><br><br>
+              You cannot register for this campaign unless your blood group matches one of the required groups.
+            `;
+          } else if (eligibility.eligibleDate) {
+            messageHtml = `
+              <strong>You donated blood through SaveABeat on ${formatDate(eligibility.lastDonationDate)}.</strong><br><br>
+              For your safety, the recommended interval between whole blood donations is 56 days (8 weeks).<br><br>
+              You will be eligible to donate again on <strong>${formatDate(eligibility.eligibleDate)}</strong>.
+            `;
+          } else {
+            messageHtml = `<strong>You are not currently eligible to donate for this campaign.</strong>`;
+          }
+          errorDiv.innerHTML = messageHtml;
           errorDiv.classList.add('show');
           document.getElementById('donationSubmitBtn').disabled = true;
         } else if (eligibility.eligibilityStatus === 'has_active_registration') {
@@ -1930,6 +1959,10 @@
       requestIdInput.value = requestId;
       
       resetResponseForm();
+      const user = getStoredUser();
+      if (user && user.donorProfile && (user.donorProfile.blood_group || user.donorProfile.bloodGroup)) {
+        selectResponseType('self');
+      }
       backdrop.classList.add('open');
       backdrop.setAttribute('aria-hidden', 'false');
     }
@@ -2008,8 +2041,8 @@
       if (emailInput && user.email) {
         emailInput.value = user.email;
       }
-      if (bloodGroupInput && user.donorProfile?.blood_group) {
-        bloodGroupInput.value = user.donorProfile.blood_group;
+      if (bloodGroupInput) {
+        bloodGroupInput.value = user.donorProfile?.blood_group || user.donorProfile?.bloodGroup || '';
       }
     }
 
@@ -2040,8 +2073,8 @@
         const availabilityTime = document.getElementById('selfAvailabilityTime').value;
         const notes = document.getElementById('selfNotes').value.trim();
         
-        if (!fullName || !phone || !availabilityDate || !availabilityTime) {
-          alert('Please fill in all required fields.');
+        if (!fullName || !phone || !bloodGroup || !availabilityDate || !availabilityTime) {
+          alert('Please fill in all required fields, including your blood group.');
           return;
         }
         

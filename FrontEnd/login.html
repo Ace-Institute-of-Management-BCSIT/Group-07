@@ -192,7 +192,7 @@ async function handleLogin(){
       const meResponse=await fetch(`/api/me?email=${encodeURIComponent(storedUser.email)}`);
       const mePayload=await readJsonResponse(meResponse);
       if(meResponse.ok && mePayload.user){
-        storedUser=mePayload.user;
+        storedUser = { ...mePayload.user, token: storedUser.token };
       }
     }catch(_error){}
 
@@ -202,7 +202,13 @@ async function handleLogin(){
       return;
     }
 
-    localStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
+    try {
+      localStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
+      sessionStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
+    } catch (_e) {
+      localStorage.setItem('saveabeatUser', JSON.stringify(storedUser));
+    }
+
     if(storedUser.role === 'org'){
       location.href = 'org-dashboard.html#panel-upcoming';
       return;
