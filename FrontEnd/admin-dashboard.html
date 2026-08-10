@@ -257,6 +257,114 @@ nav{
   grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
   gap:22px
 }
+.table-shell{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:var(--white);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch
+}
+.data-table{
+  width:100%;
+  min-width:920px;
+  border-collapse:collapse;
+  background:var(--white)
+}
+.data-table thead{background:#fbfbfb}
+.data-table th,.data-table td{
+  padding:15px 18px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  vertical-align:middle
+}
+.data-table th{
+  font-size:.76rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--soft);
+  font-weight:800;
+  white-space:nowrap
+}
+.data-table tbody tr:hover{background:#fff8f8}
+.data-table tbody tr:last-child td{border-bottom:none}
+.table-name{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0
+}
+.table-avatar{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#fdecea,#fff);
+  color:var(--red-dark);
+  border:1px solid #f2d0d0;
+  flex-shrink:0;
+  font-weight:800
+}
+.table-name-text{
+  display:flex;
+  flex-direction:column;
+  min-width:0
+}
+.table-name-text strong{
+  font-size:.96rem;
+  color:var(--ink);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+.table-name-text span{
+  font-size:.82rem;
+  color:var(--soft);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+.table-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap
+}
+.table-actions .detail-btn{
+  padding:9px 14px;
+  font-size:.86rem;
+  justify-content:center
+}
+.status-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:800;
+  letter-spacing:.02em;
+  border:1px solid transparent;
+  white-space:nowrap
+}
+.status-pill.pending{
+  background:#fff7ed;
+  color:#9a3412;
+  border-color:#fed7aa
+}
+.status-pill.verified{
+  background:#ecfdf3;
+  color:#166534;
+  border-color:#bbf7d0
+}
+.status-pill.rejected{
+  background:#fef2f2;
+  color:#991b1b;
+  border-color:#fecaca
+}
 .card{
   background:var(--white);
   border:1px solid var(--border);
@@ -343,6 +451,33 @@ nav{
 .detail-item.full-width{grid-column:1/-1}
 .detail-item .label{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin-bottom:6px}
 .detail-item .value{font-size:.95rem;color:var(--ink);word-break:break-word}
+.detail-preview{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap
+}
+.detail-preview img{
+  width:120px;
+  height:120px;
+  border-radius:16px;
+  object-fit:cover;
+  border:1px solid var(--border);
+  background:#fff
+}
+.detail-preview-copy{
+  display:flex;
+  flex-direction:column;
+  gap:4px
+}
+.detail-preview-copy strong{
+  font-size:.95rem;
+  color:var(--ink)
+}
+.detail-preview-copy span{
+  font-size:.82rem;
+  color:var(--soft)
+}
 .blood-table-wrapper{margin-top:8px}
 .blood-table{width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;border:1px solid var(--border)}
 .blood-table thead{background:#f5f5f5}
@@ -375,6 +510,8 @@ nav{
   .shell{padding:18px 14px 38px}
   .tab-panel{padding:20px}
   .grid,.summary-row{grid-template-columns:1fr}
+  .table-shell{border-radius:14px}
+  .data-table{min-width:760px}
   .filters{flex-direction:column;align-items:stretch}
   .search-box,.filter-select{width:100%}
   .detail-actions{flex-direction:column;align-items:stretch}
@@ -466,22 +603,21 @@ nav{
       <div class="section-header">
         <div class="section-copy">
           <h2>Donors</h2>
-          <p>All registered donors appear here with their blood type verification status.</p>
+          <p>All registered donors appear here in a searchable management table with registration date and verification status.</p>
         </div>
       </div>
       <div class="filters">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="donorSearch" type="text" placeholder="Search donors by name or blood type..." />
+          <input id="donorSearch" type="text" placeholder="Search donors by name, email, blood group, or location..." />
         </div>
         <select class="filter-select" id="donorFilter">
           <option value="">All donors</option>
-          <option value="Approved">Approved</option>
           <option value="Pending">Pending verification</option>
-          <option value="Rejected">Rejected</option>
+          <option value="Verified">Verified</option>
         </select>
       </div>
-      <div class="grid" id="donorGrid">
+      <div class="table-shell" id="donorGrid">
         <div class="empty-state">Loading donors...</div>
       </div>
     </section>
@@ -554,8 +690,8 @@ nav{
         </div>
         <div class="detail-actions-right">
           <button class="btn-outline" type="button" id="detailStopBtn">Stop Campaign</button>
-          <button class="btn-red" type="button" id="detailDeleteBtn">Delete Campaign</button>
-          <button class="btn-red" type="button" id="detailVerifyBtn" style="display:none">Approve Account</button>
+          <button class="btn-red" type="button" id="detailDeleteBtn">Delete</button>
+          <button class="btn-red" type="button" id="detailVerifyBtn" style="display:none">Verify</button>
           <button class="btn-outline" type="button" id="detailRejectBtn" style="display:none">Reject Account</button>
         </div>
       </div>
@@ -570,6 +706,7 @@ const adminState = {
   donors: [],
 };
 let currentDetail = null;
+let adminRefreshTimer = null;
 
 function getStoredUser(){
   try{
@@ -630,6 +767,159 @@ function formatDateString(str){
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+function normalizeDonorStatus(status){
+  const value = String(status || 'Pending').trim().toLowerCase();
+  if(value === 'verified' || value === 'approved') return 'Verified';
+  if(value === 'rejected') return 'Rejected';
+  return 'Pending';
+}
+
+function donorStatusClass(status){
+  const value = normalizeDonorStatus(status).toLowerCase();
+  return value;
+}
+
+function normalizeDonorRecord(donor){
+  const verificationStatus = normalizeDonorStatus(donor?.verification_status ?? donor?.verificationStatus);
+  return {
+    ...donor,
+    user_id: donor?.user_id ?? donor?.userId ?? donor?.id ?? null,
+    fullName: donor?.fullName ?? donor?.full_name ?? donor?.name ?? '',
+    email: donor?.email ?? '',
+    phone: donor?.phone ?? '',
+    city: donor?.city ?? '',
+    district: donor?.district ?? '',
+    bloodGroup: donor?.bloodGroup ?? donor?.blood_group ?? '',
+    created_at: donor?.created_at ?? donor?.createdAt ?? donor?.registration_date ?? donor?.registrationDate ?? '',
+    verification_status: verificationStatus,
+    address: donor?.address ?? '',
+    is_available: donor?.is_available ?? donor?.isAvailable ?? null,
+    last_donated_at: donor?.last_donated_at ?? donor?.lastDonatedAt ?? '',
+    total_donations: donor?.total_donations ?? donor?.totalDonations ?? 0,
+    profile_picture: donor?.profile_picture ?? donor?.profilePicture ?? donor?.profile_image_data ?? donor?.profileImageData ?? '',
+    profile_picture_name: donor?.profile_picture_name ?? donor?.profilePictureName ?? donor?.profile_image_name ?? donor?.profileImageName ?? '',
+    blood_verification_document_type: donor?.blood_verification_document_type ?? donor?.bloodVerificationDocumentType ?? '',
+    blood_verification_document_file: donor?.blood_verification_document_file ?? donor?.bloodVerificationDocumentFile ?? '',
+    blood_verification_document_name: donor?.blood_verification_document_name ?? donor?.bloodVerificationDocumentName ?? '',
+  };
+}
+
+function donorTableRowMarkup(donor){
+  const status = normalizeDonorStatus(donor.verification_status);
+  const statusClass = donorStatusClass(status);
+  const registrationDate = donor.created_at ? formatDateString(donor.created_at) : '-';
+  const location = donor.city || donor.district || 'Location not listed';
+  const rowId = String(donor.user_id || '');
+  return `
+    <tr>
+      <td>
+        <div class="table-name">
+          <span class="table-avatar">${escapeHtml(initialForName(donor.fullName || donor.email || 'D'))}</span>
+          <div class="table-name-text">
+            <strong>${escapeHtml(donor.fullName || '-')}</strong>
+            <span>${escapeHtml(location)}</span>
+          </div>
+        </div>
+      </td>
+      <td>${escapeHtml(donor.email || '-')}</td>
+      <td>${escapeHtml(donor.bloodGroup || '-')}</td>
+      <td>${escapeHtml(registrationDate)}</td>
+      <td><span class="status-pill ${statusClass}">${escapeHtml(status)}</span></td>
+      <td>
+        <div class="table-actions">
+          <button class="detail-btn" type="button" data-detail-kind="donor" data-detail-id="${escapeHtml(rowId)}">View Details</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function buildDonorDetailMarkup(donor){
+  const items = [];
+  const profilePicture = donor.profile_picture || donor.profileImageData || donor.profile_image_data;
+  if(profilePicture){
+    items.push([
+      'Profile Picture',
+      `<div class="detail-preview">
+        <img src="${escapeHtml(profilePicture)}" alt="${escapeHtml(donor.fullName || 'Donor profile photo')}" loading="lazy" />
+        <div class="detail-preview-copy">
+          <strong>${escapeHtml(donor.fullName || 'Donor')}</strong>
+          <span>${escapeHtml(donor.profile_picture_name || donor.profilePictureName || 'Uploaded photo')}</span>
+        </div>
+      </div>`
+    ]);
+  }
+
+  items.push(['Full Name', escapeHtml(donor.fullName || '-')]);
+  items.push(['Email', escapeHtml(donor.email || '-')]);
+  items.push(['Phone', escapeHtml(donor.phone || '-')]);
+  items.push(['Blood Group', escapeHtml(donor.bloodGroup || '-')]);
+  items.push(['Registration Date', escapeHtml(donor.created_at ? formatDateString(donor.created_at) : '-')]);
+  items.push(['Verification Status', escapeHtml(normalizeDonorStatus(donor.verification_status))]);
+
+  if(donor.address){
+    items.push(['Address', escapeHtml(donor.address)]);
+  }
+
+  if(donor.city){
+    items.push(['City', escapeHtml(donor.city)]);
+  }
+
+  if(donor.district){
+    items.push(['District', escapeHtml(donor.district)]);
+  }
+
+  if(donor.is_available !== null && donor.is_available !== undefined){
+    items.push(['Available for Donation', donor.is_available ? 'Yes' : 'No']);
+  }
+
+  if(donor.total_donations !== null && donor.total_donations !== undefined){
+    items.push(['Total Donations', escapeHtml(String(donor.total_donations))]);
+  }
+
+  if(donor.last_donated_at){
+    items.push(['Last Donated At', escapeHtml(formatDateString(donor.last_donated_at))]);
+  }
+
+  if(donor.blood_verification_document_type){
+    items.push(['Verification Document Type', escapeHtml(donor.blood_verification_document_type)]);
+  }
+
+  if(donor.blood_verification_document_file){
+    const documentName = donor.blood_verification_document_name || 'View Verification Document';
+    items.push([
+      'Verification Document',
+      `<a href="${escapeHtml(donor.blood_verification_document_file)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration:none; font-weight:600;">${escapeHtml(documentName)}</a>`
+    ]);
+  }
+
+  return items.map(([label, value]) => `
+    <div class="detail-item${label === 'Profile Picture' ? ' full-width' : ''}">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${value}</div>
+    </div>
+  `).join('');
+}
+
+async function fetchDonorDetails(donorId){
+  const storedUser = getStoredUser();
+  if(!storedUser || storedUser.role !== 'admin'){
+    throw new Error('Admin account not found.');
+  }
+
+  const params = new URLSearchParams({
+    email: storedUser.email,
+    role: storedUser.role,
+  });
+  const response = await fetch(`/api/admin/donors/${donorId}?${params.toString()}`);
+  const payload = await readJsonResponse(response);
+  if(!response.ok){
+    throw new Error(payload.message || 'Unable to load donor details.');
+  }
+
+  return normalizeDonorRecord(payload.data || payload.donor || payload);
+}
+
 function setActiveTab(tabName){
   document.querySelectorAll('.nav-tab').forEach((link) => {
     const isActive = link.dataset.tab === tabName;
@@ -659,8 +949,9 @@ function toggleProfileMenu(){
   trigger?.setAttribute('aria-expanded', String(isOpen));
 }
 
-function openDetailModal(type, item){
-  currentDetail = { type, item };
+async function openDetailModal(type, item){
+  const normalizedItem = type === 'donor' ? normalizeDonorRecord(item) : item;
+  currentDetail = { type, item: normalizedItem };
   const backdrop = document.getElementById('detailBackdrop');
   const title = document.getElementById('detailTitle');
   const subtitle = document.getElementById('detailSubtitle');
@@ -671,98 +962,98 @@ function openDetailModal(type, item){
   const rejectBtn = document.getElementById('detailRejectBtn');
   const editBtn = document.getElementById('detailEditBtn');
 
-  if(!backdrop || !title || !subtitle || !grid || !stopBtn || !deleteBtn || !editBtn){
+  if(!backdrop || !title || !subtitle || !grid || !stopBtn || !deleteBtn || !verifyBtn || !rejectBtn || !editBtn){
     return;
   }
 
   if(type === 'org'){
-    title.textContent = item.orgName || item.name || 'Organization Details';
-    subtitle.textContent = item.verification_status || (item.verified ? 'Verified account' : 'Pending verification');
-    
-    // Build grid items for organization
+    title.textContent = normalizedItem.orgName || normalizedItem.name || 'Organization Details';
+    subtitle.textContent = normalizedItem.verification_status || (normalizedItem.verified ? 'Verified account' : 'Pending verification');
+
     const gridItems = [
-      ['Organization', item.orgName || item.name || '-'],
-      ['Organization Type', item.org_type || '-'],
-      ['District', item.district || '-'],
-      ['Municipality', item.city || '-'],
-      ['Verification Status', item.verification_status || (item.verified ? 'Verified' : 'Pending')],
+      ['Organization', normalizedItem.orgName || normalizedItem.name || '-'],
+      ['Organization Type', normalizedItem.org_type || '-'],
+      ['District', normalizedItem.district || '-'],
+      ['Municipality', normalizedItem.city || '-'],
+      ['Verification Status', normalizedItem.verification_status || (normalizedItem.verified ? 'Verified' : 'Pending')],
     ];
-    
-    // Add verification document type if available
-    if(item.verification_document_type){
-      gridItems.push(['Verification Document Type', item.verification_document_type]);
+
+    if(normalizedItem.verification_document_type){
+      gridItems.push(['Verification Document Type', normalizedItem.verification_document_type]);
     }
-    
-    // Add verification document with view/download link
-    if(item.verification_document_file){
-      gridItems.push(['Verification Document', `<a href="${escapeHtml(item.verification_document_file)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
-    } else if(item.verification_documents){
-      gridItems.push(['Legal Document', `<a href="${escapeHtml(item.verification_documents)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
+
+    if(normalizedItem.verification_document_file){
+      gridItems.push(['Verification Document', `<a href="${escapeHtml(normalizedItem.verification_document_file)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
+    } else if(normalizedItem.verification_documents){
+      gridItems.push(['Legal Document', `<a href="${escapeHtml(normalizedItem.verification_documents)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
     }
-    
+
     grid.innerHTML = gridItems.map(([label, value]) => `
       <div class="detail-item">
         <div class="label">${escapeHtml(label)}</div>
         <div class="value">${value}</div>
       </div>
     `).join('');
-    
+
     stopBtn.style.display = 'none';
     deleteBtn.style.display = 'none';
-    const isPending = !item.verified && item.verification_status !== 'Approved' && item.verification_status !== 'Rejected';
-    verifyBtn.style.display = isPending ? 'inline-flex' : 'none';
-    rejectBtn.style.display = isPending ? 'inline-flex' : 'none';
+    verifyBtn.textContent = 'Approve Account';
+    verifyBtn.style.display = (!normalizedItem.verified && normalizeDonorStatus(normalizedItem.verification_status) !== 'Verified' && normalizeDonorStatus(normalizedItem.verification_status) !== 'Rejected') ? 'inline-flex' : 'none';
+    rejectBtn.style.display = (!normalizedItem.verified && normalizeDonorStatus(normalizedItem.verification_status) !== 'Verified' && normalizeDonorStatus(normalizedItem.verification_status) !== 'Rejected') ? 'inline-flex' : 'none';
     editBtn.style.display = 'none';
   } else if(type === 'donor'){
-    title.textContent = item.fullName || 'Donor Details';
-    subtitle.textContent = item.verification_status || 'Pending verification';
-    
-    const gridItems = [
-      ['Full Name', item.fullName || '-'],
-      ['Email', item.email || '-'],
-      ['Phone', item.phone || '-'],
-      ['Blood Type', item.bloodGroup || '-'],
-      ['District', item.district || '-'],
-      ['City', item.city || '-'],
-      ['Verification Status', item.verification_status || 'Pending'],
-    ];
-    
-    if(item.blood_verification_document_type){
-      gridItems.push(['Verification Document Type', item.blood_verification_document_type]);
-    }
-    
-    if(item.blood_verification_document_file){
-      gridItems.push(['Verification Document', `<a href="${escapeHtml(item.blood_verification_document_file)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
-    }
-    
-    grid.innerHTML = gridItems.map(([label, value]) => `
-      <div class="detail-item">
-        <div class="label">${escapeHtml(label)}</div>
-        <div class="value">${value}</div>
-      </div>
-    `).join('');
-    
+    const donor = normalizedItem || {};
+    title.textContent = donor.fullName || 'Donor Details';
+    subtitle.textContent = donor.email
+      ? `${donor.email} • ${normalizeDonorStatus(donor.verification_status)}`
+      : normalizeDonorStatus(donor.verification_status) || 'Pending verification';
+
+    grid.innerHTML = buildDonorDetailMarkup(donor);
+
     stopBtn.style.display = 'none';
-    deleteBtn.style.display = 'none';
-    const isDonorPending = item.verification_status !== 'Approved' && item.verification_status !== 'Rejected';
-    verifyBtn.style.display = isDonorPending ? 'inline-flex' : 'none';
-    rejectBtn.style.display = isDonorPending ? 'inline-flex' : 'none';
+    deleteBtn.textContent = 'Delete Donor';
+    deleteBtn.style.display = 'inline-flex';
+    verifyBtn.textContent = 'Verify';
+    verifyBtn.style.display = normalizeDonorStatus(donor.verification_status) === 'Pending' ? 'inline-flex' : 'none';
+    rejectBtn.style.display = 'none';
     editBtn.style.display = 'none';
+
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+
+    if(donor.user_id){
+      try{
+        const detailedDonor = await fetchDonorDetails(donor.user_id);
+        if(currentDetail?.type === 'donor' && Number(currentDetail.item?.user_id) === Number(donor.user_id)){
+          currentDetail.item = detailedDonor;
+          title.textContent = detailedDonor.fullName || 'Donor Details';
+          subtitle.textContent = detailedDonor.email
+            ? `${detailedDonor.email} • ${normalizeDonorStatus(detailedDonor.verification_status)}`
+            : normalizeDonorStatus(detailedDonor.verification_status) || 'Pending verification';
+          grid.innerHTML = buildDonorDetailMarkup(detailedDonor);
+          verifyBtn.style.display = normalizeDonorStatus(detailedDonor.verification_status) === 'Pending' ? 'inline-flex' : 'none';
+        }
+      }catch(error){
+        console.warn('Unable to load donor details:', error);
+      }
+    }
+
+    return;
   } else {
-    title.textContent = item.title || 'Campaign Details';
-    subtitle.textContent = item.orgName || item.org || 'Campaign information';
-    
-    const bloodGroups = item.bloodRequirements && item.bloodRequirements.length 
-      ? item.bloodRequirements.map(r => r.bloodGroup).join(', ') 
+    title.textContent = normalizedItem.title || 'Campaign Details';
+    subtitle.textContent = normalizedItem.orgName || normalizedItem.org || 'Campaign information';
+
+    const bloodGroups = normalizedItem.bloodRequirements && normalizedItem.bloodRequirements.length
+      ? normalizedItem.bloodRequirements.map(r => r.bloodGroup).join(', ')
       : 'All';
-    
+
     let gridHtml = [
-      ['Campaign', item.title || '-'],
-      ['Organization', item.org || item.orgName || '-'],
-      ['Type', item.type || '-'],
-      ['Date', formatDateString(item.date)],
-      ['Time', item.time || '-'],
-      ['Location', item.location || '-'],
+      ['Campaign', normalizedItem.title || '-'],
+      ['Organization', normalizedItem.org || normalizedItem.orgName || '-'],
+      ['Type', normalizedItem.type || '-'],
+      ['Date', formatDateString(normalizedItem.date)],
+      ['Time', normalizedItem.time || '-'],
+      ['Location', normalizedItem.location || '-'],
       ['Blood Groups', bloodGroups],
     ].map(([label, value]) => `
       <div class="detail-item">
@@ -770,9 +1061,8 @@ function openDetailModal(type, item){
         <div class="value">${escapeHtml(value)}</div>
       </div>
     `).join('');
-    
-    // Add blood groups and units table if available
-    if(item.bloodRequirements && item.bloodRequirements.length){
+
+    if(normalizedItem.bloodRequirements && normalizedItem.bloodRequirements.length){
       gridHtml += `
         <div class="detail-item full-width">
           <div class="label">Blood Requirements</div>
@@ -785,7 +1075,7 @@ function openDetailModal(type, item){
                 </tr>
               </thead>
               <tbody>
-                ${item.bloodRequirements.map(r => `
+                ${normalizedItem.bloodRequirements.map(r => `
                   <tr>
                     <td>${escapeHtml(r.bloodGroup)}</td>
                     <td>${Number(r.unitsRequired)} ${Number(r.unitsRequired) === 1 ? 'Unit' : 'Units'}</td>
@@ -797,11 +1087,13 @@ function openDetailModal(type, item){
         </div>
       `;
     }
-    
+
     grid.innerHTML = gridHtml;
-    stopBtn.style.display = item.state === 'completed' ? 'none' : 'inline-flex';
+    stopBtn.style.display = normalizedItem.state === 'completed' ? 'none' : 'inline-flex';
+    deleteBtn.textContent = 'Delete Campaign';
     deleteBtn.style.display = 'inline-flex';
     verifyBtn.style.display = 'none';
+    rejectBtn.style.display = 'none';
     editBtn.style.display = 'none';
   }
 
@@ -884,7 +1176,16 @@ async function handleVerificationAction(action){
 }
 
 async function verifyDonor(){
-  await handleDonorVerificationAction('approve');
+  const detail = currentDetail;
+  if(!detail || detail.type !== 'donor'){
+    return;
+  }
+
+  if(!window.confirm('Verify this donor account? This will update the database and send a verification email to the donor.')){
+    return;
+  }
+
+  await handleDonorVerificationAction('verify');
 }
 
 async function rejectDonor(){
@@ -912,9 +1213,37 @@ async function handleDonorVerificationAction(action){
 
     closeDetailModal();
     await loadAdminData();
-    alert(payload.message || `Donor ${action}ed successfully.`);
+    const fallbackMessage = action === 'reject' ? 'Donor rejected successfully.' : 'Donor verified successfully.';
+    alert(payload.message || fallbackMessage);
   }catch(error){
     alert(error.message || `Unable to ${action} donor.`);
+  }
+}
+
+async function deleteDonor(){
+  const user = getStoredUser();
+  const detail = currentDetail;
+  if(!user || !detail || detail.type !== 'donor'){
+    return;
+  }
+
+  try{
+    const response = await fetch(`/api/admin/donors/${detail.item.user_id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, role: user.role }),
+    });
+    const payload = await readJsonResponse(response);
+    if(!response.ok){
+      alert(payload.message || 'Unable to delete donor.');
+      return;
+    }
+
+    closeDetailModal();
+    await loadAdminData();
+    alert(payload.message || 'Donor deleted successfully.');
+  }catch(error){
+    alert(error.message || 'Unable to delete donor.');
   }
 }
 
@@ -943,26 +1272,31 @@ function organizationCardMarkup(org){
 }
 
 function donorCardMarkup(donor){
-  const verificationStatus = donor.verification_status || 'Pending';
-  const badgeClass = verificationStatus === 'Approved' ? 'completed' : verificationStatus === 'Rejected' ? 'rejected' : '';
+  const status = normalizeDonorStatus(donor.verification_status);
+  const statusClass = donorStatusClass(status);
+  const registrationDate = donor.created_at ? formatDateString(donor.created_at) : '-';
+  const location = donor.city || donor.district || 'Location not listed';
   return `
-    <article class="card">
-      <div class="card-img">
-        <img src="${escapeHtml(donor.profile_picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=900&auto=format&fit=crop&q=70')}" alt="${escapeHtml(donor.fullName)}" loading="lazy"/>
-        <span class="badge ${badgeClass}">${verificationStatus}</span>
-      </div>
-      <div class="body">
-        <h3>${escapeHtml(donor.fullName)}</h3>
-        <p>${escapeHtml(donor.bloodGroup || 'Blood type not specified')}</p>
-        <div class="meta-row">
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-7 7c0 4.2 4.3 8.7 6.3 10.5.4.4 1 .4 1.4 0C14.7 17.7 19 13.2 19 9a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(donor.district || '-')}</span>
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>${escapeHtml(donor.phone || '-')}</span>
+    <tr>
+      <td>
+        <div class="table-name">
+          <span class="table-avatar">${escapeHtml(initialForName(donor.fullName || donor.email || 'D'))}</span>
+          <div class="table-name-text">
+            <strong>${escapeHtml(donor.fullName || '-')}</strong>
+            <span>${escapeHtml(location)}</span>
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="detail-btn" type="button" data-detail-kind="donor" data-detail-data="${encodeDetailData(donor)}">View Details</button>
+      </td>
+      <td>${escapeHtml(donor.email || '-')}</td>
+      <td>${escapeHtml(donor.bloodGroup || '-')}</td>
+      <td>${escapeHtml(registrationDate)}</td>
+      <td><span class="status-pill ${statusClass}">${escapeHtml(status)}</span></td>
+      <td>
+        <div class="table-actions">
+          <button class="detail-btn" type="button" data-detail-kind="donor" data-detail-id="${escapeHtml(String(donor.user_id || ''))}">View Details</button>
         </div>
-      </div>
-    </article>
+      </td>
+    </tr>
   `;
 }
 
@@ -1008,7 +1342,7 @@ function filterDonors(){
   const status = String(document.getElementById('donorFilter')?.value || '').trim();
   return adminState.donors.filter((donor) => {
     const matchesQ = !q || [donor.fullName, donor.email, donor.bloodGroup, donor.district, donor.city, donor.phone].some((field) => String(field || '').toLowerCase().includes(q));
-    const matchesStatus = !status || donor.verification_status === status;
+    const matchesStatus = !status || normalizeDonorStatus(donor.verification_status) === status;
     return matchesQ && matchesStatus;
   });
 }
@@ -1043,7 +1377,23 @@ function renderDonors(){
     grid.innerHTML = '<div class="empty-state">No donors match the current filters.</div>';
     return;
   }
-  grid.innerHTML = items.map(donorCardMarkup).join('');
+  grid.innerHTML = `
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Blood Group</th>
+          <th>Registration Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(donorCardMarkup).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 function renderCampaigns(kind){
@@ -1067,18 +1417,25 @@ async function loadAdminData(){
   document.getElementById('profileInitial').textContent = initialForName(storedUser.fullName || storedUser.email || 'A');
 
   try{
+    const donorParams = new URLSearchParams({
+      email: storedUser.email,
+      role: storedUser.role,
+    });
     const [centersResp, eventsResp, donorsResp] = await Promise.all([
       fetch('/api/centers'),
       fetch('/api/events'),
-      fetch('/api/admin/donors')
+      fetch(`/api/admin/donors?${donorParams.toString()}`)
     ]);
 
     const centersJson = await readJsonResponse(centersResp);
     const eventsJson = await readJsonResponse(eventsResp);
     const donorsJson = await readJsonResponse(donorsResp);
+    if(!donorsResp.ok){
+      throw new Error(donorsJson.message || 'Unable to load donors.');
+    }
     const centers = centersJson.data || [];
     const events = eventsJson.data || [];
-    const donors = donorsJson.data || [];
+    const donors = (donorsJson.data || []).map(normalizeDonorRecord);
 
     adminState.organizations = centers;
     adminState.campaigns = events.map((event) => ({
@@ -1146,7 +1503,9 @@ document.getElementById('detailRejectBtn')?.addEventListener('click', () => {
 document.getElementById('detailStopBtn')?.addEventListener('click', () => modifyCampaign('stop'));
 document.getElementById('detailDeleteBtn')?.addEventListener('click', () => {
   const detail = currentDetail;
-  if(detail?.type === 'campaign' && window.confirm('Delete this campaign? This action cannot be undone.')){
+  if(detail?.type === 'donor' && window.confirm('Delete this donor? This action cannot be undone.')){
+    deleteDonor();
+  } else if(detail?.type === 'campaign' && window.confirm('Delete this campaign? This action cannot be undone.')){
     modifyCampaign('delete');
   }
 });
@@ -1165,21 +1524,24 @@ document.getElementById('upcomingSearch')?.addEventListener('input', () => rende
 document.getElementById('upcomingType')?.addEventListener('change', () => renderCampaigns('upcoming'));
 
 document.addEventListener('click', (event) => {
-  const trigger = event.target.closest('[data-detail-kind][data-detail-data]');
+  const trigger = event.target.closest('[data-detail-kind]');
   if(!trigger) return;
   const kind = trigger.dataset.detailKind;
+  if(kind === 'donor'){
+    const donorId = Number.parseInt(trigger.dataset.detailId, 10);
+    if(!donorId){
+      return;
+    }
+    const donor = adminState.donors.find((item) => Number(item.user_id) === donorId);
+    openDetailModal('donor', donor || { user_id: donorId });
+    return;
+  }
+
   const item = decodeDetailData(trigger.dataset.detailData);
   if(item){
     openDetailModal(kind, item);
   }
 });
-
-document.getElementById('orgSearch')?.addEventListener('input', renderOrganizations);
-document.getElementById('orgFilter')?.addEventListener('change', renderOrganizations);
-document.getElementById('completedSearch')?.addEventListener('input', () => renderCampaigns('completed'));
-document.getElementById('completedType')?.addEventListener('change', () => renderCampaigns('completed'));
-document.getElementById('upcomingSearch')?.addEventListener('input', () => renderCampaigns('upcoming'));
-document.getElementById('upcomingType')?.addEventListener('change', () => renderCampaigns('upcoming'));
 
 document.addEventListener('click', (event) => {
   const shell = document.getElementById('profileShell');
@@ -1194,6 +1556,14 @@ document.addEventListener('keydown', (event) => {
     closeDetailModal();
   }
 });
+
+if(!adminRefreshTimer){
+  adminRefreshTimer = window.setInterval(() => {
+    if(document.visibilityState === 'visible'){
+      loadAdminData();
+    }
+  }, 60000);
+}
 
 setActiveTab('organizations');
 loadAdminData();

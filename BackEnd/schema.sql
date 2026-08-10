@@ -61,7 +61,7 @@ CREATE TABLE donor_profiles (
   blood_verification_document_type VARCHAR(255),
   blood_verification_document_file LONGTEXT,
   blood_verification_document_name VARCHAR(255),
-  verification_status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
+  verification_status ENUM('Pending', 'Verified', 'Rejected') NOT NULL DEFAULT 'Pending',
   CONSTRAINT fk_donor_user
     FOREIGN KEY (user_id) REFERENCES users(user_id)
     ON DELETE CASCADE

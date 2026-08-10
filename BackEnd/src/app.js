@@ -155,6 +155,119 @@ async function sendVerificationEmail(email, role, code) {
   });
 }
 
+function normalizeDonorVerificationStatus(status) {
+  const normalized = String(status || 'Pending').trim().toLowerCase();
+  if (normalized === 'verified' || normalized === 'approved') {
+    return 'Verified';
+  }
+  if (normalized === 'rejected') {
+    return 'Rejected';
+  }
+  return 'Pending';
+}
+
+function mapDonorRecord(row, { detail = false } = {}) {
+  if (!row) {
+    return null;
+  }
+
+  const verificationStatus = normalizeDonorVerificationStatus(row.verification_status);
+  const donor = {
+    user_id: row.user_id,
+    fullName: row.full_name,
+    email: row.email,
+    phone: row.phone,
+    city: row.city,
+    district: row.district,
+    bloodGroup: row.blood_group,
+    profile_picture: row.profile_picture,
+    created_at: row.created_at,
+    verification_status: verificationStatus,
+  };
+
+  if (detail) {
+    donor.address = row.address;
+    donor.profile_image_name = row.profile_image_name;
+    donor.profile_image_data = row.profile_image_data;
+    donor.profile_picture_name = row.profile_picture_name;
+    donor.is_available = row.is_available === 1 || row.is_available === true;
+    donor.last_donated_at = row.last_donated_at;
+    donor.total_donations = row.total_donations;
+    donor.blood_verification_document_type = row.blood_verification_document_type;
+    donor.blood_verification_document_file = row.blood_verification_document_file;
+    donor.blood_verification_document_name = row.blood_verification_document_name;
+  }
+
+  return donor;
+}
+
+async function sendDonorVerificationEmail(email, fullName, loginUrl) {
+  const transport = createMailTransport();
+  const emailFrom = process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@saveabeat.local';
+  const donorName = fullName || 'there';
+  const safeLoginUrl = loginUrl || 'login.html?role=donor';
+  const subject = 'Your Donor Account Has Been Verified';
+  const text = [
+    `Hello ${donorName},`,
+    '',
+    'Your donor account has been successfully verified by the administrator.',
+    'You can now log in to the donor panel using the password you created during signup.',
+    '',
+    `Email: ${email}`,
+    `Login here: ${safeLoginUrl}`,
+    '',
+    'Thank you for registering as a donor.',
+  ].join('\n');
+  const html = `
+    <p>Hello ${donorName},</p>
+    <p>Your donor account has been successfully verified by the administrator.</p>
+    <p>You can now log in to the donor panel using the password you created during signup.</p>
+    <p><strong>Email:</strong> ${email}<br/>
+    <strong>Login here:</strong> <a href="${safeLoginUrl}">${safeLoginUrl}</a></p>
+    <p>Thank you for registering as a donor.</p>
+  `;
+
+  if (!transport) {
+    console.warn('SMTP not configured. Logging donor verification email details instead.');
+    console.log(`Donor verification email for ${email}: ${subject}`);
+    return false;
+  }
+
+  await transport.sendMail({
+    from: emailFrom,
+    to: email,
+    subject,
+    text,
+    html,
+  });
+
+  return true;
+}
+
+function getAdminRequestIdentity(req) {
+  const source = req.method === 'GET' ? req.query : req.body || {};
+  return {
+    email: String(source.email || '').trim().toLowerCase(),
+    role: String(source.role || '').trim().toLowerCase(),
+  };
+}
+
+async function getAdminAccountByEmail(email) {
+  if (!email) {
+    return null;
+  }
+
+  const rows = await query(
+    `SELECT u.user_id, u.full_name, u.email, u.role
+     FROM users u
+     WHERE LOWER(u.email) = ? AND u.role = 'admin'
+     LIMIT 1`,
+    [email]
+  );
+
+  return rows[0] || null;
+}
+
 function createVerificationCode() {
   return String(crypto.randomInt(100000, 1000000));
 }
@@ -1536,16 +1649,68 @@ app.patch('/api/notifications/:notificationId/read', async (req, res) => {
 
 app.get('/api/admin/donors', async (req, res) => {
   try {
+    const { email, role } = getAdminRequestIdentity(req);
+    if (!email || role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can view donors.' });
+    }
+
+    const admin = await getAdminAccountByEmail(email);
+    if (!admin) {
+      return res.status(403).json({ message: 'Admin account not found.' });
+    }
+
     const rows = await query(
-      `SELECT u.user_id, u.full_name, u.email, u.phone, u.city, u.district,
-              d.blood_group, d.profile_picture, d.verification_status,
-              d.blood_verification_document_type, d.blood_verification_document_file
+      `SELECT u.user_id, u.full_name, u.email, u.phone, u.city, u.district, u.created_at,
+              d.blood_group, d.verification_status
        FROM users u
        INNER JOIN donor_profiles d ON u.user_id = d.user_id
        WHERE u.role = 'donor'
        ORDER BY u.created_at DESC`
     );
-    res.json({ data: rows });
+
+    res.json({ data: rows.map((row) => mapDonorRecord(row)) });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/admin/donors/:donorId', async (req, res) => {
+  const donorId = Number.parseInt(req.params.donorId, 10);
+  try {
+    const { email, role } = getAdminRequestIdentity(req);
+    if (!email || role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can view donor details.' });
+    }
+
+    const admin = await getAdminAccountByEmail(email);
+    if (!admin) {
+      return res.status(403).json({ message: 'Admin account not found.' });
+    }
+
+    if (!donorId) {
+      return res.status(400).json({ message: 'Donor id is required.' });
+    }
+
+    const rows = await query(
+      `SELECT u.user_id, u.full_name, u.email, u.phone, u.address, u.city, u.district,
+              u.profile_image_name, u.profile_image_data, u.created_at,
+              COALESCE(d.profile_picture, u.profile_image_data) AS profile_picture,
+              COALESCE(d.profile_picture_name, u.profile_image_name) AS profile_picture_name,
+              d.blood_group, d.is_available, d.last_donated_at, d.total_donations,
+              d.blood_verification_document_type, d.blood_verification_document_file,
+              d.blood_verification_document_name, d.verification_status
+       FROM users u
+       INNER JOIN donor_profiles d ON u.user_id = d.user_id
+       WHERE u.user_id = ? AND u.role = 'donor'
+       LIMIT 1`,
+      [donorId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: 'Donor not found.' });
+    }
+
+    res.json({ data: mapDonorRecord(rows[0], { detail: true }) });
   } catch (error) {
     sendDbError(res, error);
   }
@@ -1566,16 +1731,41 @@ app.post('/api/admin/donors/:donorId/verify', async (req, res) => {
   }
 
   try {
-    const adminRows = await query(
-      `SELECT u.user_id FROM users u WHERE LOWER(u.email) = ? AND u.role = 'admin' LIMIT 1`,
-      [email]
-    );
-
-    if (!adminRows.length) {
+    const admin = await getAdminAccountByEmail(email);
+    if (!admin) {
       return res.status(403).json({ message: 'Admin account not found.' });
     }
 
-    const verificationStatus = action === 'reject' ? 'Rejected' : 'Approved';
+    const donorRows = await query(
+      `SELECT u.user_id, u.full_name, u.email, u.phone, u.address, u.city, u.district,
+              u.profile_image_name, u.profile_image_data, u.created_at,
+              COALESCE(d.profile_picture, u.profile_image_data) AS profile_picture,
+              COALESCE(d.profile_picture_name, u.profile_image_name) AS profile_picture_name,
+              d.blood_group, d.is_available, d.last_donated_at, d.total_donations,
+              d.blood_verification_document_type, d.blood_verification_document_file,
+              d.blood_verification_document_name, d.verification_status
+       FROM users u
+       INNER JOIN donor_profiles d ON u.user_id = d.user_id
+       WHERE u.user_id = ? AND u.role = 'donor'
+       LIMIT 1`,
+      [donorId]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor not found.' });
+    }
+
+    const donor = donorRows[0];
+    const currentStatus = normalizeDonorVerificationStatus(donor.verification_status);
+    const verificationStatus = action === 'reject' ? 'Rejected' : 'Verified';
+
+    if (verificationStatus === 'Verified' && currentStatus === 'Verified') {
+      return res.json({
+        message: 'Donor is already verified.',
+        donor: mapDonorRecord(donor, { detail: true }),
+        emailSent: false,
+      });
+    }
 
     const result = await query(
       `UPDATE donor_profiles SET verification_status = ? WHERE user_id = ?`,
@@ -1586,8 +1776,79 @@ app.post('/api/admin/donors/:donorId/verify', async (req, res) => {
       return res.status(404).json({ message: 'Donor not found.' });
     }
 
-    const actionMessage = action === 'reject' ? 'rejected' : 'verified';
-    res.json({ message: `Donor ${actionMessage} successfully.` });
+    donor.verification_status = verificationStatus;
+
+    let emailSent = false;
+    if (verificationStatus === 'Verified') {
+      const origin = String(req.get('origin') || '').trim().replace(/\/$/, '');
+      const envBaseUrl = String(process.env.DONOR_LOGIN_URL || process.env.FRONTEND_URL || process.env.APP_URL || '').trim().replace(/\/$/, '');
+      const loginUrl = envBaseUrl
+        ? `${envBaseUrl}/login.html?role=donor`
+        : origin
+          ? `${origin}/login.html?role=donor`
+          : 'login.html?role=donor';
+
+      try {
+        emailSent = await sendDonorVerificationEmail(donor.email, donor.full_name, loginUrl);
+      } catch (error) {
+        console.error('Donor verification email failed:', error);
+      }
+    }
+
+    res.json({
+      message: verificationStatus === 'Verified'
+        ? (emailSent ? 'Donor verified successfully.' : 'Donor verified successfully, but the verification email could not be sent automatically.')
+        : 'Donor rejected successfully.',
+      emailSent,
+      donor: mapDonorRecord(donor, { detail: true }),
+    });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
+app.delete('/api/admin/donors/:donorId', async (req, res) => {
+  const donorId = Number.parseInt(req.params.donorId, 10);
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const role = String(req.body.role || '').trim().toLowerCase();
+
+  if (!donorId || !email) {
+    return res.status(400).json({ message: 'Donor id and admin email are required.' });
+  }
+
+  if (role !== 'admin') {
+    return res.status(403).json({ message: 'Only admins can delete donors.' });
+  }
+
+  try {
+    const admin = await getAdminAccountByEmail(email);
+    if (!admin) {
+      return res.status(403).json({ message: 'Admin account not found.' });
+    }
+
+    const donorRows = await query(
+      `SELECT u.user_id, u.full_name, u.email
+       FROM users u
+       WHERE u.user_id = ? AND u.role = 'donor'
+       LIMIT 1`,
+      [donorId]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor not found.' });
+    }
+
+    const result = await query(
+      `DELETE FROM users
+       WHERE user_id = ? AND role = 'donor'`,
+      [donorId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Donor not found.' });
+    }
+
+    res.json({ message: 'Donor deleted successfully.' });
   } catch (error) {
     sendDbError(res, error);
   }
@@ -2502,6 +2763,19 @@ async function start() {
     );
     if (!campaignStatusColumns.length) {
       await pool.query("ALTER TABLE blood_drive_listings ADD COLUMN status ENUM('active', 'completed', 'stopped') NOT NULL DEFAULT 'active' AFTER event_type");
+    }
+
+    const [donorStatusColumns] = await pool.query(
+      `SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donor_profiles' AND COLUMN_NAME = 'verification_status'`
+    );
+    if (donorStatusColumns.length) {
+      const donorStatusType = String(donorStatusColumns[0].COLUMN_TYPE || '');
+      if (donorStatusType.includes('Approved') || !donorStatusType.includes('Verified')) {
+        await pool.query("ALTER TABLE donor_profiles MODIFY verification_status ENUM('Pending', 'Approved', 'Verified', 'Rejected') NOT NULL DEFAULT 'Pending'");
+        await pool.query("UPDATE donor_profiles SET verification_status = 'Verified' WHERE verification_status = 'Approved'");
+        await pool.query("ALTER TABLE donor_profiles MODIFY verification_status ENUM('Pending', 'Verified', 'Rejected') NOT NULL DEFAULT 'Pending'");
+      }
     }
 
     // Migration for donation_responses table to support self/referral functionality
