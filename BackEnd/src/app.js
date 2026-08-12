@@ -82,6 +82,21 @@ async function ensureDatabaseColumns() {
       ) ENGINE=InnoDB
     `);
   } catch (e) {}
+  try {
+    await query(`ALTER TABLE donation_history ADD COLUMN campaign_id INT NULL AFTER request_id`);
+  } catch (e) {}
+  try {
+    await query(`ALTER TABLE donation_history ADD COLUMN organization_id INT NULL AFTER campaign_id`);
+  } catch (e) {}
+  try {
+    await query(`ALTER TABLE donation_history ADD COLUMN application_id INT NULL AFTER organization_id`);
+  } catch (e) {}
+  try {
+    await query(`ALTER TABLE donation_history ADD COLUMN application_type ENUM('campaign', 'request') NULL AFTER application_id`);
+  } catch (e) {}
+  try {
+    await query(`ALTER TABLE donation_history ADD COLUMN blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL AFTER application_type`);
+  } catch (e) {}
 }
 ensureDatabaseColumns().catch(err => console.warn('Schema check warning:', err.message));
 
@@ -328,6 +343,15 @@ function formatDate(value) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 19).replace('T', ' ');
 }
 
 function parseList(value) {
@@ -635,10 +659,14 @@ app.get('/api/org/dashboard', async (req, res) => {
         [org.org_id]
       ),
       query(
-        `SELECT dh.history_id, dh.units_donated, dh.donated_at, dh.location, br.request_id, br.status AS request_status
+        `SELECT dh.history_id, dh.donor_id, dh.units_donated, dh.donated_at, dh.location, dh.request_id,
+                dh.campaign_id, dh.organization_id, dh.application_id, dh.application_type, dh.blood_group,
+                br.request_id AS linked_request_id, br.status AS request_status, br.hospital_name,
+                bl.event_id AS linked_campaign_id, bl.status AS campaign_status, bl.title AS campaign_title
          FROM donation_history dh
-         INNER JOIN blood_requests br ON br.request_id = dh.request_id
-         WHERE br.org_id = ?
+         LEFT JOIN blood_requests br ON br.request_id = dh.request_id
+         LEFT JOIN blood_drive_listings bl ON bl.event_id = dh.campaign_id
+         WHERE COALESCE(br.org_id, bl.org_id, dh.organization_id) = ?
          ORDER BY dh.donated_at DESC, dh.history_id DESC`,
         [org.org_id]
       ),
@@ -657,7 +685,7 @@ app.get('/api/org/dashboard', async (req, res) => {
       .filter((request) => String(request.status).toLowerCase() === 'open' && (!request.expires_at || new Date(request.expires_at) >= new Date()))
       .map((request) => mapBloodRequestListing({ ...request, org_name: org.org_name }));
     const totalBloodUnitsCollected = donationRows.reduce((s, r) => s + Number(r.units_donated || 0), 0);
-    const totalSoldBloodUnits = donationRows.filter((r) => String(r.request_status || '').toLowerCase() === 'fulfilled').reduce((s, r) => s + Number(r.units_donated || 0), 0);
+    const totalSoldBloodUnits = donationRows.filter((r) => String(r.request_status || '').toLowerCase() === 'fulfilled' || String(r.application_type || '').toLowerCase() === 'campaign').reduce((s, r) => s + Number(r.units_donated || 0), 0);
     const requestForBloodUnits = requestRows.reduce((s, r) => s + Number(r.units_needed || 0), 0);
     const openRequests = requestRows.filter((r) => String(r.status || '').toLowerCase() === 'open').length;
     const fulfilledRequests = requestRows.filter((r) => String(r.status || '').toLowerCase() === 'fulfilled').length;
@@ -687,8 +715,16 @@ app.get('/api/org/dashboard', async (req, res) => {
         hospitalName: r.hospital_name, patientType: r.patient_type,
       })),
       recentActivity: donationRows.map((r) => ({
-        historyId: r.history_id, units: r.units_donated, date: formatDate(r.donated_at),
-        location: r.location, requestId: r.request_id, requestStatus: r.request_status,
+        historyId: r.history_id,
+        units: r.units_donated,
+        date: formatDate(r.donated_at),
+        location: r.location,
+        requestId: r.linked_request_id || r.request_id,
+        campaignId: r.linked_campaign_id || r.campaign_id,
+        requestStatus: r.request_status || r.campaign_status || r.application_type,
+        campaignTitle: r.campaign_title || null,
+        bloodGroup: r.blood_group || null,
+        applicationType: r.application_type || null,
       })),
     });
   } catch (error) {
@@ -993,16 +1029,31 @@ app.get('/api/donor/history', async (req, res) => {
     const donorId = donorRows[0].donor_id;
 
     const rows = await query(
-      `SELECT dh.history_id, dh.donated_at, dh.units_donated, dh.location, o.org_name
+      `SELECT dh.history_id, dh.donated_at, dh.units_donated, dh.location, dh.blood_group, dh.application_type,
+              COALESCE(reqOrg.org_name, campOrg.org_name) AS org_name,
+              br.hospital_name AS request_title,
+              bl.title AS campaign_title
        FROM donation_history dh
        LEFT JOIN blood_requests br ON br.request_id = dh.request_id
-       LEFT JOIN organizations o ON o.org_id = br.org_id
+       LEFT JOIN organizations reqOrg ON reqOrg.org_id = br.org_id
+       LEFT JOIN blood_drive_listings bl ON bl.event_id = dh.campaign_id
+       LEFT JOIN organizations campOrg ON campOrg.org_id = bl.org_id
        WHERE dh.donor_id = ?
-       ORDER BY dh.donated_at DESC`,
+       ORDER BY dh.donated_at DESC, dh.history_id DESC`,
       [donorId]
     );
 
-    res.json({ data: rows.map((r) => ({ id: r.history_id, date: formatDate(r.donated_at), units: r.units_donated, location: r.location, org: r.org_name })) });
+    res.json({
+      data: rows.map((r) => ({
+        id: r.history_id,
+        date: formatDate(r.donated_at),
+        units: r.units_donated,
+        location: r.location,
+        org: r.org_name || r.campaign_title || r.request_title || null,
+        bloodGroup: r.blood_group || null,
+        applicationType: r.application_type || null,
+      })),
+    });
   } catch (error) {
     sendDbError(res, error);
   }
@@ -1020,7 +1071,7 @@ app.post('/api/events/:id/apply', async (req, res) => {
 
   try {
     const donorRows = await query(
-      `SELECT d.donor_id, d.total_donations
+      `SELECT d.donor_id, d.total_donations, d.blood_group
        FROM users u
        INNER JOIN donor_profiles d ON d.user_id = u.user_id
        WHERE LOWER(u.email) = ?
@@ -1033,7 +1084,7 @@ app.post('/api/events/:id/apply', async (req, res) => {
     }
 
     const eventRows = await query(
-      `SELECT event_id, location, spots_available FROM blood_drive_listings
+      `SELECT event_id, org_id, title, location, spots_available FROM blood_drive_listings
        WHERE event_id = ? AND status = 'active' AND spots_available > 0 LIMIT 1`,
       [eventId]
     );
@@ -1042,17 +1093,32 @@ app.post('/api/events/:id/apply', async (req, res) => {
     }
 
     const donorId = donorRows[0].donor_id;
+    const bloodGroup = normalizeBloodGroup(donorRows[0].blood_group);
     const location = eventRows[0].location || 'Event location';
+    const donatedDate = formatDate(new Date());
 
     // insert donation history record
     const insert = await query(
-      `INSERT INTO donation_history (donor_id, request_id, donated_at, units_donated, location)
-       VALUES (?, NULL, CURDATE(), ?, ?)`,
-      [donorId, Number.isNaN(units) || units < 1 ? 1 : units, location]
+      `INSERT INTO donation_history (
+        donor_id, request_id, campaign_id, organization_id, application_id, application_type,
+        blood_group, donated_at, units_donated, location
+      ) VALUES (?, NULL, ?, ?, NULL, 'campaign', ?, ?, ?, ?)`,
+      [
+        donorId,
+        eventRows[0].event_id,
+        eventRows[0].org_id,
+        bloodGroup || null,
+        donatedDate,
+        Number.isNaN(units) || units < 1 ? 1 : units,
+        location,
+      ]
     );
 
     // update donor total donations
-    await query('UPDATE donor_profiles SET total_donations = total_donations + ? WHERE donor_id = ?', [Number.isNaN(units) || units < 1 ? 1 : units, donorId]);
+    await query(
+      'UPDATE donor_profiles SET total_donations = COALESCE(total_donations, 0) + ?, last_donated_at = ? WHERE donor_id = ?',
+      [Number.isNaN(units) || units < 1 ? 1 : units, donatedDate, donorId]
+    );
 
     // decrement event spots if available
     try {
@@ -1398,6 +1464,73 @@ async function getOrganizationForCampaignAction(email) {
     [email]
   );
   return rows[0] || null;
+}
+
+function safeParseJson(value, fallback = {}) {
+  if (!value) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(String(value));
+  } catch (_error) {
+    return fallback;
+  }
+}
+
+function normalizeBloodGroup(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function mapDonationHistoryRow(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    donationId: row.history_id,
+    donorId: row.donor_id,
+    donorName: row.donor_name || row.full_name || row.donor_full_name || 'Unknown',
+    email: row.email || row.donor_email || '',
+    bloodGroup: row.blood_group || row.profile_blood_group || row.response_blood_group || '',
+    units: Number(row.units_donated || 0),
+    date: formatDate(row.donated_at),
+    location: row.location || '',
+    requestId: row.request_id || null,
+    campaignId: row.campaign_id || null,
+    organizationId: row.organization_id || null,
+    applicationId: row.application_id || null,
+    applicationType: row.application_type || (row.campaign_id ? 'campaign' : 'request'),
+    sourceTitle: row.request_title || row.campaign_title || '',
+    sourceStatus: row.request_status || row.campaign_status || '',
+  };
+}
+
+async function loadDonationActionContext({ orgId, requestId = null, eventId = null }) {
+  if (requestId) {
+    const rows = await query(
+      `SELECT br.request_id, br.org_id, br.blood_group, br.units_needed, br.status, br.city, br.district,
+              br.hospital_name, br.hospital_address, br.contact_person, br.contact_number
+       FROM blood_requests br
+       WHERE br.request_id = ? AND br.org_id = ?
+       LIMIT 1`,
+      [requestId, orgId]
+    );
+    return rows[0] || null;
+  }
+
+  if (eventId) {
+    const rows = await query(
+      `SELECT bl.event_id, bl.org_id, bl.title, bl.event_date, bl.time_range, bl.location, bl.status, bl.event_type
+       FROM blood_drive_listings bl
+       WHERE bl.event_id = ? AND bl.org_id = ?
+       LIMIT 1`,
+      [eventId, orgId]
+    );
+    return rows[0] || null;
+  }
+
+  return null;
 }
 
 function mapBloodRequestListing(row) {
@@ -2354,6 +2487,8 @@ app.put('/api/me', async (req, res) => {
 
 app.post('/api/responses', async (req, res) => {
   const { requestId, responseType, fullName, phone, email, bloodGroup, referralFullName, referralPhone, referralBloodGroup, referralRelationship, availabilityDate, availabilityTime, notes } = req.body;
+  const authHeader = req.headers.authorization;
+  let donorId = null;
 
   if (!requestId || !responseType || !availabilityDate || !availabilityTime) {
     return res.status(400).json({ message: 'Request ID, response type, availability date, and time are required.' });
@@ -2368,14 +2503,37 @@ app.post('/api/responses', async (req, res) => {
   }
 
   try {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const decoded = jwt.verify(authHeader.substring(7), jwtSecret);
+        const userId = decoded.userId || decoded.donorId;
+        if (userId) {
+          const donorRows = await query(
+            `SELECT d.donor_id, u.full_name, u.email, u.phone, d.blood_group
+             FROM donor_profiles d
+             INNER JOIN users u ON u.user_id = d.user_id
+             WHERE u.user_id = ? AND u.role = 'donor'
+             LIMIT 1`,
+            [userId]
+          );
+          if (donorRows.length) {
+            donorId = donorRows[0].donor_id;
+          }
+        }
+      } catch (_error) {
+        donorId = null;
+      }
+    }
+
     const result = await query(
       `INSERT INTO donation_responses 
        (request_id, donor_id, response_type, full_name, phone, email, blood_group, 
         referral_full_name, referral_phone, referral_blood_group, referral_relationship, 
         availability_date, availability_time, notes, status)
-       VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
         requestId,
+        donorId,
         responseType,
         responseType === 'self' ? fullName : null,
         responseType === 'self' ? phone : null,
@@ -2689,31 +2847,31 @@ app.get('/api/organization/campaigns/:eventId/participations', async (req, res) 
     }
 
     const registrations = await query(
-      `SELECT dp.participation_id, dp.status, dp.applied_at, dp.approved_at, dp.donation_completed_at, dp.notes
+      `SELECT dp.participation_id, dp.donor_id, dp.status, dp.applied_at, dp.approved_at, dp.donation_completed_at, dp.notes,
+              d.blood_group AS profile_blood_group,
+              u.full_name, u.email, u.phone
        FROM donation_participation dp
        INNER JOIN blood_drive_listings bl ON dp.campaign_id = bl.event_id
-       WHERE bl.event_id = ? AND bl.org_id = ?
+       INNER JOIN donor_profiles d ON d.donor_id = dp.donor_id
+       INNER JOIN users u ON u.user_id = d.user_id
+       WHERE bl.event_id = ? AND bl.org_id = ? AND dp.status IN ('pending', 'approved')
        ORDER BY dp.applied_at DESC`,
       [eventId, org.org_id]
     );
 
     const processed = registrations.map((row) => {
-      let donorData = {};
-      try {
-        donorData = row.notes ? JSON.parse(row.notes) : {};
-      } catch (_err) {
-        donorData = {};
-      }
+      const donorData = safeParseJson(row.notes, {});
       return {
         participationId: row.participation_id,
+        donorId: row.donor_id,
         status: row.status,
         appliedAt: row.applied_at,
         approvedAt: row.approved_at,
         donationCompletedAt: row.donation_completed_at,
-        fullName: donorData.fullName || donorData.name || 'Unknown',
-        email: donorData.email || '',
-        phone: donorData.phone || '',
-        bloodGroup: donorData.bloodGroup || donorData.blood_group || '',
+        fullName: donorData.fullName || row.full_name || donorData.name || 'Unknown',
+        email: donorData.email || row.email || '',
+        phone: donorData.phone || row.phone || '',
+        bloodGroup: normalizeBloodGroup(donorData.bloodGroup || donorData.blood_group || row.profile_blood_group || ''),
       };
     });
 
@@ -2791,7 +2949,10 @@ app.get('/api/organization/participations', async (req, res) => {
 
 app.patch('/api/organization/participations/:participationId', async (req, res) => {
   const { participationId } = req.params;
-  const { status, donationCompletedAt } = req.body;
+  const status = String(req.body.status || '').trim().toLowerCase();
+  const donationCompletedAt = String(req.body.donationCompletedAt || '').trim();
+  const unitsDonated = Number.parseInt(req.body.unitsDonated, 10);
+  const bodyBloodGroup = normalizeBloodGroup(req.body.bloodGroup);
 
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -2821,6 +2982,29 @@ app.patch('/api/organization/participations/:participationId', async (req, res) 
       return res.status(400).json({ message: 'Invalid status.' });
     }
 
+    const participationRows = await query(
+      `SELECT dp.participation_id, dp.donor_id, dp.campaign_id, dp.organization_id, dp.status, dp.notes,
+              d.blood_group AS profile_blood_group,
+              u.full_name, u.email, u.phone
+       FROM donation_participation dp
+       INNER JOIN donor_profiles d ON d.donor_id = dp.donor_id
+       INNER JOIN users u ON u.user_id = d.user_id
+       WHERE dp.participation_id = ? AND dp.organization_id = ?
+       LIMIT 1`,
+      [participationId, org.org_id]
+    );
+
+    if (!participationRows.length) {
+      return res.status(404).json({ message: 'Participation not found or not authorized.' });
+    }
+
+    const participation = participationRows[0];
+    const donorData = safeParseJson(participation.notes, {});
+
+    if (status === 'completed' && (!Number.isInteger(unitsDonated) || unitsDonated < 1)) {
+      return res.status(400).json({ message: 'Units donated must be a whole number of at least 1.' });
+    }
+
     let updateFields = ['status = ?'];
     let updateValues = [status];
 
@@ -2828,11 +3012,11 @@ app.patch('/api/organization/participations/:participationId', async (req, res) 
       updateFields.push('approved_at = CURRENT_TIMESTAMP');
     } else if (status === 'cancelled') {
       updateFields.push('cancelled_at = CURRENT_TIMESTAMP');
-    } else if (status === 'completed' && donationCompletedAt) {
-      updateFields.push('donation_completed_at = ?');
-      updateValues.push(donationCompletedAt);
     } else if (status === 'no_show') {
       updateFields.push('cancelled_at = CURRENT_TIMESTAMP');
+    } else if (status === 'completed') {
+      updateFields.push('donation_completed_at = COALESCE(?, CURRENT_TIMESTAMP)');
+      updateValues.push(formatDateTime(donationCompletedAt));
     }
 
     updateValues.push(participationId, org.org_id);
@@ -2848,10 +3032,423 @@ app.patch('/api/organization/participations/:participationId', async (req, res) 
       return res.status(404).json({ message: 'Participation not found or not authorized.' });
     }
 
+    let donationRecord = null;
+    if (status === 'completed') {
+      const campaignRows = await query(
+        `SELECT event_id, org_id, title, location, event_date
+         FROM blood_drive_listings
+         WHERE event_id = ? AND org_id = ?
+         LIMIT 1`,
+        [participation.campaign_id, org.org_id]
+      );
+
+      if (!campaignRows.length) {
+        return res.status(404).json({ message: 'Campaign not found or not authorized.' });
+      }
+
+      const campaign = campaignRows[0];
+      const bloodGroup = bodyBloodGroup || normalizeBloodGroup(donorData.bloodGroup || donorData.blood_group || participation.profile_blood_group);
+      if (!bloodGroup) {
+        return res.status(400).json({ message: 'Blood group is required to record the donation.' });
+      }
+
+      const donatedAt = donationCompletedAt ? new Date(donationCompletedAt) : new Date();
+      const donatedDate = Number.isNaN(donatedAt.getTime()) ? formatDate(new Date()) : formatDate(donatedAt);
+      const location = campaign.location || 'Campaign site';
+
+      const donationInsert = await query(
+        `INSERT INTO donation_history (
+          donor_id, request_id, campaign_id, organization_id, application_id, application_type,
+          blood_group, donated_at, units_donated, location
+        ) VALUES (?, NULL, ?, ?, ?, 'campaign', ?, ?, ?, ?)`,
+        [
+          participation.donor_id,
+          campaign.event_id,
+          org.org_id,
+          participation.participation_id,
+          bloodGroup,
+          donatedDate,
+          unitsDonated,
+          location,
+        ]
+      );
+
+      await query(
+        `UPDATE donor_profiles
+         SET total_donations = COALESCE(total_donations, 0) + ?,
+             last_donated_at = ?
+         WHERE donor_id = ?`,
+        [unitsDonated, donatedDate, participation.donor_id]
+      );
+
+      donationRecord = {
+        donationId: donationInsert.insertId,
+        donorId: participation.donor_id,
+        campaignId: campaign.event_id,
+        organizationId: org.org_id,
+        applicationId: participation.participation_id,
+        bloodGroup,
+        units: unitsDonated,
+        date: donatedDate,
+        location,
+      };
+    }
+
     res.json({
       message: 'Participation status updated successfully.',
       participationId: Number(participationId),
-      status
+      status,
+      donation: donationRecord,
+    });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/organization/campaigns/:eventId/donations', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  const token = authHeader.substring(7);
+  const eventId = Number.parseInt(req.params.eventId, 10);
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const userId = decoded.userId || decoded.orgId;
+    if (!userId || !eventId) {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+
+    const [org] = await query('SELECT org_id FROM organizations WHERE user_id = ?', [userId]);
+    if (!org) {
+      return res.status(403).json({ message: 'Not authorized as an organization.' });
+    }
+
+    const campaign = await loadDonationActionContext({ orgId: org.org_id, eventId });
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found or you do not have permission to access it.' });
+    }
+
+    const rows = await query(
+      `SELECT dh.history_id, dh.donor_id, dh.campaign_id, dh.organization_id, dh.application_id,
+              dh.application_type, dh.blood_group, dh.donated_at, dh.units_donated, dh.location,
+              u.full_name AS donor_name, u.email, bl.title AS campaign_title
+       FROM donation_history dh
+       INNER JOIN donor_profiles d ON d.donor_id = dh.donor_id
+       INNER JOIN users u ON u.user_id = d.user_id
+       LEFT JOIN blood_drive_listings bl ON bl.event_id = dh.campaign_id
+       WHERE dh.campaign_id = ? AND dh.organization_id = ?
+       ORDER BY dh.donated_at DESC, dh.history_id DESC`,
+      [eventId, org.org_id]
+    );
+
+    res.json({
+      totalUnits: rows.reduce((sum, row) => sum + Number(row.units_donated || 0), 0),
+      data: rows.map((row) => mapDonationHistoryRow({
+        ...row,
+        donor_name: row.donor_name,
+        campaign_title: row.campaign_title,
+      })),
+    });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/organization/requests/:requestId/responses', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  const token = authHeader.substring(7);
+  const requestId = Number.parseInt(req.params.requestId, 10);
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const userId = decoded.userId || decoded.orgId;
+    if (!userId || !requestId) {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+
+    const [org] = await query('SELECT org_id FROM organizations WHERE user_id = ?', [userId]);
+    if (!org) {
+      return res.status(403).json({ message: 'Not authorized as an organization.' });
+    }
+
+    const request = await loadDonationActionContext({ orgId: org.org_id, requestId });
+    if (!request) {
+      return res.status(404).json({ message: 'Blood request not found or you do not have permission to access it.' });
+    }
+
+    const rows = await query(
+      `SELECT dr.response_id, dr.request_id, dr.donor_id, dr.response_type, dr.full_name, dr.phone, u.email AS email,
+              dr.blood_group, dr.referral_full_name, dr.referral_phone, dr.referral_blood_group,
+              dr.referral_relationship, dr.availability_date, dr.availability_time, dr.notes,
+              dr.status, dr.responded_at, dr.confirmed_at,
+              d.blood_group AS profile_blood_group,
+              u.full_name AS donor_name, u.email AS donor_email, u.phone AS donor_phone
+       FROM donation_responses dr
+       LEFT JOIN donor_profiles d ON d.donor_id = dr.donor_id
+       LEFT JOIN users u ON u.user_id = d.user_id
+       WHERE dr.request_id = ? AND dr.status = 'pending'
+       ORDER BY dr.responded_at DESC, dr.response_id DESC`,
+      [requestId]
+    );
+
+    res.json({
+      total: rows.length,
+      data: rows.map((row) => ({
+        responseId: row.response_id,
+        requestId: row.request_id,
+        donorId: row.donor_id,
+        responseType: row.response_type,
+        fullName: row.response_type === 'referral'
+          ? row.referral_full_name || row.full_name || row.donor_name || 'Unknown'
+          : row.donor_name || row.full_name || 'Unknown',
+        email: row.response_type === 'referral'
+          ? row.email || row.donor_email || ''
+          : row.donor_email || row.email || '',
+        phone: row.response_type === 'referral'
+          ? row.referral_phone || row.phone || row.donor_phone || ''
+          : row.donor_phone || row.phone || '',
+        bloodGroup: row.response_type === 'referral'
+          ? normalizeBloodGroup(row.referral_blood_group || row.blood_group || row.profile_blood_group)
+          : normalizeBloodGroup(row.profile_blood_group || row.blood_group),
+        referralFullName: row.referral_full_name || '',
+        referralPhone: row.referral_phone || '',
+        referralBloodGroup: normalizeBloodGroup(row.referral_blood_group || row.blood_group),
+        referralRelationship: row.referral_relationship || '',
+        availabilityDate: row.availability_date || null,
+        availabilityTime: row.availability_time || null,
+        notes: row.notes || '',
+        status: row.status,
+        respondedAt: row.responded_at,
+        confirmedAt: row.confirmed_at,
+      })),
+    });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/organization/requests/:requestId/donations', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  const token = authHeader.substring(7);
+  const requestId = Number.parseInt(req.params.requestId, 10);
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const userId = decoded.userId || decoded.orgId;
+    if (!userId || !requestId) {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+
+    const [org] = await query('SELECT org_id FROM organizations WHERE user_id = ?', [userId]);
+    if (!org) {
+      return res.status(403).json({ message: 'Not authorized as an organization.' });
+    }
+
+    const request = await loadDonationActionContext({ orgId: org.org_id, requestId });
+    if (!request) {
+      return res.status(404).json({ message: 'Blood request not found or you do not have permission to access it.' });
+    }
+
+    const rows = await query(
+      `SELECT dh.history_id, dh.donor_id, dh.request_id, dh.campaign_id, dh.organization_id, dh.application_id,
+              dh.application_type, dh.blood_group, dh.donated_at, dh.units_donated, dh.location,
+              u.full_name AS donor_name, u.email, br.hospital_name AS request_title
+       FROM donation_history dh
+       INNER JOIN donor_profiles d ON d.donor_id = dh.donor_id
+       INNER JOIN users u ON u.user_id = d.user_id
+       LEFT JOIN blood_requests br ON br.request_id = dh.request_id
+       WHERE dh.request_id = ? AND dh.organization_id = ?
+       ORDER BY dh.donated_at DESC, dh.history_id DESC`,
+      [requestId, org.org_id]
+    );
+
+    res.json({
+      totalUnits: rows.reduce((sum, row) => sum + Number(row.units_donated || 0), 0),
+      data: rows.map((row) => mapDonationHistoryRow({
+        ...row,
+        donor_name: row.donor_name,
+        request_title: row.request_title,
+      })),
+    });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+    sendDbError(res, error);
+  }
+});
+
+app.patch('/api/organization/requests/:requestId/responses/:responseId', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  const token = authHeader.substring(7);
+  const requestId = Number.parseInt(req.params.requestId, 10);
+  const responseId = Number.parseInt(req.params.responseId, 10);
+  const status = String(req.body.status || '').trim().toLowerCase();
+  const donationCompletedAt = String(req.body.donationCompletedAt || '').trim();
+  const unitsDonated = Number.parseInt(req.body.unitsDonated, 10);
+  const bodyBloodGroup = normalizeBloodGroup(req.body.bloodGroup);
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const userId = decoded.userId || decoded.orgId;
+    if (!userId || !requestId || !responseId) {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
+
+    const [org] = await query('SELECT org_id FROM organizations WHERE user_id = ?', [userId]);
+    if (!org) {
+      return res.status(403).json({ message: 'Not authorized as an organization.' });
+    }
+
+    const request = await loadDonationActionContext({ orgId: org.org_id, requestId });
+    if (!request) {
+      return res.status(404).json({ message: 'Blood request not found or you do not have permission to access it.' });
+    }
+
+    const responseRows = await query(
+      `SELECT dr.response_id, dr.request_id, dr.donor_id, dr.response_type, dr.full_name, dr.phone, u.email AS email,
+              dr.blood_group, dr.status, dr.notes,
+              d.blood_group AS profile_blood_group,
+              d.total_donations, d.last_donated_at,
+              u.full_name AS donor_name, u.email AS donor_email, u.phone AS donor_phone
+       FROM donation_responses dr
+       LEFT JOIN donor_profiles d ON d.donor_id = dr.donor_id
+       LEFT JOIN users u ON u.user_id = d.user_id
+       WHERE dr.response_id = ? AND dr.request_id = ? AND dr.request_id IN (
+         SELECT request_id FROM blood_requests WHERE request_id = ? AND org_id = ?
+       )
+       LIMIT 1`,
+      [responseId, requestId, requestId, org.org_id]
+    );
+
+    if (!responseRows.length) {
+      return res.status(404).json({ message: 'Applicant not found or not authorized.' });
+    }
+
+    const applicant = responseRows[0];
+    const validStatuses = ['confirmed', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status.' });
+    }
+
+    if (status === 'confirmed' && (!Number.isInteger(unitsDonated) || unitsDonated < 1)) {
+      return res.status(400).json({ message: 'Units donated must be a whole number of at least 1.' });
+    }
+
+    let updateFields = ['status = ?'];
+    let updateValues = [status];
+
+    if (status === 'confirmed') {
+      updateFields.push('confirmed_at = COALESCE(?, CURRENT_TIMESTAMP)');
+      updateValues.push(formatDateTime(donationCompletedAt));
+    }
+
+    updateValues.push(responseId, requestId);
+
+    const result = await query(
+      `UPDATE donation_responses
+       SET ${updateFields.join(', ')}
+       WHERE response_id = ? AND request_id = ?`,
+      updateValues
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Applicant not found or not authorized.' });
+    }
+
+    let donationRecord = null;
+    if (status === 'confirmed') {
+      const bloodGroup = bodyBloodGroup || normalizeBloodGroup(applicant.profile_blood_group || applicant.blood_group);
+      if (!bloodGroup) {
+        return res.status(400).json({ message: 'Blood group is required to record the donation.' });
+      }
+
+      const donatedAt = donationCompletedAt ? new Date(donationCompletedAt) : new Date();
+      const donatedDate = Number.isNaN(donatedAt.getTime()) ? formatDate(new Date()) : formatDate(donatedAt);
+      const location = request.hospital_address || request.hospital_name || `${request.city || ''}${request.district ? `, ${request.district}` : ''}`.trim() || 'Blood request site';
+
+      const donationInsert = await query(
+        `INSERT INTO donation_history (
+          donor_id, request_id, campaign_id, organization_id, application_id, application_type,
+          blood_group, donated_at, units_donated, location
+        ) VALUES (?, ?, NULL, ?, ?, 'request', ?, ?, ?, ?)`,
+        [
+          applicant.donor_id,
+          request.request_id,
+          org.org_id,
+          applicant.response_id,
+          bloodGroup,
+          donatedDate,
+          unitsDonated,
+          location,
+        ]
+      );
+
+      await query(
+        `UPDATE donor_profiles
+         SET total_donations = COALESCE(total_donations, 0) + ?,
+             last_donated_at = ?
+         WHERE donor_id = ?`,
+        [unitsDonated, donatedDate, applicant.donor_id]
+      );
+
+      const totalUnitsRows = await query(
+        `SELECT COALESCE(SUM(units_donated), 0) AS total_units
+         FROM donation_history
+         WHERE request_id = ? AND organization_id = ?`,
+        [request.request_id, org.org_id]
+      );
+      const totalUnits = Number(totalUnitsRows[0]?.total_units || 0);
+      if (totalUnits >= Number(request.units_needed || 0)) {
+        await query(
+          `UPDATE blood_requests
+           SET status = 'fulfilled'
+           WHERE request_id = ? AND org_id = ? AND status = 'open'`,
+          [request.request_id, org.org_id]
+        );
+      }
+
+      donationRecord = {
+        donationId: donationInsert.insertId,
+        donorId: applicant.donor_id,
+        requestId: request.request_id,
+        organizationId: org.org_id,
+        applicationId: applicant.response_id,
+        bloodGroup,
+        units: unitsDonated,
+        date: donatedDate,
+        location,
+      };
+    }
+
+    res.json({
+      message: 'Applicant status updated successfully.',
+      responseId: Number(responseId),
+      status,
+      donation: donationRecord,
     });
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -2951,6 +3548,22 @@ async function start() {
       await pool.query("ALTER TABLE donation_responses MODIFY COLUMN donor_id INT NULL");
     }
 
+    const [bloodGroupColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_responses' AND COLUMN_NAME = 'blood_group'`
+    );
+    if (!bloodGroupColumns.length) {
+      await pool.query("ALTER TABLE donation_responses ADD COLUMN blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL");
+    }
+
+    const [referralBloodGroupColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_responses' AND COLUMN_NAME = 'referral_blood_group'`
+    );
+    if (!referralBloodGroupColumns.length) {
+      await pool.query("ALTER TABLE donation_responses ADD COLUMN referral_blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL");
+    }
+
     // Migration for donation_participation table
     const [participationColumns] = await pool.query(
       `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -2980,8 +3593,48 @@ async function start() {
           CONSTRAINT fk_participation_org
             FOREIGN KEY (organization_id) REFERENCES organizations(org_id)
             ON DELETE CASCADE
-        ) ENGINE=InnoDB
+          ) ENGINE=InnoDB
       `);
+    }
+
+    const [donationHistoryCampaignColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_history' AND COLUMN_NAME = 'campaign_id'`
+    );
+    if (!donationHistoryCampaignColumns.length) {
+      await pool.query('ALTER TABLE donation_history ADD COLUMN campaign_id INT NULL AFTER request_id');
+    }
+
+    const [donationHistoryOrgColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_history' AND COLUMN_NAME = 'organization_id'`
+    );
+    if (!donationHistoryOrgColumns.length) {
+      await pool.query('ALTER TABLE donation_history ADD COLUMN organization_id INT NULL AFTER campaign_id');
+    }
+
+    const [donationHistoryApplicationColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_history' AND COLUMN_NAME = 'application_id'`
+    );
+    if (!donationHistoryApplicationColumns.length) {
+      await pool.query('ALTER TABLE donation_history ADD COLUMN application_id INT NULL AFTER organization_id');
+    }
+
+    const [donationHistoryApplicationTypeColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_history' AND COLUMN_NAME = 'application_type'`
+    );
+    if (!donationHistoryApplicationTypeColumns.length) {
+      await pool.query("ALTER TABLE donation_history ADD COLUMN application_type ENUM('campaign', 'request') NULL AFTER application_id");
+    }
+
+    const [donationHistoryBloodGroupColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'donation_history' AND COLUMN_NAME = 'blood_group'`
+    );
+    if (!donationHistoryBloodGroupColumns.length) {
+      await pool.query("ALTER TABLE donation_history ADD COLUMN blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL AFTER application_type");
     }
 
     // Campaign images are sent from the browser as base64 data URLs. Older

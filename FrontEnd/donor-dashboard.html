@@ -2109,9 +2109,13 @@
       }
       
       try {
+        const user = getStoredUser();
         const response = await fetch('/api/responses', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+          },
           body: JSON.stringify(payload)
         });
         

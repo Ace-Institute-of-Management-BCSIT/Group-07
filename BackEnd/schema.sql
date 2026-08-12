@@ -184,6 +184,11 @@ CREATE TABLE donation_history (
   history_id INT AUTO_INCREMENT PRIMARY KEY,
   donor_id INT NOT NULL,
   request_id INT,
+  campaign_id INT,
+  organization_id INT,
+  application_id INT,
+  application_type ENUM('campaign', 'request'),
+  blood_group ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
   donated_at DATE NOT NULL,
   units_donated INT NOT NULL,
   location VARCHAR(150) NOT NULL,
@@ -192,6 +197,12 @@ CREATE TABLE donation_history (
     ON DELETE CASCADE,
   CONSTRAINT fk_history_request
     FOREIGN KEY (request_id) REFERENCES blood_requests(request_id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_history_campaign
+    FOREIGN KEY (campaign_id) REFERENCES blood_drive_listings(event_id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_history_org
+    FOREIGN KEY (organization_id) REFERENCES organizations(org_id)
     ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
