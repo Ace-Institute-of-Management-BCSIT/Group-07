@@ -989,10 +989,24 @@ function renderDetailSection(title, items) {
 
 function renderPreviewCard(src, name, fallbackText = 'Preview') {
   if (!src) return '';
+  const lowerName = String(name || '').toLowerCase();
+  const isPdf = String(src || '').startsWith('data:application/pdf') || lowerName.endsWith('.pdf');
+  const isImage = String(src || '').startsWith('data:image/') || lowerName.match(/\.(png|jpe?g|gif|webp)$/i);
+  if (isImage) {
+    return `
+      <div class="preview-card">
+        <img src="${escapeHtml(src)}" alt="${escapeHtml(name || fallbackText)}" />
+        <div class="caption">${escapeHtml(name || fallbackText)}</div>
+      </div>
+    `;
+  }
+  // For non-image files (PDFs or other), render a clickable link that opens in a new tab
   return `
     <div class="preview-card">
-      <img src="${escapeHtml(src)}" alt="${escapeHtml(name || fallbackText)}" />
-      <div class="caption">${escapeHtml(name || fallbackText)}</div>
+      <a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;color:inherit;padding:18px;">
+        <div style="font-weight:700">${escapeHtml(name || fallbackText)}</div>
+        <div style="color:var(--mid);font-size:.9rem;margin-top:6px">View document</div>
+      </a>
     </div>
   `;
 }
@@ -1001,6 +1015,10 @@ function renderOrganizationDetail(detail) {
   const status = normalizeOrganizationStatus(detail);
   const isVerified = status === 'Verified';
   const name = detail.orgName || detail.name || 'Organization';
+  const verificationDocLink = detail.verification_document_file ? `<a href="${escapeHtml(detail.verification_document_file)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.verification_document_name || 'View document')}</a>` : escapeHtml(detail.verification_document_name || '');
+  const additionalDocsLink = detail.verification_documents ? `<a href="${escapeHtml(detail.verification_documents)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.verification_documents_name || 'View document')}</a>` : escapeHtml(detail.verification_documents_name || '');
+  const buildingPhotoLink = detail.building_photo ? `<a href="${escapeHtml(detail.building_photo)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.building_photo_name || 'View photo')}</a>` : escapeHtml(detail.building_photo_name || '');
+
   const sections = [
     renderDetailSection('Registration information', [
       renderField('Organization name', name),
@@ -1015,9 +1033,9 @@ function renderOrganizationDetail(detail) {
     ]),
     renderDetailSection('Verification documents', [
       renderField('Document type', detail.verification_document_type),
-      renderField('Document name', detail.verification_document_name),
-      renderField('Additional documents', detail.verification_documents_name),
-      renderField('Building photo', detail.building_photo_name),
+      renderField('Document name', verificationDocLink, false, true),
+      renderField('Additional documents', additionalDocsLink, false, true),
+      renderField('Building photo', buildingPhotoLink, false, true),
     ]),
   ].filter(Boolean).join('');
 
@@ -1398,6 +1416,7 @@ async function verifyOrganization(detail) {
     state.activeSubsections.organizations = 'verified';
     backToList();
     await loadActiveList();
+    setTimeout(() => { location.reload(); }, 700);
   } catch (error) {
     showNotice(error.message || 'Unable to verify organization.', 'error');
   }
@@ -1443,6 +1462,7 @@ async function verifyDonor(detail) {
     state.activeSubsections.donors = 'verified';
     backToList();
     await loadActiveList();
+    setTimeout(() => { location.reload(); }, 700);
   } catch (error) {
     showNotice(error.message || 'Unable to verify donor.', 'error');
   }

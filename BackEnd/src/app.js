@@ -1091,8 +1091,7 @@ app.post('/api/org/campaigns', async (req, res) => {
 
     const org = orgRows[0];
     if (!org.verified) {
-      await query('UPDATE organizations SET verified = TRUE WHERE org_id = ?', [org.org_id]);
-      org.verified = 1;
+      return res.status(403).json({ message: 'Organization account is not verified by an admin. You cannot create campaigns until an admin verifies your account.' });
     }
 
     const bloodSummaryText = bloodRequirements.map(r => `${r.bloodGroup} (${r.unitsRequired} units)`).join(', ');
@@ -1371,6 +1370,84 @@ app.get('/api/donor/history', async (req, res) => {
   }
 });
 
+app.get('/api/donor/participations', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
+  const token = authHeader.substring(7);
+  let userId = null;
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    userId = decoded.userId || decoded.userId;
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token.' });
+  }
+
+  if (!userId) {
+    return res.status(401).json({ message: 'Invalid token.' });
+  }
+
+  try {
+    const donorRows = await query(
+      `SELECT donor_id FROM donor_profiles WHERE user_id = ? LIMIT 1`,
+      [userId]
+    );
+
+    if (!donorRows.length) {
+      return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    const donorId = donorRows[0].donor_id;
+
+    const rows = await query(
+      `SELECT dp.participation_id, dp.donor_id, dp.campaign_id, dp.organization_id, dp.status, dp.applied_at, dp.approved_at, dp.donation_completed_at, dp.notes,
+              bdl.title AS campaign_title, bdl.event_date, bdl.time_range, bdl.location,
+              o.org_name
+       FROM donation_participation dp
+       LEFT JOIN blood_drive_listings bdl ON bdl.event_id = dp.campaign_id
+       LEFT JOIN organizations o ON o.org_id = dp.organization_id
+       WHERE dp.donor_id = ?
+       ORDER BY dp.applied_at DESC`,
+      [donorId]
+    );
+
+    const processed = rows.map((row) => {
+      let donorInfo = {};
+      try {
+        donorInfo = row.notes ? JSON.parse(row.notes) : {};
+      } catch (_err) {
+        donorInfo = {};
+      }
+
+      return {
+        participationId: row.participation_id,
+        donorId: row.donor_id,
+        campaignId: row.campaign_id,
+        organizationId: row.organization_id,
+        status: row.status,
+        appliedAt: row.applied_at,
+        approvedAt: row.approved_at,
+        donationCompletedAt: row.donation_completed_at,
+        fullName: donorInfo.fullName || donorInfo.name || null,
+        email: donorInfo.email || null,
+        phone: donorInfo.phone || null,
+        bloodGroup: donorInfo.bloodGroup || donorInfo.blood_group || null,
+        campaignTitle: row.campaign_title || null,
+        campaignDate: row.event_date || null,
+        campaignTime: row.time_range || null,
+        campaignLocation: row.location || null,
+        orgName: row.org_name || null,
+      };
+    });
+
+    res.json({ data: processed });
+  } catch (error) {
+    sendDbError(res, error);
+  }
+});
+
 // Record a donation for an event (donor applied / marked as donated)
 app.post('/api/events/:id/apply', async (req, res) => {
   const eventId = Number.parseInt(req.params.id, 10);
@@ -1556,8 +1633,7 @@ app.post('/api/org/requests', async (req, res) => {
 
     const org = orgRows[0];
     if (!org.verified) {
-      await query('UPDATE organizations SET verified = TRUE WHERE org_id = ?', [org.org_id]);
-      org.verified = 1;
+      return res.status(403).json({ message: 'Organization account is not verified by an admin. You cannot publish requests until an admin verifies your account.' });
     }
 
     const city = org.city || 'Kathmandu';
@@ -1657,7 +1733,6 @@ app.post('/api/org/campaigns', async (req, res) => {
   const location = String(req.body.location || '').trim();
   const eventType = String(req.body.eventType || 'Drive').trim();
   const imageUrl = String(req.body.imageUrl || req.body.imageData || '').trim();
-  const spotsTotal = Number.parseInt(req.body.spotsTotal, 10);
   const bloodGroupNeeded = String(req.body.bloodGroupNeeded || '').trim() || null;
 
   if (!email || !title || !eventDate || !timeRange || !location || !imageUrl) {
@@ -1668,9 +1743,7 @@ app.post('/api/org/campaigns', async (req, res) => {
     return res.status(400).json({ message: 'Campaign type must be Drive, Camp, or Emergency.' });
   }
 
-  if (Number.isNaN(spotsTotal) || spotsTotal < 1) {
-    return res.status(400).json({ message: 'Total spots must be at least 1.' });
-  }
+  // No spots limit: allow unlimited applicants. Frontend will not send spotsTotal.
 
   try {
     const orgRows = await query(
@@ -1688,8 +1761,7 @@ app.post('/api/org/campaigns', async (req, res) => {
 
     const org = orgRows[0];
     if (!org.verified) {
-      await query('UPDATE organizations SET verified = TRUE WHERE org_id = ?', [org.org_id]);
-      org.verified = 1;
+      return res.status(403).json({ message: 'Organization account is not verified by an admin. You cannot create campaigns until an admin verifies your account.' });
     }
 
     const insertResult = await query(
@@ -1702,8 +1774,8 @@ app.post('/api/org/campaigns', async (req, res) => {
         timeRange,
         location,
         0,
-        spotsTotal,
-        spotsTotal,
+        null,
+        null,
         eventType,
         bloodGroupNeeded,
         imageUrl,
@@ -2872,7 +2944,7 @@ app.post('/api/auth/register', async (req, res) => {
     );
 
     return res.status(201).json({
-      message: 'Verified Successfully.',
+      message: 'Account created successfully. Awaiting admin verification.',
       user: {
         userId: insertUser.insertId,
         fullName: orgName,
@@ -3277,7 +3349,7 @@ app.get('/api/donor/eligibility', async (req, res) => {
 
   try {
     const [donor] = await query(
-      `SELECT donor_id, blood_group, last_donated_at FROM donor_profiles WHERE user_id = ?`,
+      `SELECT donor_id, blood_group, last_donated_at, verification_status FROM donor_profiles WHERE user_id = ?`,
       [donorId]
     );
 
@@ -3286,6 +3358,13 @@ app.get('/api/donor/eligibility', async (req, res) => {
     }
 
     const donorProfileId = donor.donor_id;
+    const donorVerification = String(donor.verification_status || '').toLowerCase();
+    if (donorVerification !== 'verified' && donorVerification !== 'approved') {
+      return res.json({
+        eligibilityStatus: 'not_verified',
+        message: 'Your donor account is not verified yet. Please wait for admin verification before registering for donations.'
+      });
+    }
     const donorBloodGroup = String(donor.blood_group || '').trim();
     const donorLastDonatedAt = donor.last_donated_at ? new Date(donor.last_donated_at) : null;
 
@@ -3406,12 +3485,18 @@ app.post('/api/participation', async (req, res) => {
     }
 
     const [donor] = await query(
-      `SELECT donor_id, blood_group, last_donated_at FROM donor_profiles WHERE user_id = ?`,
+      `SELECT donor_id, blood_group, last_donated_at, verification_status FROM donor_profiles WHERE user_id = ?`,
       [donorId]
     );
 
     if (!donor) {
       return res.status(404).json({ message: 'Donor profile not found.' });
+    }
+
+    // Block unverified donor accounts from registering for donation
+    const donorVerificationStatus = String(donor.verification_status || '').toLowerCase();
+    if (donorVerificationStatus !== 'verified' && donorVerificationStatus !== 'approved') {
+      return res.status(403).json({ message: 'Your donor account is not verified by an admin yet. You cannot register for donation until verified.' });
     }
 
     const donorProfileId = donor.donor_id;

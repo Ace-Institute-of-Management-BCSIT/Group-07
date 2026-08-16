@@ -228,8 +228,18 @@ async function handleLogin(){
   }
 }
 document.addEventListener("keydown",e=>{if(e.key==="Enter")handleLogin()});
-document.getElementById('loginFooter')?.querySelector('a')?.setAttribute('href', loginRole === 'org' ? 'register.html?role=org' : loginRole === 'admin' ? 'register.html' : 'register.html?role=donor');
 applyLoginRole();
+// Ensure the signup link points to the correct role-specific register page
+const footerAnchor = document.getElementById('loginFooter')?.querySelector('a');
+if (footerAnchor) {
+  const href = loginRole === 'org' ? 'register.html?role=org' : loginRole === 'admin' ? 'register.html' : 'register.html?role=donor';
+  footerAnchor.setAttribute('href', href);
+  footerAnchor.addEventListener('click', (e) => {
+    // force navigation (avoid cases where innerHTML rewrites remove the link)
+    e.preventDefault();
+    location.href = href;
+  });
+}
 </script>
 </body>
 </html>

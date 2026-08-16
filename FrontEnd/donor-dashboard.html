@@ -1469,16 +1469,18 @@
         const user = getStoredUser();
         if(!user){location.href='login.html?role=donor'; return;}
         const email = user.email;
-        const [eventsResp, centersResp, historyResp, meResp] = await Promise.all([
+        const [eventsResp, centersResp, historyResp, participationsResp, meResp] = await Promise.all([
           fetch('/api/events'),
           fetch('/api/centers'),
           email ? fetch(`/api/donor/history?email=${encodeURIComponent(email)}`) : Promise.resolve(new Response(JSON.stringify({data:[]}))),
+          (user && user.token) ? fetch('/api/donor/participations', { headers: { 'Authorization': `Bearer ${user.token}` } }) : Promise.resolve(new Response(JSON.stringify({data:[]}))),
           email ? fetch(`/api/me?email=${encodeURIComponent(email)}`) : Promise.resolve(new Response(JSON.stringify({user:null})))
         ]);
 
         const eventsJson = eventsResp.ok ? await eventsResp.json() : { data: [] };
         const centersJson = centersResp.ok ? await centersResp.json() : { data: [] };
         const historyJson = historyResp.ok ? await historyResp.json() : { data: [] };
+        const participationsJson = participationsResp && participationsResp.ok ? await participationsResp.json() : { data: [] };
         const meJson = meResp.ok ? await meResp.json() : { user: null };
 
         EVENTS = eventsJson.data || [];
@@ -1486,7 +1488,7 @@
 
         renderDrives(EVENTS);
         renderCenters(CENTERS);
-        renderHistory(historyJson.data || [], meJson.user);
+        renderHistory(historyJson.data || [], participationsJson.data || [], meJson.user);
         
         if (meJson.user) {
           const hydratedUser = { ...meJson.user, token: user.token };
@@ -1651,30 +1653,48 @@
       return date.toLocaleDateString('en-US', options);
     }
 
-    function renderHistory(entries, me){
+    function renderHistory(entries, participations, me){
       const donations = entries || [];
+      const parts = participations || [];
       const totalPoints = Math.min(4, donations.length);
-      
+
       document.getElementById('donationPointsText').textContent = `Donation Points: ${totalPoints} / 4`;
-      
+
       const angle = (totalPoints - 2) * 45;
       const needle = document.getElementById('needle');
       if (needle) {
         needle.setAttribute('transform', `rotate(${angle}, 140, 140)`);
       }
-      
-      const log=document.getElementById('donationLog');
-      if (!donations.length) {
+
+      const log = document.getElementById('donationLog');
+      const pending = parts.filter(p => String(p.status || '').toLowerCase() === 'pending');
+
+      const pendingHtml = pending.length ? `
+        <div style="margin-bottom:12px">
+          <div style="font-weight:700;margin-bottom:8px">Pending Registrations</div>
+          ${pending.map(p => `
+            <div class="history-item-pink" style="padding:10px;margin-bottom:8px">
+              <div class="history-date">Applied: ${formatDateString(p.appliedAt)}</div>
+              <div class="history-details">${escapeHtml(p.campaignTitle || p.orgName || 'Campaign')} — <strong>${escapeHtml((p.status || '').toUpperCase())}</strong></div>
+              <div style="color:#666;margin-top:6px">${escapeHtml(p.campaignLocation || '')}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const historyHtml = donations.length ? donations.map(d=>`
+        <div class="history-item-pink">
+          <div class="history-date">Date: ${formatDateString(d.date)}</div>
+          <div class="history-details">${escapeHtml(d.org || d.location || 'Donation')}: ${d.units || 1} Units</div>
+        </div>
+      `).join('') : '';
+
+      if (!pendingHtml && !historyHtml) {
         log.innerHTML = `<p style="color:#888;text-align:center;padding:24px 0">No donation history recorded yet.</p>`;
         return;
       }
-      
-      log.innerHTML = donations.map(d=>`
-        <div class="history-item-pink">
-          <div class="history-date">Date: ${formatDateString(d.date)}</div>
-          <div class="history-details">${d.org || d.location || 'Donation'}: ${d.units || 1} Units</div>
-        </div>
-      `).join('');
+
+      log.innerHTML = `${pendingHtml}${historyHtml}`;
     }
 
     function filterDrives() {
@@ -1769,6 +1789,10 @@
             <strong>You already have an active donation registration for another campaign.</strong><br><br>
             Please complete or cancel your existing participation before registering again.
           `;
+          errorDiv.classList.add('show');
+          document.getElementById('donationSubmitBtn').disabled = true;
+        } else if (eligibility.eligibilityStatus === 'not_verified') {
+          errorDiv.innerHTML = `<strong>${escapeHtml(eligibility.message || 'Your account is not verified yet. Please wait for admin verification.')}</strong>`;
           errorDiv.classList.add('show');
           document.getElementById('donationSubmitBtn').disabled = true;
         } else {
