@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SaveABeat — Save Lives Through Blood Donation</title>
+<title>SaveABeat - Save Lives Through Blood Donation</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -17,7 +17,7 @@
 }
 body{font-family:var(--ff-body);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6}
 
-/* ── NAV ── */
+/* NAV */
 nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .logo{display:flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.25rem;font-weight:700;color:var(--ink);text-decoration:none}
 .logo svg{color:#E3242B}
@@ -95,7 +95,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
   .profile-card-header{align-items:center}
 }
 
-/* ── HERO ── */
+/* HERO */
 .hero{background:linear-gradient(135deg,#fff5f5 0%,#fdecea 100%);padding:72px 48px 64px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
 .hero-text h1{font-family:var(--ff-head);font-size:3rem;font-weight:900;line-height:1.15;margin-bottom:16px}
 .hero-text h1 span{color:var(--red)}
@@ -113,7 +113,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
 .next-drive strong{display:block;font-size:.82rem;font-weight:600}
 .next-drive span{font-size:.75rem;color:var(--soft)}
 
-/* ── EVENTS SECTION ── */
+/* EVENTS SECTION */
 .section{padding:64px 48px}
 .section-header{text-align:center;margin-bottom:36px}
 .section-header h2{font-family:var(--ff-head);font-size:2rem;font-weight:700;margin-bottom:8px}
@@ -147,7 +147,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
 .btn-register{width:100%;background:var(--red);color:var(--white);border:none;font:600 .85rem var(--ff-body);padding:10px;border-radius:6px;cursor:pointer;transition:background .2s}
 .btn-register:hover{background:var(--red-dark)}
 
-/* ── FOOTER ── */
+/* FOOTER */
 footer{background:#1a1a2e;color:#ccc;padding:48px;margin-top:0}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:32px}
 .footer-brand p{font-size:.85rem;color:#999;margin:12px 0 20px;line-height:1.7;max-width:240px}
@@ -371,17 +371,18 @@ function getAvatarMarkup(user, isLarge = false){
 }
 
 function getDashboardLink(user){
+  const cacheBust = `?v=${Date.now()}`;
   if(!user){
     return 'login.html';
   }
   if(user.role === 'donor'){
-    return 'donor-dashboard.html';
+    return `donor-dashboard.html${cacheBust}`;
   }
   if(user.role === 'org'){
-    return 'org-dashboard.html#panel-upcoming';
+    return `org-dashboard.html${cacheBust}#panel-upcoming`;
   }
   if(user.role === 'admin'){
-    return 'admin-dashboard.html';
+    return `admin-dashboard.html${cacheBust}`;
   }
   return 'login.html';
 }

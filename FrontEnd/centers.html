@@ -4,11 +4,10 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SaveABeat — Find Donation Centers</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--red:#E3242B;--red-dark:#a81e1e;--red-light:#fdecea;--ink:#1a1a1a;--mid:#555;--soft:#888;--border:#e8e8e8;--bg:#fafafa;--white:#fff;--ff-head:'Playfair Display',serif;--ff-body:'DM Sans',sans-serif;--r:10px;--shadow:0 2px 16px rgba(0,0,0,.08)}
+:root{--red:#D62B2B;--red-dark:#a81e1e;--red-light:#fdecea;--ink:#1a1a1a;--mid:#555;--soft:#888;--border:#e8e8e8;--bg:#fafafa;--white:#fff;--ff-head:'Playfair Display',serif;--ff-body:'DM Sans',sans-serif;--r:10px;--shadow:0 2px 16px rgba(0,0,0,.08)}
 body{font-family:var(--ff-body);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6}
 nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:64px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
 .logo{display:flex;align-items:center;gap:8px;font-family:var(--ff-head);font-size:1.25rem;font-weight:700;color:var(--ink);text-decoration:none}
@@ -37,14 +36,23 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px
 .center-info{padding:18px}
 .center-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
 .center-header h3{font-size:.95rem;font-weight:600}
+.avail-badge{font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.avail-high{background:#e8f5e9;color:#2e7d32}
+.avail-med{background:#fff8e1;color:#f57f17}
+.avail-low{background:#fdecea;color:var(--red)}
 .center-meta{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .center-meta-row{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--mid)}
 .center-meta-row svg{color:var(--soft);flex-shrink:0;width:13px;height:13px}
+.services{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.service-tag{font-size:.73rem;padding:3px 10px;background:#f0f0f0;border-radius:20px;color:var(--mid);font-weight:500}
 .center-btns{display:flex;gap:8px}
 .btn-outline{background:var(--white);border:1.5px solid var(--border);color:var(--ink);font:500 .82rem var(--ff-body);padding:7px 14px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:border-color .2s}
 .btn-outline:hover{border-color:var(--ink)}
 .btn-sm-red{background:var(--red);color:var(--white);border:none;font:600 .82rem var(--ff-body);padding:7px 14px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s}
 .btn-sm-red:hover{background:var(--red-dark)}
+.map-note{background:#f0f7ff;border:1px solid #c5ddf9;border-radius:8px;padding:16px 20px;display:flex;gap:12px;align-items:flex-start;margin-top:28px}
+.map-note svg{color:#1a6fa8;flex-shrink:0;margin-top:2px}
+.map-note p{font-size:.85rem;color:#1a4a72;line-height:1.6}
 footer{background:#1a1a2e;color:#ccc;padding:48px}
 .footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:32px}
 .footer-brand p{font-size:.85rem;color:#999;margin:12px 0 20px;max-width:240px;line-height:1.7}
@@ -58,7 +66,7 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
 <body>
 <nav>
   <a href="index.html" class="logo">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
     SaveABeat
   </a>
   <div class="nav-links">
@@ -67,14 +75,14 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
   </div>
   <div class="nav-right">
     <button class="btn-ghost" onclick="location.href='login.html'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Login</button>
-    <button class="btn-red" onclick="location.href='register.html'">Sign Up</button>
+    <button class="btn-red" onclick="location.href='register.html'">Donate Now</button>
   </div>
 </nav>
 
 <section class="section">
   <div class="section-header">
     <h2>Find Donation Centers Near You</h2>
-    <p>Locate blood donation centers with real-time availability and contact information.</p>
+    <p>Locate blood donation centers with real-time availability, contact information, and distance filtering to find the most convenient location for you.</p>
   </div>
 
   <div class="filters">
@@ -82,6 +90,13 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       <input type="text" placeholder="Search centers, addresses, or services..." oninput="filterCenters(this.value)"/>
     </div>
+    <select class="filter-select" onchange="filterByDist(this.value)">
+      <option>All Distances</option>
+      <option>Within 2 km</option>
+      <option>Within 5 km</option>
+      <option>Within 10 km</option>
+      <option>Within 25 km</option>
+    </select>
     <select class="filter-select" onchange="filterByAvail(this.value)">
       <option>All Centers</option>
       <option>High Availability</option>
@@ -91,14 +106,19 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
   </div>
 
   <div class="centers-grid" id="centersGrid"></div>
+
+  <div class="map-note">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <p><strong>Interactive Map View</strong><br/>For a better experience, use our interactive map to see all donation centers in your area, get real-time directions, and check current wait times. Click "Directions" above to open the location in your preferred map application.</p>
+  </div>
 </section>
 
 <footer>
   <div class="footer-grid">
     <div class="footer-brand">
       <a href="index.html" class="logo" style="color:#fff;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px;text-decoration:none">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
-        SaveABeat
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#D62B2B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+        SaveABeat Nepal
       </a>
       <p>Connecting donors across Kathmandu Valley with those in need.</p>
     </div>
@@ -107,24 +127,12 @@ footer{background:#1a1a2e;color:#ccc;padding:48px}
     <div class="footer-col"><h4>Contact Us</h4><a href="#">Emergency: 102</a><a href="#">+977-1-4221119</a><a href="#">info@bloodcare.org.np</a></div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 SaveABeat Nepal. All rights reserved.</span>
+    <span>© 2025 SaveABeat Nepal. All rights reserved.</span>
+    <div class="footer-bottom-stats"><span>15,000+ Donors</span><span>200+ Centers</span><span>24/7 Support</span></div>
   </div>
 </footer>
 
 <script>
-const AUTH_STORAGE_KEY='saveabeatUser';
-
-function getStoredUser(){
-  try{
-    const savedUser=localStorage.getItem(AUTH_STORAGE_KEY)||sessionStorage.getItem(AUTH_STORAGE_KEY);
-    const user=JSON.parse(savedUser||'null');
-    if(user&&!localStorage.getItem(AUTH_STORAGE_KEY)) localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(user));
-    return user;
-  }catch(error){
-    return null;
-  }
-}
-
 let CENTERS=[
   {name:"Bir Hospital Blood Center",dist:"2.3 km away",address:"Tundilkhel Road, Kathmandu",phone:"+977-1-4221119",hours:"Mon-Fri: 8AM-6PM, Sat: 9AM-3PM",avail:"High",services:["Whole Blood","Platelets","Plasma","Power Red"],
    img:"https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&auto=format&fit=crop&q=70"},
@@ -147,11 +155,18 @@ function renderCenters(list){
       <div class="center-info">
         <div class="center-header">
           <h3>${c.name}</h3>
+          <span class="avail-badge ${ac}">${c.avail} Availability</span>
         </div>
         <div class="center-meta">
+          <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${c.dist}</div>
           <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${c.address}</div>
           <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${c.phone}</div>
           <div class="center-meta-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>${c.hours}</div>
+        </div>
+        <div class="services">${c.services.map(s=>`<span class="service-tag">${s}</span>`).join("")}</div>
+        <div class="center-btns">
+          <button class="btn-outline"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3,11 22,2 13,21 11,13"/></svg>Directions</button>
+          <button class="btn-sm-red"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.22 9.84 19.79 19.79 0 01.18 1.22 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</button>
         </div>
       </div>
     </div>`}).join("")
@@ -160,6 +175,7 @@ function renderCenters(list){
 function filterCenters(q){
   renderCenters(CENTERS.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase())||c.address.toLowerCase().includes(q.toLowerCase())))
 }
+function filterByDist(v){renderCenters(CENTERS)}
 function filterByAvail(v){
   if(!v||v==="All Centers")return renderCenters(CENTERS);
   const a=v.replace(" Availability","");

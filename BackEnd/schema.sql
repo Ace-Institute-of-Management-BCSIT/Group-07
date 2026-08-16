@@ -126,28 +126,6 @@ CREATE TABLE notifications (
 ) ENGINE=InnoDB;
 
 -- =========================
--- CHAT MESSAGES
--- =========================
-CREATE TABLE chat_messages (
-  message_id INT AUTO_INCREMENT PRIMARY KEY,
-  sender_id INT NOT NULL,
-  receiver_id INT NOT NULL,
-  request_id INT,
-  message_text TEXT NOT NULL,
-  sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  is_read BOOLEAN NOT NULL DEFAULT FALSE,
-  CONSTRAINT fk_chat_sender
-    FOREIGN KEY (sender_id) REFERENCES users(user_id)
-    ON DELETE CASCADE,
-  CONSTRAINT fk_chat_receiver
-    FOREIGN KEY (receiver_id) REFERENCES users(user_id)
-    ON DELETE CASCADE,
-  CONSTRAINT fk_chat_request
-    FOREIGN KEY (request_id) REFERENCES blood_requests(request_id)
-    ON DELETE SET NULL
-) ENGINE=InnoDB;
-
--- =========================
 -- DONATION RESPONSES
 -- =========================
 CREATE TABLE donation_responses (
@@ -182,7 +160,7 @@ CREATE TABLE donation_responses (
 -- =========================
 CREATE TABLE donation_history (
   history_id INT AUTO_INCREMENT PRIMARY KEY,
-  donor_id INT NOT NULL,
+  donor_id INT NULL,
   request_id INT,
   campaign_id INT,
   organization_id INT,
@@ -194,7 +172,7 @@ CREATE TABLE donation_history (
   location VARCHAR(150) NOT NULL,
   CONSTRAINT fk_history_donor
     FOREIGN KEY (donor_id) REFERENCES donor_profiles(donor_id)
-    ON DELETE CASCADE,
+    ON DELETE SET NULL,
   CONSTRAINT fk_history_request
     FOREIGN KEY (request_id) REFERENCES blood_requests(request_id)
     ON DELETE SET NULL,

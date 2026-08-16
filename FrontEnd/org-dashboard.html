@@ -2216,15 +2216,28 @@ async function publishBloodRequest() {
     }
 
     function buildDonationApplicantDetails(applicant, kind, parentId) {
+      const fullName = applicant.applicantName || applicant.fullName || applicant.donorName || applicant.submitterName || applicant.email || 'Unknown';
+      const bloodGroup = applicant.applicantBloodGroup || applicant.bloodGroup || '';
+      const contactInfo = applicant.contactInfo
+        || [applicant.phone, applicant.email].filter(Boolean).join(' • ')
+        || '-';
+      const status = String(applicant.status || 'pending').toLowerCase();
+
       return {
         kind,
         parentId,
         applicantId: applicant.participationId || applicant.responseId,
-        donorName: applicant.fullName || applicant.donorName || applicant.email || 'Unknown',
-        bloodGroup: applicant.bloodGroup || '',
+        donorName: fullName,
+        applicantName: fullName,
+        bloodGroup,
+        applicantBloodGroup: bloodGroup,
         email: applicant.email || '',
         phone: applicant.phone || '',
+        contactInfo,
+        status,
+        statusLabel: applicant.statusLabel || (status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Pending'),
         responseType: applicant.responseType || null,
+        submittedBy: applicant.submittedBy || '',
       };
     }
 
@@ -2245,18 +2258,23 @@ async function publishBloodRequest() {
               <tr>
                 <th>Applicant</th>
                 <th>Blood Group</th>
+                <th>Contact</th>
+                <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               ${applicants.map((applicant) => {
                 const details = buildDonationApplicantDetails(applicant, kind, parentId);
+                const statusClass = details.status === 'confirmed' ? 'green' : details.status === 'rejected' ? 'red' : 'amber';
                 return `
                   <tr>
                     <td>
                       <strong>${escapeHtml(details.donorName)}</strong>
                     </td>
                     <td>${escapeHtml(details.bloodGroup || '-')}</td>
+                    <td>${escapeHtml(details.contactInfo || '-')}</td>
+                    <td><span class="pill ${statusClass}">${escapeHtml(details.statusLabel || 'Pending')}</span></td>
                     <td>
                       <div class="table-actions">
                         <button class="btn-soft" type="button" data-donation-action="done" data-donation-kind="${escapeHtml(kind)}" data-donation-parent-id="${escapeHtml(String(parentId))}" data-donation-item="${encodeDetailData(details)}">Done</button>
@@ -2683,10 +2701,17 @@ async function publishBloodRequest() {
           return;
         }
 
-        donationLogState.campaignCache = {};
-        donationLogState.requestCache = {};
+        if (action.kind === 'campaign') {
+          delete donationLogState.campaignCache[action.parentId];
+        } else {
+          delete donationLogState.requestCache[action.parentId];
+        }
         closeDonationRecordModal();
-        await loadDashboard();
+        if (action.kind === 'campaign') {
+          await loadDonationLogCampaignDetail(action.parentId, { force: true });
+        } else {
+          await loadDonationLogRequestDetail(action.parentId, { force: true });
+        }
         setDonationLogRoute({
           section: action.kind === 'campaign' ? 'campaigns' : 'requests',
           id: action.parentId,
@@ -2731,10 +2756,17 @@ async function publishBloodRequest() {
           return;
         }
 
-        donationLogState.campaignCache = {};
-        donationLogState.requestCache = {};
+        if (action.kind === 'campaign') {
+          delete donationLogState.campaignCache[action.parentId];
+        } else {
+          delete donationLogState.requestCache[action.parentId];
+        }
         closeDonationDeleteModal();
-        await loadDashboard();
+        if (action.kind === 'campaign') {
+          await loadDonationLogCampaignDetail(action.parentId, { force: true });
+        } else {
+          await loadDonationLogRequestDetail(action.parentId, { force: true });
+        }
         setDonationLogRoute({
           section: action.kind === 'campaign' ? 'campaigns' : 'requests',
           id: action.parentId,

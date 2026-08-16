@@ -3,734 +3,546 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SaveABeat - Admin Dashboard</title>
+<title>SaveABeat</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23E3242B' d='M32 56s-24-14.8-24-31c0-7.2 5.4-12 12-12 4.4 0 7.4 2.3 9 4.5 1.6-2.2 4.6-4.5 9-4.5 6.6 0 12 4.8 12 12 0 16.2-24 31-24 31z'/%3E%3C/svg%3E"/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --red:#E3242B;
-  --red-dark:#a81e1e;
-  --red-light:#fdecea;
-  --bg:#fafafa;
-  --white:#fff;
-  --ink:#1a1a1a;
+  --red-dark:#b21f23;
+  --red-soft:#fff1f1;
+  --bg:#f5f7fb;
+  --panel:#fff;
+  --ink:#171717;
   --mid:#555;
-  --soft:#888;
-  --border:#e8e8e8;
+  --soft:#7d7d7d;
+  --border:#e8e8ec;
+  --green:#1f7a3d;
+  --amber:#b26a00;
+  --blue:#245bdb;
+  --gray:#5f6b7a;
+  --shadow:0 14px 36px rgba(16,24,40,.06);
+  --shadow-soft:0 8px 18px rgba(16,24,40,.04);
   --ff-head:'Playfair Display',serif;
   --ff-body:'DM Sans',sans-serif;
-  --shadow:0 8px 30px rgba(0,0,0,.06);
-  --r:14px;
+  --radius:18px;
 }
+html,body{min-height:100%}
 body{
   font-family:var(--ff-body);
-  background:linear-gradient(180deg,#fff6f6 0%,#fafafa 34%,#f8f9fb 100%);
-  min-height:100vh;
+  background:
+    radial-gradient(circle at top left, rgba(227,36,43,.08), transparent 30%),
+    linear-gradient(180deg,#fff6f6 0%,#fafafa 34%,#f8f9fb 100%);
   color:var(--ink);
-  font-size:15px;
-  line-height:1.6
+  line-height:1.5;
 }
-a{color:inherit}
-button,input,select{font:inherit}
-nav{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:0 48px;
-  height:64px;
-  background:var(--white);
-  border-bottom:1px solid var(--border);
-  position:sticky;
-  top:0;
-  z-index:100
+a{color:inherit;text-decoration:none}
+button,input{font:inherit}
+button{cursor:pointer}
+.topbar{
+  position:sticky;top:0;z-index:120;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  min-height:68px;padding:0 24px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(232,232,236,.9);
 }
-.logo{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-family:var(--ff-head);
-  font-size:1.25rem;
-  font-weight:700;
-  color:var(--ink);
-  text-decoration:none;
-  white-space:nowrap
+.brand{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--ff-head);font-size:1.26rem;font-weight:700;
+  color:var(--ink);white-space:nowrap;
 }
-.logo svg{color:#E3242B;flex-shrink:0}
-.nav-links{display:flex;align-items:center;gap:32px;flex-wrap:wrap}
-.nav-links a{
-  text-decoration:none;
-  color:var(--mid);
-  font-size:.9rem;
-  font-weight:500;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  transition:color .2s;
-  position:relative;
-  padding:4px 0
+.brand svg{color:var(--red);flex-shrink:0}
+.main-nav{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
 }
-.nav-links a:hover,.nav-links a.active{color:var(--ink)}
-.nav-links a.active::after{
-  content:'';
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:-20px;
-  height:3px;
-  background:var(--red);
-  border-radius:999px
+.main-nav button{
+  border:1px solid transparent;background:transparent;color:var(--mid);
+  padding:10px 14px;border-radius:999px;font-weight:600;transition:.2s ease;
 }
-.nav-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
-.profile-shell{position:relative;min-width:180px}
+.main-nav button:hover{background:#fafafa;color:var(--ink)}
+.main-nav button.active{
+  background:var(--red-soft);color:var(--red);
+  border-color:#f3d0d0;
+}
+.profile-shell{position:relative;min-width:210px}
 .profile-trigger{
-  width:100%;
-  height:44px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:var(--white);
-  color:var(--ink);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:0 14px;
-  cursor:pointer;
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
-  transition:border-color .2s,box-shadow .2s,transform .2s
+  width:100%;height:44px;border:1px solid var(--border);border-radius:12px;
+  background:var(--panel);color:var(--ink);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;
+  box-shadow:0 2px 8px rgba(16,24,40,.04);
+  transition:border-color .2s,box-shadow .2s,transform .2s;
 }
-.profile-trigger:hover{
-  border-color:#d7d7d7;
-  box-shadow:0 6px 14px rgba(0,0,0,.06);
-  transform:translateY(-1px)
-}
+.profile-trigger:hover{border-color:#d8d8df;box-shadow:0 6px 14px rgba(16,24,40,.06);transform:translateY(-1px)}
 .profile-trigger-left{display:flex;align-items:center;gap:10px;min-width:0}
 .profile-initial{
-  width:30px;
-  height:30px;
-  border-radius:50%;
-  background:var(--red);
-  color:var(--white);
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font:700 .95rem var(--ff-body);
-  flex-shrink:0
+  width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.95rem;font-weight:700;
 }
-.profile-name{
-  font:600 .92rem var(--ff-body);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis
-}
+.profile-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .profile-arrow{display:inline-flex;align-items:center;justify-content:center;color:var(--mid);transition:transform .2s}
 .profile-shell.open .profile-arrow{transform:rotate(180deg)}
 .profile-menu{
-  position:absolute;
-  left:0;
-  right:0;
-  top:calc(100% + 8px);
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:12px;
-  box-shadow:0 16px 40px rgba(0,0,0,.12);
-  padding:6px;
-  display:none;
-  z-index:120
+  position:absolute;left:0;right:0;top:calc(100% + 8px);
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  box-shadow:0 16px 40px rgba(16,24,40,.12);padding:6px;display:none;z-index:130;
 }
 .profile-menu.open{display:block}
 .profile-menu button{
-  width:100%;
-  border:none;
-  background:none;
-  border-radius:10px;
-  padding:11px 12px;
-  text-align:left;
-  font:500 .9rem var(--ff-body);
-  color:var(--ink);
-  cursor:pointer;
-  transition:background .2s
+  width:100%;border:none;background:none;border-radius:10px;padding:11px 12px;
+  text-align:left;font-weight:600;color:var(--ink);transition:background .2s;
 }
-.profile-menu button:hover{background:#f7f7f7}
-.shell{max-width:1240px;margin:0 auto;padding:32px 24px 56px}
-.hero{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:28px;
-  box-shadow:0 14px 40px rgba(0,0,0,.06);
-  margin-bottom:20px
+.profile-menu button:hover{background:#f7f7f8}
+.page{max-width:1420px;margin:0 auto;padding:28px 24px 56px}
+.page-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  margin-bottom:18px;
 }
-.hero h1{font-family:var(--ff-head);font-size:2.2rem;margin-bottom:8px}
-.hero p{color:var(--mid);max-width:760px;line-height:1.6}
-.summary-row{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:14px;
-  margin-top:20px
+.page-head h1{
+  font-family:var(--ff-head);font-size:2.25rem;line-height:1.1;margin-bottom:8px;
 }
-.summary-card{
-  background:linear-gradient(180deg,#fff,#fff8f8);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:16px
+.notice{
+  min-width:280px;max-width:520px;
+  border-radius:14px;padding:13px 14px;font-weight:600;
+  border:1px solid transparent;box-shadow:var(--shadow-soft);
 }
-.summary-card strong{
-  display:block;
-  font-family:var(--ff-head);
-  font-size:1.5rem;
-  color:var(--red);
-  margin-bottom:4px
+.notice.success{background:#edf8f0;border-color:#d4ecd9;color:var(--green)}
+.notice.error{background:#fff1f1;border-color:#f0c9c9;color:#a61b1b}
+.notice.info{background:#eff5ff;border-color:#d2e0ff;color:#1848b0}
+.workspace{
+  display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start;
 }
-.summary-card span{font-size:.84rem;color:var(--soft)}
-.tab-panel{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:18px;
+.side-card,.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
   box-shadow:var(--shadow);
-  padding:28px;
-  margin-bottom:18px
 }
-.section-header{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:16px;
-  flex-wrap:wrap;
-  margin-bottom:22px
+.side-card{padding:18px;position:sticky;top:86px}
+.side-title{
+  font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);
+  margin-bottom:12px;
 }
-.section-copy{max-width:760px}
-.section-header h2{font-family:var(--ff-head);font-size:1.8rem;margin-bottom:8px}
-.section-header p{color:var(--mid);max-width:760px}
-.filters{
-  display:flex;
-  gap:14px;
-  align-items:center;
-  flex-wrap:wrap;
-  margin-bottom:24px
+.subnav{display:flex;flex-direction:column;gap:10px}
+.subnav button{
+  width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:14px;
+  padding:12px 14px;font-weight:700;color:var(--ink);transition:all .2s ease;
 }
-.search-box{flex:1;min-width:250px;position:relative}
-.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--soft);width:16px;height:16px}
-.search-box input,.filter-select{
-  width:100%;
-  padding:11px 14px 11px 40px;
-  border:1.5px solid var(--border);
-  border-radius:10px;
-  font:400 .92rem var(--ff-body);
-  background:var(--white);
-  outline:none;
-  transition:border-color .2s,color .2s
+.subnav button:hover{border-color:#d8d8df;transform:translateY(-1px)}
+.subnav button.active{
+  border-color:#f0c9c9;background:var(--red-soft);color:var(--red);
+  box-shadow:inset 0 0 0 1px rgba(227,36,43,.06);
 }
-.search-box input:focus,.filter-select:focus{border-color:var(--red)}
-.filter-select{
-  padding:11px 36px 11px 14px;
-  min-width:160px;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;
-  background-position:right 12px center;
-  cursor:pointer
+.subnav small{display:block;font-weight:500;color:var(--soft);margin-top:4px}
+.panel{padding:18px;min-height:560px}
+.toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:18px;
 }
-.action-btn,.detail-btn,.logout-btn,.btn-outline,.btn-red{
-  border:none;
-  cursor:pointer;
-  border-radius:10px;
-  padding:11px 18px;
-  font:700 .92rem var(--ff-body);
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  transition:transform .2s,background .2s,border-color .2s,box-shadow .2s;
-  text-decoration:none
+.search-shell{
+  flex:1;min-width:280px;position:relative;
 }
-.action-btn,.detail-btn,.btn-red,.logout-btn{background:var(--red);color:var(--white);box-shadow:0 10px 24px rgba(214,43,43,.18)}
-.action-btn:hover,.detail-btn:hover,.btn-red:hover,.logout-btn:hover{background:var(--red-dark);transform:translateY(-1px)}
-.btn-outline{
-  background:var(--white);
-  color:var(--ink);
-  border:1.5px solid var(--border)
+.search-shell svg{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;color:var(--soft);
 }
-.btn-outline:hover{border-color:var(--ink);transform:translateY(-1px)}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:22px
+.search-shell input{
+  width:100%;height:46px;border:1.5px solid var(--border);border-radius:12px;
+  padding:0 44px 0 40px;background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;
 }
-.table-shell{
-  width:100%;
-  border:1px solid var(--border);
-  border-radius:16px;
-  background:var(--white);
-  overflow:hidden;
-  box-shadow:var(--shadow);
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch
+.search-shell input:focus{border-color:#e4b5b7;box-shadow:0 0 0 3px rgba(227,36,43,.08)}
+.toolbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.clear-btn,.btn{
+  border:none;border-radius:12px;padding:11px 14px;font-weight:700;
+  transition:all .2s ease;display:inline-flex;align-items:center;justify-content:center;gap:8px;
 }
-.data-table{
-  width:100%;
-  min-width:920px;
-  border-collapse:collapse;
-  background:var(--white)
+.clear-btn{
+  background:#f7f7f8;color:var(--ink);border:1px solid var(--border);
 }
-.data-table thead{background:#fbfbfb}
-.data-table th,.data-table td{
-  padding:15px 18px;
-  border-bottom:1px solid var(--border);
-  text-align:left;
-  vertical-align:middle
+.clear-btn:hover{border-color:#d4d4da;transform:translateY(-1px)}
+.clear-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.results-meta{color:var(--soft);font-size:.92rem}
+.loading,.empty-state,.error-state{
+  border:1px dashed #d9d9df;border-radius:16px;padding:28px 18px;
+  text-align:center;background:#fcfcfd;color:var(--mid);
 }
-.data-table th{
-  font-size:.76rem;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--soft);
-  font-weight:800;
-  white-space:nowrap
+.error-state{border-color:#f0c9c9;background:#fff6f6;color:#a61b1b}
+.record-list{
+  display:flex;flex-direction:column;gap:14px;
 }
-.data-table tbody tr:hover{background:#fff8f8}
+.record-card{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  padding:18px;border:1px solid var(--border);border-radius:18px;background:#fff;
+  box-shadow:var(--shadow-soft);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.record-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 16px 32px rgba(16,24,40,.08);
+  border-color:#dddde4;
+}
+.record-card-main{
+  display:flex;flex-direction:column;gap:10px;min-width:0;flex:1;
+}
+.record-card-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.record-card-copy{
+  display:flex;flex-direction:column;gap:4px;min-width:0;
+}
+.record-card-copy strong,
+.record-card-copy h3{
+  font-size:1.02rem;line-height:1.35;
+}
+.record-card-copy span,
+.record-card-copy p{
+  color:var(--mid);font-size:.92rem;
+}
+.record-card-meta{
+  display:flex;flex-wrap:wrap;gap:8px;
+}
+.record-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 10px;border-radius:999px;border:1px solid #ececf1;background:#fafafa;
+  color:var(--mid);font-size:.8rem;font-weight:700;
+}
+.record-card-actions{
+  display:flex;align-items:flex-start;gap:10px;flex-shrink:0;
+}
+.table-shell{overflow:auto;border:1px solid var(--border);border-radius:16px;background:#fff}
+.data-table{width:100%;border-collapse:collapse;min-width:920px}
+.data-table thead th{
+  background:#fafafa;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;font-size:.75rem;
+  text-align:left;padding:14px 16px;border-bottom:1px solid var(--border);
+}
+.data-table tbody td{
+  padding:14px 16px;border-bottom:1px solid #f0f0f3;vertical-align:top;
+}
+.data-table tbody tr:hover{background:#fcfcfd}
 .data-table tbody tr:last-child td{border-bottom:none}
-.table-name{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  min-width:0
+.name-cell{display:flex;align-items:center;gap:12px;min-width:0}
+.avatar{
+  width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#fff0f0,#ffe4e4);
+  color:var(--red);display:inline-flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;
 }
-.table-avatar{
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(135deg,#fdecea,#fff);
-  color:var(--red-dark);
-  border:1px solid #f2d0d0;
-  flex-shrink:0;
-  font-weight:800
+.name-cell strong{display:block;font-size:.98rem}
+.name-cell span,.muted{display:block;color:var(--soft);font-size:.85rem}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;
+  font-size:.8rem;font-weight:700;background:#f4f5f7;color:var(--gray);
 }
-.table-name-text{
-  display:flex;
-  flex-direction:column;
-  min-width:0
+.pill.verified,.pill.completed,.pill.fulfilled{background:#eef8f1;color:var(--green)}
+.pill.pending,.pill.upcoming,.pill.open{background:#fff6e6;color:var(--amber)}
+.pill.running{background:#fff0f0;color:var(--red)}
+.pill.rejected,.pill.cancelled,.pill.expired{background:#f4f5f7;color:#8a4b4b}
+.pill.blue{background:#edf3ff;color:var(--blue)}
+.action-btn,.action-btn-secondary,.action-btn-danger,.detail-btn{
+  border:none;border-radius:12px;padding:11px 14px;font-weight:700;transition:all .2s ease;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
 }
-.table-name-text strong{
-  font-size:.96rem;
-  color:var(--ink);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis
+.action-btn,.detail-btn,.action-btn-danger{
+  background:var(--red);color:#fff;box-shadow:0 10px 22px rgba(227,36,43,.16);
 }
-.table-name-text span{
-  font-size:.82rem;
-  color:var(--soft);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis
+.action-btn:hover,.detail-btn:hover,.action-btn-danger:hover{background:var(--red-dark);transform:translateY(-1px)}
+.action-btn-secondary{
+  background:#fff;color:var(--ink);border:1px solid var(--border);
 }
-.table-actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap
+.action-btn-secondary:hover{border-color:#d4d4da;transform:translateY(-1px)}
+.action-btn-danger{
+  background:#b42318;
 }
-.table-actions .detail-btn{
-  padding:9px 14px;
-  font-size:.86rem;
-  justify-content:center
+.action-btn-danger:hover{background:#8f1d16}
+.table-actions{display:flex;gap:10px;flex-wrap:wrap}
+.detail-shell{display:flex;flex-direction:column;gap:18px}
+.detail-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding-bottom:16px;border-bottom:1px solid var(--border);
 }
-.status-pill{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:.75rem;
-  font-weight:800;
-  letter-spacing:.02em;
-  border:1px solid transparent;
-  white-space:nowrap
+.detail-head .left{display:flex;flex-direction:column;gap:10px;min-width:0}
+.detail-title-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.detail-title-row h2{
+  font-family:var(--ff-head);font-size:1.8rem;line-height:1.1;
 }
-.status-pill.pending{
-  background:#fff7ed;
-  color:#9a3412;
-  border-color:#fed7aa
+.detail-footer{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding-top:4px;
 }
-.status-pill.verified{
-  background:#ecfdf3;
-  color:#166534;
-  border-color:#bbf7d0
+.detail-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.detail-body{display:flex;flex-direction:column;gap:16px}
+.detail-section{
+  border:1px solid var(--border);border-radius:16px;background:#fff;padding:16px;
 }
-.status-pill.rejected{
-  background:#fef2f2;
-  color:#991b1b;
-  border-color:#fecaca
+.detail-section h3{
+  font-size:1rem;margin-bottom:12px;color:var(--ink);
 }
-.card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:16px;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  transition:transform .25s,box-shadow .25s
+.detail-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
 }
-.card:hover{transform:translateY(-3px);box-shadow:0 14px 38px rgba(0,0,0,.08)}
-.card .card-img{position:relative;height:180px;overflow:hidden;background:#f4f4f4}
-.card .card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
-.card:hover .card-img img{transform:scale(1.04)}
-.badge{
-  position:absolute;
-  top:14px;
-  left:14px;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:.75rem;
-  font-weight:800;
-  letter-spacing:.01em;
-  color:var(--white);
-  background:var(--red)
+.detail-item{
+  padding:13px 14px;border-radius:14px;background:#fafafa;border:1px solid #ededf2;
 }
-.badge.completed{background:#166534}
-.badge.upcoming{background:#1a6fa8}
-.card .body{padding:18px;display:flex;flex-direction:column;gap:10px;flex:1}
-.card .body h3{font-family:var(--ff-head);font-size:1.18rem;margin-bottom:2px}
-.card .body p{font-size:.9rem;color:var(--mid)}
-.meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--soft);flex-wrap:wrap}
-.meta-row span{display:inline-flex;align-items:center;gap:6px}
-.card-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.stat-box{padding:10px 12px;border-radius:12px;background:#fafafa;border:1px solid var(--border)}
-.stat-box strong{display:block;font-size:.95rem;margin-bottom:3px}
-.stat-box span{font-size:.76rem;color:var(--soft)}
-.card-actions{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap}
-.card-actions .detail-btn{width:100%;justify-content:center}
-.empty-state{
-  padding:28px 18px;
-  border:1px dashed #d9d9d9;
-  border-radius:14px;
-  background:#fcfcfc;
-  color:var(--mid);
-  text-align:center
+.detail-item.full{grid-column:1/-1}
+.detail-item .label{
+  display:block;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-bottom:6px;
 }
-.hidden{display:none}
-
-.detail-backdrop{
-  position:fixed;
-  inset:0;
-  background:rgba(10,10,15,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-  z-index:220
+.detail-item .value{color:var(--ink);word-break:break-word}
+.preview-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;
 }
-.detail-backdrop.open{display:flex}
-.detail-card{
-  width:100%;
-  max-width:760px;
-  max-height:calc(100vh - 36px);
-  background:var(--white);
-  border-radius:18px;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  box-shadow:0 26px 70px rgba(0,0,0,.24)
+.preview-card{
+  border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#fff;
 }
-.detail-header{
-  display:flex;
-  align-items:center;
-  gap:16px;
-  padding:24px 28px;
-  border-bottom:1px solid var(--border);
-  background:linear-gradient(135deg,#fff7f7 0%,#fff 100%)
+.preview-card img{
+  display:block;width:100%;height:180px;object-fit:cover;background:#f7f7f8;
 }
-.detail-title h3{font-family:var(--ff-head);font-size:1.4rem}
-.detail-title p{color:var(--soft);font-size:.9rem}
-.detail-body{padding:24px 28px;overflow:auto}
-.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.detail-item{padding:14px;border-radius:14px;background:#fafafa;border:1px solid var(--border)}
-.detail-item.full-width{grid-column:1/-1}
-.detail-item .label{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin-bottom:6px}
-.detail-item .value{font-size:.95rem;color:var(--ink);word-break:break-word}
-.detail-preview{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  flex-wrap:wrap
+.preview-card .caption{padding:12px 14px;font-weight:600}
+.log-summary{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-bottom:10px;
 }
-.detail-preview img{
-  width:120px;
-  height:120px;
-  border-radius:16px;
-  object-fit:cover;
-  border:1px solid var(--border);
-  background:#fff
+.log-summary strong{font-size:1rem}
+.log-table{min-width:720px}
+.confirm-backdrop{
+  position:fixed;inset:0;z-index:260;background:rgba(10,10,15,.5);
+  display:none;align-items:center;justify-content:center;padding:18px;
 }
-.detail-preview-copy{
-  display:flex;
-  flex-direction:column;
-  gap:4px
+.confirm-backdrop.open{display:flex}
+.confirm-card{
+  width:100%;max-width:520px;background:#fff;border:1px solid var(--border);border-radius:20px;
+  box-shadow:0 24px 60px rgba(16,24,40,.22);overflow:hidden;
 }
-.detail-preview-copy strong{
-  font-size:.95rem;
-  color:var(--ink)
+.confirm-header{
+  padding:24px 24px 18px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,#fff7f7 0%,#fff 100%);
 }
-.detail-preview-copy span{
-  font-size:.82rem;
-  color:var(--soft)
+.confirm-kicker{
+  color:var(--red);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:8px;
 }
-.blood-table-wrapper{margin-top:8px}
-.blood-table{width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;border:1px solid var(--border)}
-.blood-table thead{background:#f5f5f5}
-.blood-table th{padding:10px 14px;text-align:left;font-size:.82rem;font-weight:600;color:var(--ink);border-bottom:1px solid var(--border)}
-.blood-table td{padding:10px 14px;font-size:.9rem;color:var(--mid);border-bottom:1px solid var(--border)}
-.blood-table tr:last-child td{border-bottom:none}
-.detail-actions{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:18px 28px;
-  border-top:1px solid var(--border);
-  background:#fcfcfc
+.confirm-header h3{
+  font-family:var(--ff-head);font-size:1.45rem;line-height:1.15;margin-bottom:8px;
 }
-.detail-actions-left{display:flex;gap:10px;flex-wrap:wrap}
-.detail-actions-right{display:flex;gap:10px;flex-wrap:wrap}
-
-@media (max-width: 1024px){
-  nav{padding:0 20px}
-  .summary-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+.confirm-header p{
+  color:var(--mid);line-height:1.55;
+}
+.confirm-actions{
+  display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;
+  padding:18px 24px 24px;background:#fcfcfc;
+}
+.confirm-actions .action-btn-secondary,
+.confirm-actions .action-btn-danger{
+  min-width:140px;
+}
+.section-hidden{display:none!important}
+@media (max-width: 1180px){
+  .workspace{grid-template-columns:1fr}
+  .side-card{position:static}
+}
+@media (max-width: 860px){
+  .topbar{padding:12px 16px;flex-wrap:wrap}
+  .profile-shell{min-width:unset;width:100%}
+  .main-nav{width:100%;justify-content:flex-start}
+  .page{padding:18px 14px 40px}
+  .panel,.side-card{padding:16px}
   .detail-grid{grid-template-columns:1fr}
+  .detail-head{align-items:flex-start}
 }
 @media (max-width: 720px){
-  nav{height:auto;min-height:72px;padding:14px 16px;flex-wrap:wrap}
-  .nav-links{gap:18px;flex-wrap:wrap}
-  .nav-links a.active::after{bottom:-12px}
-  .profile-shell{min-width:unset;width:100%}
-  .nav-right{width:100%}
-  .shell{padding:18px 14px 38px}
-  .tab-panel{padding:20px}
-  .grid,.summary-row{grid-template-columns:1fr}
-  .table-shell{border-radius:14px}
+  .main-nav button{padding:9px 12px}
+  .toolbar{padding-bottom:14px;margin-bottom:14px}
+  .search-shell,.toolbar-actions{width:100%}
+  .toolbar-actions .clear-btn{width:100%}
+  .detail-footer,.detail-actions{width:100%}
+  .detail-actions .btn,.detail-actions .action-btn,.detail-actions .action-btn-secondary,.detail-actions .action-btn-danger{width:100%}
+  .record-card{flex-direction:column}
+  .record-card-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}
+  .record-card-actions .detail-btn{width:100%}
   .data-table{min-width:760px}
-  .filters{flex-direction:column;align-items:stretch}
-  .search-box,.filter-select{width:100%}
-  .detail-actions{flex-direction:column;align-items:stretch}
-  .detail-actions-right{justify-content:stretch}
-  .detail-actions-right .btn-outline,.detail-actions-right .btn-red{width:100%;justify-content:center}
+  .preview-card img{height:160px}
+  .confirm-actions{justify-content:stretch}
+  .confirm-actions .action-btn-secondary,
+  .confirm-actions .action-btn-danger{width:100%;min-width:0}
 }
 </style>
 </head>
 <body>
-  <nav>
-    <a class="logo" href="#organizations" id="adminLogo" aria-label="Admin dashboard home">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="#E3242B"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
-      SaveABeat Admin
-    </a>
-
-    <div class="nav-links" role="tablist" aria-label="Admin sections">
-      <a class="nav-tab active" href="#organizations" data-tab="organizations" role="tab" aria-selected="true">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7a4 4 0 014-4h8a4 4 0 014 4v7"/><circle cx="12" cy="7" r="4"/></svg>
-        Organizations
-      </a>
-      <a class="nav-tab" href="#donors" data-tab="donors" role="tab" aria-selected="false">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        Donors
-      </a>
-      <a class="nav-tab" href="#completed-campaigns" data-tab="completed" role="tab" aria-selected="false">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-        Completed Campaigns
-      </a>
-      <a class="nav-tab" href="#upcoming-campaigns" data-tab="upcoming" role="tab" aria-selected="false">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Upcoming Campaigns
-      </a>
-    </div>
-
-    <div class="nav-right">
-      <div class="profile-shell" id="profileShell">
-        <button class="profile-trigger" id="profileTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
-          <span class="profile-trigger-left">
-            <span class="profile-initial" id="profileInitial">A</span>
-            <span class="profile-name" id="adminNameDisplay">Admin</span>
-          </span>
-          <span class="profile-arrow" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-        </button>
-        <div class="profile-menu" id="profileMenu" role="menu" aria-label="Profile menu">
-          <button type="button" id="logoutBtn" role="menuitem">Logout</button>
-        </div>
-      </div>
-    </div>
+<header class="topbar">
+  <a class="brand" href="#organizations" id="brandLink" aria-label="SaveABeat home">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
+    <span>SaveABeat</span>
+  </a>
+  <nav class="main-nav" role="tablist" aria-label="Admin sections">
+    <button type="button" class="active" data-section="organizations" role="tab" aria-selected="true">Organizations</button>
+    <button type="button" data-section="donors" role="tab" aria-selected="false">Donors</button>
+    <button type="button" data-section="campaigns" role="tab" aria-selected="false">Campaigns</button>
+    <button type="button" data-section="requests" role="tab" aria-selected="false">Blood Requests</button>
   </nav>
-
-  <div class="shell">
-    <section class="hero">
-      <h1>Admin Dashboard</h1>
-      <p>This dashboard gives you a shared view of all registered organizations and every campaign on the platform. Use it to review centers, inspect completed drives, and watch upcoming campaigns before they go live.</p>
-      <div class="summary-row" aria-label="Admin summary">
-        <div class="summary-card"><strong id="summaryOrgs">0</strong><span>Organizations</span></div>
-        <div class="summary-card"><strong id="summaryCompleted">0</strong><span>Completed Campaigns</span></div>
-        <div class="summary-card"><strong id="summaryUpcoming">0</strong><span>Upcoming Campaigns</span></div>
-        <div class="summary-card"><strong id="summaryTotal">0</strong><span>Total Campaigns</span></div>
-      </div>
-    </section>
-
-    <section class="tab-panel" id="organizations" data-panel="organizations">
-      <div class="section-header">
-        <div class="section-copy">
-          <h2>Organizations</h2>
-          <p>Every organization registered in the system appears here using the same card style as the home page donation centers. Use View Details to inspect the organization profile.</p>
-        </div>
-      </div>
-      <div class="filters">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="orgSearch" type="text" placeholder="Search organizations by name, address, or service..." />
-        </div>
-        <select class="filter-select" id="orgFilter">
-          <option value="">All organizations</option>
-          <option value="Verified">Verified</option>
-          <option value="Pending">Pending verification</option>
-        </select>
-      </div>
-      <div class="grid" id="orgGrid">
-        <div class="empty-state">Loading organizations...</div>
-      </div>
-    </section>
-
-    <section class="tab-panel hidden" id="donors" data-panel="donors">
-      <div class="section-header">
-        <div class="section-copy">
-          <h2>Donors</h2>
-          <p>All registered donors appear here in a searchable management table with registration date and verification status.</p>
-        </div>
-      </div>
-      <div class="filters">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="donorSearch" type="text" placeholder="Search donors by name, email, blood group, or location..." />
-        </div>
-        <select class="filter-select" id="donorFilter">
-          <option value="">All donors</option>
-          <option value="Pending">Pending verification</option>
-          <option value="Verified">Verified</option>
-        </select>
-      </div>
-      <div class="table-shell" id="donorGrid">
-        <div class="empty-state">Loading donors...</div>
-      </div>
-    </section>
-
-    <section class="tab-panel hidden" id="completed-campaigns" data-panel="completed">
-      <div class="section-header">
-        <div class="section-copy">
-          <h2>Completed Campaigns</h2>
-          <p>All finished campaigns from every organization are shown here in the same format as the home page event cards, with View Details replacing Donate Now.</p>
-        </div>
-      </div>
-      <div class="filters">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="completedSearch" type="text" placeholder="Search completed campaigns by title or location..." />
-        </div>
-        <select class="filter-select" id="completedType">
-          <option value="">All types</option>
-          <option value="Drive">Drive</option>
-          <option value="Camp">Camp</option>
-          <option value="Emergency">Emergency</option>
-        </select>
-      </div>
-      <div class="grid" id="completedGrid">
-        <div class="empty-state">Loading completed campaigns...</div>
-      </div>
-    </section>
-
-    <section class="tab-panel hidden" id="upcoming-campaigns" data-panel="upcoming">
-      <div class="section-header">
-        <div class="section-copy">
-          <h2>Upcoming Campaigns</h2>
-          <p>These campaigns are scheduled for later dates and are shown with the same visual language as your homepage event cards.</p>
-        </div>
-      </div>
-      <div class="filters">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="upcomingSearch" type="text" placeholder="Search upcoming campaigns by title or location..." />
-        </div>
-        <select class="filter-select" id="upcomingType">
-          <option value="">All types</option>
-          <option value="Drive">Drive</option>
-          <option value="Camp">Camp</option>
-          <option value="Emergency">Emergency</option>
-        </select>
-      </div>
-      <div class="grid" id="upcomingGrid">
-        <div class="empty-state">Loading upcoming campaigns...</div>
-      </div>
-    </section>
-  </div>
-
-  <div class="detail-backdrop" id="detailBackdrop" aria-hidden="true">
-    <div class="detail-card" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <div class="detail-header">
-        <div class="detail-title">
-          <h3 id="detailTitle">Details</h3>
-          <p id="detailSubtitle">Select an item to view more information.</p>
-        </div>
-      </div>
-      <div class="detail-body">
-        <div class="detail-grid" id="detailGrid"></div>
-      </div>
-      <div class="detail-actions">
-        <div class="detail-actions-left">
-          <button class="btn-outline" type="button" id="detailCloseBtn">Close</button>
-          <button class="btn-outline" type="button" id="detailEditBtn" style="display:none">Edit</button>
-          <button class="btn-red" type="button" id="detailSaveBtn" style="display:none">Save</button>
-        </div>
-        <div class="detail-actions-right">
-          <button class="btn-outline" type="button" id="detailStopBtn">Stop Campaign</button>
-          <button class="btn-red" type="button" id="detailDeleteBtn">Delete</button>
-          <button class="btn-red" type="button" id="detailVerifyBtn" style="display:none">Verify</button>
-          <button class="btn-outline" type="button" id="detailRejectBtn" style="display:none">Reject Account</button>
-        </div>
-      </div>
+  <div class="profile-shell" id="profileShell">
+    <button class="profile-trigger" id="profileTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
+      <span class="profile-trigger-left">
+        <span class="profile-initial" id="profileInitial">A</span>
+        <span class="profile-name" id="profileName">Admin</span>
+      </span>
+      <span class="profile-arrow" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+    </button>
+    <div class="profile-menu" id="profileMenu" role="menu" aria-label="Profile menu">
+      <button type="button" id="logoutBtn" role="menuitem">Logout</button>
     </div>
   </div>
+</header>
+
+<main class="page">
+  <section class="page-head">
+    <div>
+      <h1 id="sectionTitle">Organizations</h1>
+    </div>
+    <div class="notice info" id="notice" hidden></div>
+  </section>
+
+  <div class="workspace">
+    <aside class="side-card">
+      <div class="subnav" id="subnav"></div>
+    </aside>
+
+    <section class="panel">
+      <div class="toolbar" id="toolbar"></div>
+      <div id="content"></div>
+    </section>
+  </div>
+</main>
+
+<div class="confirm-backdrop" id="confirmBackdrop" hidden aria-hidden="true">
+  <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-header">
+      <div class="confirm-kicker">Please confirm</div>
+      <h3 id="confirmTitle">Confirm action</h3>
+      <p id="confirmMessage"></p>
+    </div>
+    <div class="confirm-actions">
+      <button type="button" class="action-btn-secondary" data-action="confirm-cancel">Cancel</button>
+      <button type="button" class="action-btn-danger" data-action="confirm-accept" id="confirmAcceptBtn">Confirm</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const AUTH_STORAGE_KEY = 'saveabeatUser';
-const adminState = {
-  organizations: [],
-  campaigns: [],
-  donors: [],
+const AUTH_KEY = 'saveabeatUser';
+const SECTION_CONFIG = {
+  organizations: {
+    title: 'Organizations',
+    api: '/api/admin/organizations',
+    detailApi: (id) => `/api/admin/organizations/${id}`,
+    verifyApi: (id) => `/api/admin/organizations/${id}/verify`,
+    deleteApi: (id) => `/api/admin/organizations/${id}`,
+    queryKey: 'status',
+    searchPlaceholder: 'Search by organization name',
+    listLabel: 'organization',
+    subsections: [
+      { id: 'verified', label: 'Verified', value: 'verified' },
+      { id: 'nonverified', label: 'Non-Verified', value: 'nonverified' },
+    ],
+  },
+  donors: {
+    title: 'Donors',
+    api: '/api/admin/donors',
+    detailApi: (id) => `/api/admin/donors/${id}`,
+    verifyApi: (id) => `/api/admin/donors/${id}/verify`,
+    deleteApi: (id) => `/api/admin/donors/${id}`,
+    queryKey: 'status',
+    searchPlaceholder: 'Search by donor name',
+    listLabel: 'donor',
+    subsections: [
+      { id: 'verified', label: 'Verified', value: 'verified' },
+      { id: 'nonverified', label: 'Non-Verified', value: 'nonverified' },
+    ],
+  },
+  campaigns: {
+    title: 'Campaigns',
+    api: '/api/admin/campaigns',
+    detailApi: (id) => `/api/admin/campaigns/${id}`,
+    queryKey: 'section',
+    searchPlaceholder: 'Search by organization name',
+    listLabel: 'campaign',
+    subsections: [
+      { id: 'upcoming', label: 'Upcoming', value: 'upcoming' },
+      { id: 'running', label: 'Running', value: 'running' },
+      { id: 'completed', label: 'Completed', value: 'completed' },
+    ],
+  },
+  requests: {
+    title: 'Blood Requests',
+    api: '/api/admin/requests',
+    detailApi: (id) => `/api/admin/requests/${id}`,
+    queryKey: 'section',
+    searchPlaceholder: 'Search by organization name',
+    listLabel: 'request',
+    subsections: [
+      { id: 'open', label: 'Open', value: 'open' },
+      { id: 'completed', label: 'Completed', value: 'completed' },
+    ],
+  },
 };
-let currentDetail = null;
-let adminRefreshTimer = null;
 
-function getStoredUser(){
-  try{
-    const savedUser=localStorage.getItem(AUTH_STORAGE_KEY)||sessionStorage.getItem(AUTH_STORAGE_KEY);
-    const user=JSON.parse(savedUser||'null');
-    if(user && user.role !== 'admin'){
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-      location.replace('login.html?role=admin');
+const state = {
+  user: null,
+  activeSection: getInitialSection(),
+  activeSubsections: {
+    organizations: 'verified',
+    donors: 'verified',
+    campaigns: 'upcoming',
+    requests: 'open',
+  },
+  searchTerms: {
+    organizations: '',
+    donors: '',
+    campaigns: '',
+    requests: '',
+  },
+  listLoading: false,
+  listError: '',
+  detailLoading: false,
+  detailError: '',
+  viewMode: 'list',
+  currentItems: [],
+  currentCount: 0,
+  detail: null,
+  confirmDialog: {
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    resolve: null,
+  },
+};
+
+const requestTokens = { list: 0, detail: 0 };
+const searchTimers = {};
+let noticeTimer = null;
+
+function getInitialSection() {
+  const hash = String(location.hash || '').replace('#', '').trim().toLowerCase();
+  return SECTION_CONFIG[hash] ? hash : 'organizations';
+}
+
+function redirectToLogin() {
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_KEY);
+  location.replace('login.html?role=admin');
+}
+
+function getStoredUser() {
+  try {
+    const saved = localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
+    const parsed = JSON.parse(saved || 'null');
+    if (!parsed || parsed.role !== 'admin') {
       return null;
     }
-    if(!user){
-      location.replace('login.html?role=admin');
-      return null;
-    }
-    if(user&&!localStorage.getItem(AUTH_STORAGE_KEY)) localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(user));
-    return user;
-  }catch(_error){
-    location.replace('login.html?role=admin');
+    return parsed;
+  } catch (_error) {
     return null;
   }
 }
 
-function escapeHtml(value){
+function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -739,199 +551,968 @@ function escapeHtml(value){
     .replaceAll("'", '&#39;');
 }
 
-function readJsonResponse(response){
-  return response.json();
-}
-
-function initialForName(name){
-  const text = String(name || 'A').trim();
+function initialForName(value) {
+  const text = String(value || '').trim();
   return text ? text.charAt(0).toUpperCase() : 'A';
 }
 
-function encodeDetailData(value){
-  return escapeHtml(encodeURIComponent(JSON.stringify(value)));
+function formatDate(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function decodeDetailData(value){
-  try{
-    return JSON.parse(decodeURIComponent(String(value || '')));
-  }catch(_error){
-    return null;
-  }
-}
-
-function formatDateString(str){
-  if(!str) return '-';
-  const date = new Date(str);
-  if(Number.isNaN(date.getTime())) return String(str);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-}
-
-function normalizeDonorStatus(status){
+function normalizeDonorStatus(status) {
   const value = String(status || 'Pending').trim().toLowerCase();
-  if(value === 'verified' || value === 'approved') return 'Verified';
-  if(value === 'rejected') return 'Rejected';
+  if (value === 'verified' || value === 'approved') return 'Verified';
+  if (value === 'rejected') return 'Rejected';
   return 'Pending';
 }
 
-function donorStatusClass(status){
-  const value = normalizeDonorStatus(status).toLowerCase();
-  return value;
+function normalizeOrganizationStatus(item) {
+  if (item?.verified) return 'Verified';
+  const value = String(item?.verification_status || 'Pending').trim().toLowerCase();
+  if (value === 'approved' || value === 'verified') return 'Verified';
+  if (value === 'rejected') return 'Rejected';
+  return 'Pending';
 }
 
-function normalizeDonorRecord(donor){
-  const verificationStatus = normalizeDonorStatus(donor?.verification_status ?? donor?.verificationStatus);
-  return {
-    ...donor,
-    user_id: donor?.user_id ?? donor?.userId ?? donor?.id ?? null,
-    fullName: donor?.fullName ?? donor?.full_name ?? donor?.name ?? '',
-    email: donor?.email ?? '',
-    phone: donor?.phone ?? '',
-    city: donor?.city ?? '',
-    district: donor?.district ?? '',
-    bloodGroup: donor?.bloodGroup ?? donor?.blood_group ?? '',
-    created_at: donor?.created_at ?? donor?.createdAt ?? donor?.registration_date ?? donor?.registrationDate ?? '',
-    verification_status: verificationStatus,
-    address: donor?.address ?? '',
-    is_available: donor?.is_available ?? donor?.isAvailable ?? null,
-    last_donated_at: donor?.last_donated_at ?? donor?.lastDonatedAt ?? '',
-    total_donations: donor?.total_donations ?? donor?.totalDonations ?? 0,
-    profile_picture: donor?.profile_picture ?? donor?.profilePicture ?? donor?.profile_image_data ?? donor?.profileImageData ?? '',
-    profile_picture_name: donor?.profile_picture_name ?? donor?.profilePictureName ?? donor?.profile_image_name ?? donor?.profileImageName ?? '',
-    blood_verification_document_type: donor?.blood_verification_document_type ?? donor?.bloodVerificationDocumentType ?? '',
-    blood_verification_document_file: donor?.blood_verification_document_file ?? donor?.bloodVerificationDocumentFile ?? '',
-    blood_verification_document_name: donor?.blood_verification_document_name ?? donor?.bloodVerificationDocumentName ?? '',
-  };
+function campaignSectionLabel(section) {
+  const value = String(section || '').toLowerCase();
+  if (value === 'upcoming') return 'Upcoming';
+  if (value === 'running') return 'Running';
+  return 'Completed';
 }
 
-function donorTableRowMarkup(donor){
-  const status = normalizeDonorStatus(donor.verification_status);
-  const statusClass = donorStatusClass(status);
-  const registrationDate = donor.created_at ? formatDateString(donor.created_at) : '-';
-  const location = donor.city || donor.district || 'Location not listed';
-  const rowId = String(donor.user_id || '');
-  return `
-    <tr>
-      <td>
-        <div class="table-name">
-          <span class="table-avatar">${escapeHtml(initialForName(donor.fullName || donor.email || 'D'))}</span>
-          <div class="table-name-text">
-            <strong>${escapeHtml(donor.fullName || '-')}</strong>
-            <span>${escapeHtml(location)}</span>
-          </div>
-        </div>
-      </td>
-      <td>${escapeHtml(donor.email || '-')}</td>
-      <td>${escapeHtml(donor.bloodGroup || '-')}</td>
-      <td>${escapeHtml(registrationDate)}</td>
-      <td><span class="status-pill ${statusClass}">${escapeHtml(status)}</span></td>
-      <td>
-        <div class="table-actions">
-          <button class="detail-btn" type="button" data-detail-kind="donor" data-detail-id="${escapeHtml(rowId)}">View Details</button>
-        </div>
-      </td>
-    </tr>
-  `;
+function requestStatusLabel(status) {
+  const value = String(status || '').toLowerCase();
+  if (value === 'open') return 'Open';
+  if (value === 'fulfilled') return 'Completed';
+  if (value === 'expired') return 'Expired';
+  if (value === 'cancelled') return 'Cancelled';
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : 'Open';
 }
 
-function buildDonorDetailMarkup(donor){
-  const items = [];
-  const profilePicture = donor.profile_picture || donor.profileImageData || donor.profile_image_data;
-  if(profilePicture){
-    items.push([
-      'Profile Picture',
-      `<div class="detail-preview">
-        <img src="${escapeHtml(profilePicture)}" alt="${escapeHtml(donor.fullName || 'Donor profile photo')}" loading="lazy" />
-        <div class="detail-preview-copy">
-          <strong>${escapeHtml(donor.fullName || 'Donor')}</strong>
-          <span>${escapeHtml(donor.profile_picture_name || donor.profilePictureName || 'Uploaded photo')}</span>
-        </div>
-      </div>`
-    ]);
+function requestStatusClass(status) {
+  const value = String(status || '').toLowerCase();
+  if (value === 'fulfilled') return 'fulfilled';
+  if (value === 'open') return 'open';
+  if (value === 'expired') return 'expired';
+  if (value === 'cancelled') return 'cancelled';
+  return 'open';
+}
+
+function sectionConfig(section) {
+  return SECTION_CONFIG[section];
+}
+
+function activeSubsection(section = state.activeSection) {
+  return state.activeSubsections[section];
+}
+
+function subsectionValue(section, subsectionId) {
+  const config = sectionConfig(section);
+  return config.subsections.find((item) => item.id === subsectionId)?.value || subsectionId;
+}
+
+function subsectionLabel(section, subsectionId) {
+  const config = sectionConfig(section);
+  return config.subsections.find((item) => item.id === subsectionId)?.label || subsectionId;
+}
+
+function showNotice(message, type = 'success') {
+  const el = document.getElementById('notice');
+  if (!el) return;
+  el.className = `notice ${type}`;
+  el.textContent = message;
+  el.hidden = !message;
+  clearTimeout(noticeTimer);
+  if (message) {
+    noticeTimer = window.setTimeout(() => {
+      el.hidden = true;
+      el.textContent = '';
+    }, 4500);
   }
+}
 
-  items.push(['Full Name', escapeHtml(donor.fullName || '-')]);
-  items.push(['Email', escapeHtml(donor.email || '-')]);
-  items.push(['Phone', escapeHtml(donor.phone || '-')]);
-  items.push(['Blood Group', escapeHtml(donor.bloodGroup || '-')]);
-  items.push(['Registration Date', escapeHtml(donor.created_at ? formatDateString(donor.created_at) : '-')]);
-  items.push(['Verification Status', escapeHtml(normalizeDonorStatus(donor.verification_status))]);
+function buildQuery(params = {}) {
+  const user = state.user || getStoredUser();
+  const query = new URLSearchParams({
+    email: user?.email || '',
+    role: 'admin',
+    ...params,
+  });
+  return query.toString();
+}
 
-  if(donor.address){
-    items.push(['Address', escapeHtml(donor.address)]);
+async function apiFetch(path, { method = 'GET', query = {}, body = null } = {}) {
+  const url = Object.keys(query).length ? `${path}?${buildQuery(query)}` : `${path}?${buildQuery()}`;
+  const response = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body === null ? undefined : JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(payload.message || 'Request failed.');
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
+  return payload;
+}
 
-  if(donor.city){
-    items.push(['City', escapeHtml(donor.city)]);
-  }
+function renderTopNavigation() {
+  document.querySelectorAll('.main-nav button').forEach((button) => {
+    const active = button.dataset.section === state.activeSection;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+}
 
-  if(donor.district){
-    items.push(['District', escapeHtml(donor.district)]);
-  }
+function renderSectionHeader() {
+  const config = sectionConfig(state.activeSection);
+  document.getElementById('sectionTitle').textContent = config.title;
+}
 
-  if(donor.is_available !== null && donor.is_available !== undefined){
-    items.push(['Available for Donation', donor.is_available ? 'Yes' : 'No']);
-  }
-
-  if(donor.total_donations !== null && donor.total_donations !== undefined){
-    items.push(['Total Donations', escapeHtml(String(donor.total_donations))]);
-  }
-
-  if(donor.last_donated_at){
-    items.push(['Last Donated At', escapeHtml(formatDateString(donor.last_donated_at))]);
-  }
-
-  if(donor.blood_verification_document_type){
-    items.push(['Verification Document Type', escapeHtml(donor.blood_verification_document_type)]);
-  }
-
-  if(donor.blood_verification_document_file){
-    const documentName = donor.blood_verification_document_name || 'View Verification Document';
-    items.push([
-      'Verification Document',
-      `<a href="${escapeHtml(donor.blood_verification_document_file)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration:none; font-weight:600;">${escapeHtml(documentName)}</a>`
-    ]);
-  }
-
-  return items.map(([label, value]) => `
-    <div class="detail-item${label === 'Profile Picture' ? ' full-width' : ''}">
-      <div class="label">${escapeHtml(label)}</div>
-      <div class="value">${value}</div>
-    </div>
+function renderSubnav() {
+  const container = document.getElementById('subnav');
+  const config = sectionConfig(state.activeSection);
+  const current = activeSubsection();
+  container.innerHTML = config.subsections.map((subsection) => `
+    <button type="button" class="${subsection.id === current ? 'active' : ''}" data-subsection="${escapeHtml(subsection.id)}">
+      ${escapeHtml(subsection.label)}
+    </button>
   `).join('');
 }
 
-async function fetchDonorDetails(donorId){
-  const storedUser = getStoredUser();
-  if(!storedUser || storedUser.role !== 'admin'){
-    throw new Error('Admin account not found.');
+function renderToolbar() {
+  const container = document.getElementById('toolbar');
+  if (state.viewMode === 'detail') {
+    container.innerHTML = '';
+    return;
   }
 
-  const params = new URLSearchParams({
-    email: storedUser.email,
-    role: storedUser.role,
-  });
-  const response = await fetch(`/api/admin/donors/${donorId}?${params.toString()}`);
-  const payload = await readJsonResponse(response);
-  if(!response.ok){
-    throw new Error(payload.message || 'Unable to load donor details.');
+  const config = sectionConfig(state.activeSection);
+  const searchValue = state.searchTerms[state.activeSection] || '';
+  const disabled = searchValue ? '' : 'disabled';
+  container.innerHTML = `
+    <div class="search-shell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" data-search-input placeholder="${escapeHtml(config.searchPlaceholder)}" value="${escapeHtml(searchValue)}" autocomplete="off" />
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" class="clear-btn" data-action="clear-search" ${disabled}>Clear</button>
+      <div class="results-meta">${state.listLoading ? 'Loading results...' : `${state.currentCount} result${state.currentCount === 1 ? '' : 's'}`}</div>
+    </div>
+  `;
+}
+
+function updateToolbarMeta() {
+  const container = document.getElementById('toolbar');
+  if (!container || state.viewMode === 'detail') {
+    return;
   }
 
-  return normalizeDonorRecord(payload.data || payload.donor || payload);
+  const clearButton = container.querySelector('[data-action="clear-search"]');
+  const results = container.querySelector('.results-meta');
+  if (clearButton) {
+    clearButton.disabled = !String(state.searchTerms[state.activeSection] || '').trim();
+  }
+  if (results) {
+    results.textContent = state.listLoading
+      ? 'Loading results...'
+      : `${state.currentCount} result${state.currentCount === 1 ? '' : 's'}`;
+  }
 }
 
-function setActiveTab(tabName){
-  document.querySelectorAll('.nav-tab').forEach((link) => {
-    const isActive = link.dataset.tab === tabName;
-    link.classList.toggle('active', isActive);
-    link.setAttribute('aria-selected', String(isActive));
-  });
-  document.querySelectorAll('.tab-panel').forEach((panel) => {
-    panel.classList.toggle('hidden', panel.dataset.panel !== tabName);
+function renderConfirmDialog() {
+  const backdrop = document.getElementById('confirmBackdrop');
+  const title = document.getElementById('confirmTitle');
+  const message = document.getElementById('confirmMessage');
+  const acceptBtn = document.getElementById('confirmAcceptBtn');
+  if (!backdrop || !title || !message || !acceptBtn) {
+    return;
+  }
+
+  backdrop.classList.toggle('open', state.confirmDialog.open);
+  backdrop.hidden = !state.confirmDialog.open;
+  backdrop.setAttribute('aria-hidden', String(!state.confirmDialog.open));
+  title.textContent = state.confirmDialog.title || 'Confirm action';
+  message.textContent = state.confirmDialog.message || '';
+  acceptBtn.textContent = state.confirmDialog.confirmLabel || 'Confirm';
+
+  if (state.confirmDialog.open) {
+    window.requestAnimationFrame(() => {
+      if (!state.confirmDialog.open) return;
+      const cancelBtn = backdrop.querySelector('[data-action="confirm-cancel"]');
+      cancelBtn?.focus();
+    });
+  }
+}
+
+function askConfirm({ title, message, confirmLabel }) {
+  return new Promise((resolve) => {
+    state.confirmDialog = {
+      open: true,
+      title: title || 'Confirm action',
+      message: message || '',
+      confirmLabel: confirmLabel || 'Confirm',
+      resolve,
+    };
+    renderConfirmDialog();
   });
 }
 
-function closeProfileMenu(){
+function closeConfirmDialog(result = false) {
+  const resolve = state.confirmDialog.resolve;
+  state.confirmDialog = {
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirm',
+    resolve: null,
+  };
+  renderConfirmDialog();
+  if (typeof resolve === 'function') {
+    resolve(result);
+  }
+}
+
+function renderListState() {
+  const container = document.getElementById('content');
+  const config = sectionConfig(state.activeSection);
+
+  if (state.listLoading) {
+    container.innerHTML = `<div class="loading">Loading ${escapeHtml(config.title.toLowerCase())}...</div>`;
+    return;
+  }
+
+  if (state.listError) {
+    container.innerHTML = `
+      <div class="error-state">
+        <strong>Unable to load ${escapeHtml(config.title.toLowerCase())}.</strong>
+        <div style="margin-top:8px">${escapeHtml(state.listError)}</div>
+        <div style="margin-top:14px">
+          <button type="button" class="action-btn-secondary" data-action="retry-list">Try Again</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (!state.currentItems.length) {
+    const activeSearch = String(state.searchTerms[state.activeSection] || '').trim();
+    const emptyMessage = activeSearch
+      ? `No ${config.listLabel}s match "${activeSearch}".`
+      : `No ${subsectionLabel(state.activeSection, activeSubsection()).toLowerCase()} ${config.listLabel}s found.`;
+    container.innerHTML = `
+      <div class="empty-state">
+        <strong>${escapeHtml(emptyMessage)}</strong>
+      </div>
+    `;
+    return;
+  }
+
+  if (state.activeSection === 'organizations') {
+    container.innerHTML = renderOrganizationTable(state.currentItems);
+    return;
+  }
+  if (state.activeSection === 'donors') {
+    container.innerHTML = renderDonorTable(state.currentItems);
+    return;
+  }
+  if (state.activeSection === 'campaigns') {
+    container.innerHTML = renderCampaignTable(state.currentItems);
+    return;
+  }
+  container.innerHTML = renderRequestTable(state.currentItems);
+}
+
+function pillClassForOrganization(item) {
+  return normalizeOrganizationStatus(item).toLowerCase();
+}
+
+function renderOrganizationTable(items) {
+  const cards = items.map((item) => {
+    const status = normalizeOrganizationStatus(item);
+    const location = [item.city, item.district].filter(Boolean).join(', ') || item.address || 'Location not listed';
+    return `
+      <article class="record-card">
+        <div class="record-card-main">
+          <div class="record-card-head">
+            <div class="record-card-copy">
+              <strong>${escapeHtml(item.orgName || item.name || 'Organization')}</strong>
+              <span>${escapeHtml(item.orgType || 'Organization')}</span>
+            </div>
+            <span class="pill ${escapeHtml(pillClassForOrganization(item))}">${escapeHtml(status)}</span>
+          </div>
+          <div class="record-card-meta">
+            <span class="record-chip">${escapeHtml(location)}</span>
+            <span class="record-chip">${escapeHtml(item.contact || item.phone || 'Contact not listed')}</span>
+            <span class="record-chip">${escapeHtml(item.email || 'Email not listed')}</span>
+          </div>
+        </div>
+        <div class="record-card-actions">
+          <button type="button" class="detail-btn" data-action="open-detail" data-id="${escapeHtml(item.orgId || item.org_id)}">View Details</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  return `<div class="record-list">${cards}</div>`;
+}
+
+function renderDonorTable(items) {
+  const cards = items.map((item) => {
+    const status = normalizeDonorStatus(item.verification_status);
+    const location = [item.city, item.district].filter(Boolean).join(', ') || item.address || 'Location not listed';
+    return `
+      <article class="record-card">
+        <div class="record-card-main">
+          <div class="record-card-head">
+            <div class="record-card-copy">
+              <strong>${escapeHtml(item.fullName || item.full_name || 'Donor')}</strong>
+              <span>${escapeHtml(item.bloodGroup || item.blood_group || 'Blood group not listed')}</span>
+            </div>
+            <span class="pill ${status.toLowerCase()}">${escapeHtml(status)}</span>
+          </div>
+          <div class="record-card-meta">
+            <span class="record-chip">${escapeHtml(location)}</span>
+            <span class="record-chip">${escapeHtml(item.email || 'Email not listed')}</span>
+            <span class="record-chip">${escapeHtml(formatDate(item.created_at))}</span>
+          </div>
+        </div>
+        <div class="record-card-actions">
+          <button type="button" class="detail-btn" data-action="open-detail" data-id="${escapeHtml(item.user_id || item.userId)}">View Details</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  return `<div class="record-list">${cards}</div>`;
+}
+
+function renderCampaignTable(items) {
+  const cards = items.map((item) => {
+    const requirements = Array.isArray(item.bloodRequirements) && item.bloodRequirements.length
+      ? item.bloodRequirements.map((req) => `${req.bloodGroup || req.blood_group} ${Number(req.unitsRequired || req.units_required || 0)}u`).join(', ')
+      : item.bloodGroupNeeded || item.blood_group_needed || '—';
+    const statusLabel = campaignSectionLabel(item.section || item.kind || item.status);
+    const statusClass = String(item.section || item.status || '').toLowerCase();
+    return `
+      <article class="record-card">
+        <div class="record-card-main">
+          <div class="record-card-head">
+            <div class="record-card-copy">
+              <strong>${escapeHtml(item.title || 'Campaign')}</strong>
+              <span>${escapeHtml(item.eventType || item.type || 'Campaign')}</span>
+            </div>
+            <span class="pill ${escapeHtml(statusClass)}">${escapeHtml(statusLabel)}</span>
+          </div>
+          <div class="record-card-meta">
+            <span class="record-chip">${escapeHtml(item.orgName || item.org || 'Organization not listed')}</span>
+            <span class="record-chip">${escapeHtml(formatDate(item.date || item.event_date))}</span>
+            <span class="record-chip">${escapeHtml(item.time || item.time_range || 'Time not listed')}</span>
+            <span class="record-chip">${escapeHtml(item.location || 'Location not listed')}</span>
+            <span class="record-chip">${escapeHtml(requirements)}</span>
+          </div>
+        </div>
+        <div class="record-card-actions">
+          <button type="button" class="detail-btn" data-action="open-detail" data-id="${escapeHtml(item.id || item.event_id)}">View</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  return `<div class="record-list">${cards}</div>`;
+}
+
+function renderRequestTable(items) {
+  const cards = items.map((item) => {
+    const status = requestStatusLabel(item.status);
+    const statusClass = requestStatusClass(item.status);
+    const location = item.hospitalAddress || item.location || [item.city, item.district].filter(Boolean).join(', ') || '—';
+    const dateValue = item.displayDate || item.requiredBy || item.expiresAt || item.createdAt;
+    return `
+      <article class="record-card">
+        <div class="record-card-main">
+          <div class="record-card-head">
+            <div class="record-card-copy">
+              <strong>${escapeHtml(item.orgName || 'Organization')}</strong>
+              <span>${escapeHtml(item.hospitalName || 'Blood request')}</span>
+            </div>
+            <span class="pill ${escapeHtml(statusClass)}">${escapeHtml(status)}</span>
+          </div>
+          <div class="record-card-meta">
+            <span class="record-chip">${escapeHtml(item.bloodGroup || 'Blood group not listed')}</span>
+            <span class="record-chip">${escapeHtml(String(item.unitsNeeded ?? item.units_needed ?? '—'))} units</span>
+            <span class="record-chip">${escapeHtml(item.urgency || 'normal')}</span>
+            <span class="record-chip">${escapeHtml(location)}</span>
+            <span class="record-chip">${escapeHtml(formatDate(dateValue))}</span>
+          </div>
+        </div>
+        <div class="record-card-actions">
+          <button type="button" class="detail-btn" data-action="open-detail" data-id="${escapeHtml(item.requestId || item.request_id)}">View</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  return `<div class="record-list">${cards}</div>`;
+}
+
+function renderField(label, value, full = false, allowHtml = false) {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+  const safeValue = allowHtml ? value : escapeHtml(String(value));
+  return `
+    <div class="detail-item ${full ? 'full' : ''}">
+      <span class="label">${escapeHtml(label)}</span>
+      <div class="value">${safeValue}</div>
+    </div>
+  `;
+}
+
+function renderDetailSection(title, items) {
+  const content = items.filter(Boolean).join('');
+  if (!content) return '';
+  return `
+    <section class="detail-section">
+      <h3>${escapeHtml(title)}</h3>
+      <div class="detail-grid">${content}</div>
+    </section>
+  `;
+}
+
+function renderPreviewCard(src, name, fallbackText = 'Preview') {
+  if (!src) return '';
+  return `
+    <div class="preview-card">
+      <img src="${escapeHtml(src)}" alt="${escapeHtml(name || fallbackText)}" />
+      <div class="caption">${escapeHtml(name || fallbackText)}</div>
+    </div>
+  `;
+}
+
+function renderOrganizationDetail(detail) {
+  const status = normalizeOrganizationStatus(detail);
+  const isVerified = status === 'Verified';
+  const name = detail.orgName || detail.name || 'Organization';
+  const sections = [
+    renderDetailSection('Registration information', [
+      renderField('Organization name', name),
+      renderField('Email', detail.email),
+      renderField('Phone', detail.phone || detail.contact),
+      renderField('Organization type', detail.orgType || detail.org_type),
+      renderField('Address', detail.address || detail.org_address),
+      renderField('City', detail.city),
+      renderField('District', detail.district),
+      renderField('Verification status', `<span class="pill ${status.toLowerCase()}">${escapeHtml(status)}</span>`, false, true),
+      renderField('Created at', formatDate(detail.created_at)),
+    ]),
+    renderDetailSection('Verification documents', [
+      renderField('Document type', detail.verification_document_type),
+      renderField('Document name', detail.verification_document_name),
+      renderField('Additional documents', detail.verification_documents_name),
+      renderField('Building photo', detail.building_photo_name),
+    ]),
+  ].filter(Boolean).join('');
+
+  const media = [];
+  if (detail.building_photo) media.push(renderPreviewCard(detail.building_photo, detail.building_photo_name || 'Building photo', 'Building photo'));
+  if (detail.verification_document_file) media.push(renderPreviewCard(detail.verification_document_file, detail.verification_document_name || 'Verification document', 'Verification document'));
+  if (detail.verification_documents) media.push(renderPreviewCard(detail.verification_documents, detail.verification_documents_name || 'Additional documents', 'Additional documents'));
+
+  return `
+    <div class="detail-shell">
+      <div class="detail-head">
+        <div class="left">
+          <div class="detail-title-row">
+            <h2>${escapeHtml(name)}</h2>
+            <span class="pill ${status.toLowerCase()}">${escapeHtml(status)}</span>
+          </div>
+        </div>
+      </div>
+      ${media.length ? `<div class="preview-grid">${media.join('')}</div>` : ''}
+      <div class="detail-body">${sections}</div>
+      <div class="detail-footer">
+        <div class="detail-actions">
+          ${isVerified ? '<button type="button" class="action-btn-danger" data-action="remove-user">Remove User</button>' : '<button type="button" class="action-btn" data-action="verify">Verify</button><button type="button" class="action-btn-danger" data-action="delete">Delete</button>'}
+          <button type="button" class="action-btn-secondary" data-action="close-detail">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDonorDetail(detail) {
+  const status = normalizeDonorStatus(detail.verification_status);
+  const isVerified = status === 'Verified';
+  const name = detail.fullName || detail.full_name || 'Donor';
+  const sections = [
+    renderDetailSection('Registration information', [
+      renderField('Full name', name),
+      renderField('Email', detail.email),
+      renderField('Phone', detail.phone),
+      renderField('Address', detail.address),
+      renderField('City', detail.city),
+      renderField('District', detail.district),
+      renderField('Blood group', detail.bloodGroup || detail.blood_group),
+      renderField('Availability', detail.is_available === false ? 'No' : (detail.is_available === true ? 'Yes' : '-')),
+      renderField('Total donations', detail.total_donations),
+      renderField('Last donated at', detail.last_donated_at ? formatDate(detail.last_donated_at) : '-'),
+      renderField('Created at', formatDate(detail.created_at)),
+    ]),
+    renderDetailSection('Verification status', [
+      renderField('Verification status', `<span class="pill ${status.toLowerCase()}">${escapeHtml(status)}</span>`, false, true),
+    ]),
+    renderDetailSection('Verification documents', [
+      renderField('Document type', detail.blood_verification_document_type),
+      renderField('Document name', detail.blood_verification_document_name),
+    ]),
+  ].filter(Boolean).join('');
+
+  const media = [];
+  if (detail.profile_picture || detail.profile_image_data) media.push(renderPreviewCard(detail.profile_picture || detail.profile_image_data, detail.profile_picture_name || detail.profile_image_name || 'Profile picture', 'Profile picture'));
+  if (detail.blood_verification_document_file) media.push(renderPreviewCard(detail.blood_verification_document_file, detail.blood_verification_document_name || 'Verification document', 'Verification document'));
+
+  return `
+    <div class="detail-shell">
+      <div class="detail-head">
+        <div class="left">
+          <div class="detail-title-row">
+            <h2>${escapeHtml(name)}</h2>
+            <span class="pill ${status.toLowerCase()}">${escapeHtml(status)}</span>
+          </div>
+        </div>
+      </div>
+      ${media.length ? `<div class="preview-grid">${media.join('')}</div>` : ''}
+      <div class="detail-body">${sections}</div>
+      <div class="detail-footer">
+        <div class="detail-actions">
+          ${isVerified ? '<button type="button" class="action-btn-danger" data-action="remove-user">Remove User</button>' : '<button type="button" class="action-btn" data-action="verify">Verify</button><button type="button" class="action-btn-danger" data-action="delete">Delete</button>'}
+          <button type="button" class="action-btn-secondary" data-action="close-detail">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderBloodLog(items, totalUnits, emptyMessage) {
+  if (!items.length) {
+    return `<div class="empty-state">${escapeHtml(emptyMessage)}</div>`;
+  }
+  const rows = items.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.donorName || item.donor_name || item.applicantName || 'Unknown')}</td>
+      <td>${escapeHtml(item.bloodGroup || item.blood_group || '—')}</td>
+      <td>${escapeHtml(String(item.units ?? item.units_donated ?? '—'))}</td>
+    </tr>
+  `).join('');
+  return `
+    <div class="detail-section">
+      <div class="log-summary">
+        <h3>Donation Log</h3>
+        <strong>Total Units Collected: ${escapeHtml(String(totalUnits || 0))}</strong>
+      </div>
+      <div class="table-shell">
+        <table class="data-table log-table">
+          <thead>
+            <tr>
+              <th>Donor</th>
+              <th>Blood Type</th>
+              <th>Units</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderCampaignDetail(detail) {
+  const section = String(detail.section || '').toLowerCase();
+  const statusLabel = campaignSectionLabel(section);
+  const requirements = Array.isArray(detail.bloodRequirements) ? detail.bloodRequirements : [];
+  const requirementItems = requirements.map((req) => renderField(`${req.bloodGroup || req.blood_group}`, `${Number(req.unitsRequired || req.units_required || 0)} unit${Number(req.unitsRequired || req.units_required || 0) === 1 ? '' : 's'}`));
+  const sections = [
+    renderDetailSection('Campaign information', [
+      renderField('Title', detail.title),
+      renderField('Organization', detail.orgName || detail.org || '-'),
+      renderField('Location', detail.location),
+      renderField('Date', formatDate(detail.date || detail.event_date)),
+      renderField('Time', detail.time || detail.time_range),
+      renderField('Type', detail.type || detail.event_type),
+      renderField('Status', `<span class="pill ${section}">${escapeHtml(statusLabel)}</span>`, false, true),
+    ]),
+    renderDetailSection('Blood requirements', requirementItems.length ? requirementItems : [
+      renderField('Blood groups required', detail.bloodGroupNeeded || detail.blood_group_needed || '-', true),
+    ]),
+  ].filter(Boolean).join('');
+
+  const logSection = section === 'upcoming'
+    ? ''
+    : renderBloodLog(detail.donationLog || [], detail.totalUnitsCollected || 0, 'No completed donations recorded yet.');
+
+  return `
+    <div class="detail-shell">
+      <div class="detail-head">
+        <div class="left">
+          <div class="detail-title-row">
+            <h2>${escapeHtml(detail.title || 'Campaign')}</h2>
+            <span class="pill ${section}">${escapeHtml(statusLabel)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-body">${sections}${logSection ? logSection : ''}</div>
+      <div class="detail-footer">
+        <div class="detail-actions">
+          <button type="button" class="action-btn-secondary" data-action="close-detail">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRequestDetail(detail) {
+  const status = String(detail.status || '').toLowerCase();
+  const statusLabel = requestStatusLabel(status);
+  const sections = [
+    renderDetailSection('Request information', [
+      renderField('Organization', detail.orgName || detail.org || '-'),
+      renderField('Hospital name', detail.hospitalName || detail.hospital_name),
+      renderField('Blood group', detail.bloodGroup || detail.blood_group),
+      renderField('Units needed', detail.unitsNeeded || detail.units_needed),
+      renderField('Urgency', detail.urgency),
+      renderField('Status', `<span class="pill ${requestStatusClass(status)}">${escapeHtml(statusLabel)}</span>`, false, true),
+      renderField('Required by', detail.requiredBy ? formatDate(detail.requiredBy) : '-'),
+      renderField('Created date', formatDate(detail.createdAt)),
+    ]),
+    renderDetailSection('Location and contact', [
+      renderField('Hospital address', detail.hospitalAddress || detail.hospital_address),
+      renderField('City', detail.city),
+      renderField('District', detail.district),
+      renderField('Contact person', detail.contactPerson || detail.contact_person),
+      renderField('Contact number', detail.contactNumber || detail.contact_number),
+      renderField('Patient type', detail.patientType || detail.patient_type),
+    ]),
+    renderDetailSection('Additional notes', [
+      renderField('Additional note', detail.additionalNote || detail.additional_note || '-', true),
+    ]),
+  ].filter(Boolean).join('');
+
+  const donationLog = Array.isArray(detail.donationLog) ? detail.donationLog : [];
+  const logSection = donationLog.length ? renderBloodLog(donationLog, detail.totalUnitsCollected || 0, 'No confirmed donations recorded yet.') : '';
+
+  return `
+    <div class="detail-shell">
+      <div class="detail-head">
+        <div class="left">
+          <div class="detail-title-row">
+            <h2>${escapeHtml(detail.hospitalName || 'Blood request')}</h2>
+            <span class="pill ${requestStatusClass(status)}">${escapeHtml(statusLabel)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-body">${sections}${logSection}</div>
+      <div class="detail-footer">
+        <div class="detail-actions">
+          <button type="button" class="action-btn-secondary" data-action="close-detail">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderContent() {
+  renderTopNavigation();
+  renderSectionHeader();
+  renderSubnav();
+  renderToolbar();
+  const container = document.getElementById('content');
+
+  if (state.viewMode === 'detail') {
+    if (state.detailLoading) {
+      container.innerHTML = '<div class="loading">Loading details...</div>';
+      return;
+    }
+    if (state.detailError) {
+      container.innerHTML = `
+        <div class="error-state">
+          <strong>Unable to load details.</strong>
+          <div style="margin-top:8px">${escapeHtml(state.detailError)}</div>
+          <div style="margin-top:14px">
+            <button type="button" class="action-btn-secondary" data-action="close-detail">Close</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    if (!state.detail) {
+      container.innerHTML = '<div class="loading">Loading details...</div>';
+      return;
+    }
+
+    if (state.activeSection === 'organizations') {
+      container.innerHTML = renderOrganizationDetail(state.detail);
+      return;
+    }
+    if (state.activeSection === 'donors') {
+      container.innerHTML = renderDonorDetail(state.detail);
+      return;
+    }
+    if (state.activeSection === 'campaigns') {
+      container.innerHTML = renderCampaignDetail(state.detail);
+      return;
+    }
+    container.innerHTML = renderRequestDetail(state.detail);
+    return;
+  }
+
+  renderListState();
+}
+
+async function loadActiveList() {
+  const section = state.activeSection;
+  const config = sectionConfig(section);
+  const subsectionId = activeSubsection(section);
+  const subsection = config.subsections.find((item) => item.id === subsectionId) || config.subsections[0];
+  const token = ++requestTokens.list;
+  state.listLoading = true;
+  state.listError = '';
+  state.currentItems = [];
+  state.currentCount = 0;
+  updateToolbarMeta();
+  renderListState();
+
+  try {
+    const payload = await apiFetch(config.api, {
+      query: {
+        [config.queryKey]: subsection.value,
+        search: state.searchTerms[section] || '',
+      },
+    });
+    if (token !== requestTokens.list) return;
+    state.currentItems = Array.isArray(payload.data) ? payload.data : [];
+    state.currentCount = state.currentItems.length;
+    state.listLoading = false;
+    updateToolbarMeta();
+    renderListState();
+  } catch (error) {
+    if (token !== requestTokens.list) return;
+    state.listLoading = false;
+    state.listError = error.message || 'Unable to load records.';
+    updateToolbarMeta();
+    renderListState();
+  }
+}
+
+function normalizeDetailData(section, payload) {
+  const data = payload?.data ?? payload?.organization ?? payload?.donor ?? payload?.campaign ?? payload?.request ?? payload;
+  if (section === 'campaigns' || section === 'requests') {
+    return data || null;
+  }
+  return data || null;
+}
+
+async function openDetail(itemId) {
+  const section = state.activeSection;
+  const config = sectionConfig(section);
+  const token = ++requestTokens.detail;
+  state.viewMode = 'detail';
+  state.detailLoading = true;
+  state.detailError = '';
+  state.detail = null;
+  renderContent();
+
+  try {
+    const payload = await apiFetch(config.detailApi(itemId));
+    if (token !== requestTokens.detail) return;
+    state.detail = normalizeDetailData(section, payload);
+    state.detailLoading = false;
+    renderContent();
+  } catch (error) {
+    if (token !== requestTokens.detail) return;
+    state.detailLoading = false;
+    state.detailError = error.message || 'Unable to load details.';
+    renderContent();
+  }
+}
+
+function backToList() {
+  state.viewMode = 'list';
+  state.detail = null;
+  state.detailError = '';
+  renderContent();
+}
+
+function setActiveSection(section) {
+  if (!SECTION_CONFIG[section]) return;
+  state.activeSection = section;
+  state.viewMode = 'list';
+  state.detail = null;
+  state.detailError = '';
+  clearTimeout(searchTimers[section]);
+  history.replaceState(null, '', `#${section}`);
+  renderContent();
+  loadActiveList();
+}
+
+function setActiveSubsection(subsectionId) {
+  state.activeSubsections[state.activeSection] = subsectionId;
+  state.viewMode = 'list';
+  state.detail = null;
+  state.detailError = '';
+  renderContent();
+  loadActiveList();
+}
+
+function scheduleSearchLoad(section = state.activeSection) {
+  clearTimeout(searchTimers[section]);
+  searchTimers[section] = window.setTimeout(() => {
+    if (state.activeSection !== section || state.viewMode !== 'list') {
+      return;
+    }
+    loadActiveList();
+  }, 220);
+}
+
+async function verifyOrganization(detail) {
+  const name = detail.orgName || detail.name || 'this organization';
+  const confirmed = await askConfirm({
+    title: 'Verify Organization',
+    message: `Verify ${name}? This will mark the organization as verified and send a confirmation email to the registered account.`,
+    confirmLabel: 'Verify',
+  });
+  if (!confirmed) return;
+  try {
+    const payload = await apiFetch(SECTION_CONFIG.organizations.verifyApi(detail.orgId || detail.org_id), {
+      method: 'POST',
+      body: { email: state.user.email, role: 'admin', action: 'approve' },
+    });
+    showNotice(payload.message || 'Organization verified successfully.', 'success');
+    state.activeSubsections.organizations = 'verified';
+    backToList();
+    await loadActiveList();
+  } catch (error) {
+    showNotice(error.message || 'Unable to verify organization.', 'error');
+  }
+}
+
+async function deleteOrganization(detail, removeOnly = false) {
+  const name = detail.orgName || detail.name || 'this organization';
+  const confirmed = await askConfirm({
+    title: removeOnly ? 'Remove User' : 'Delete Organization',
+    message: removeOnly
+      ? `Remove this user? This will permanently remove the user account from SaveABeat. This action cannot be undone.`
+      : `Delete ${name}? This will permanently remove the organization and its linked user account from SaveABeat. This action cannot be undone.`,
+    confirmLabel: removeOnly ? 'Remove User' : 'Delete',
+  });
+  if (!confirmed) return;
+  try {
+    const payload = await apiFetch(SECTION_CONFIG.organizations.deleteApi(detail.orgId || detail.org_id), {
+      method: 'DELETE',
+      body: { email: state.user.email, role: 'admin' },
+    });
+    showNotice(payload.message || 'Organization deleted successfully.', 'success');
+    backToList();
+    await loadActiveList();
+  } catch (error) {
+    showNotice(error.message || 'Unable to delete organization.', 'error');
+  }
+}
+
+async function verifyDonor(detail) {
+  const name = detail.fullName || detail.full_name || 'this donor';
+  const confirmed = await askConfirm({
+    title: 'Verify Donor',
+    message: `Verify ${name}? This will mark the donor as verified and send a confirmation email to the registered account.`,
+    confirmLabel: 'Verify',
+  });
+  if (!confirmed) return;
+  try {
+    const payload = await apiFetch(SECTION_CONFIG.donors.verifyApi(detail.user_id || detail.userId), {
+      method: 'POST',
+      body: { email: state.user.email, role: 'admin', action: 'approve' },
+    });
+    showNotice(payload.message || 'Donor verified successfully.', 'success');
+    state.activeSubsections.donors = 'verified';
+    backToList();
+    await loadActiveList();
+  } catch (error) {
+    showNotice(error.message || 'Unable to verify donor.', 'error');
+  }
+}
+
+async function deleteDonor(detail, removeOnly = false) {
+  const name = detail.fullName || detail.full_name || 'this donor';
+  const confirmed = await askConfirm({
+    title: removeOnly ? 'Remove User' : 'Delete Donor',
+    message: removeOnly
+      ? `Remove this user? This will permanently remove the user account from SaveABeat. This action cannot be undone.`
+      : `Delete ${name}? This will permanently remove the donor and linked user account from SaveABeat. This action cannot be undone.`,
+    confirmLabel: removeOnly ? 'Remove User' : 'Delete',
+  });
+  if (!confirmed) return;
+  try {
+    const payload = await apiFetch(SECTION_CONFIG.donors.deleteApi(detail.user_id || detail.userId), {
+      method: 'DELETE',
+      body: { email: state.user.email, role: 'admin' },
+    });
+    showNotice(payload.message || 'Donor deleted successfully.', 'success');
+    backToList();
+    await loadActiveList();
+  } catch (error) {
+    showNotice(error.message || 'Unable to delete donor.', 'error');
+  }
+}
+
+async function handleDetailAction(action) {
+  const detail = state.detail;
+  if (!detail) return;
+
+  if (action === 'close-detail') {
+    backToList();
+    return;
+  }
+
+  if (state.activeSection === 'organizations') {
+    if (action === 'verify') {
+      await verifyOrganization(detail);
+      return;
+    }
+    if (action === 'delete') {
+      await deleteOrganization(detail, false);
+      return;
+    }
+    if (action === 'remove-user') {
+      await deleteOrganization(detail, true);
+      return;
+    }
+    return;
+  }
+
+  if (state.activeSection === 'donors') {
+    if (action === 'verify') {
+      await verifyDonor(detail);
+      return;
+    }
+    if (action === 'delete') {
+      await deleteDonor(detail, false);
+      return;
+    }
+    if (action === 'remove-user') {
+      await deleteDonor(detail, true);
+      return;
+    }
+  }
+}
+
+function ensureProfileMenuClosed() {
   const menu = document.getElementById('profileMenu');
   const shell = document.getElementById('profileShell');
   const trigger = document.getElementById('profileTrigger');
@@ -940,7 +1521,7 @@ function closeProfileMenu(){
   trigger?.setAttribute('aria-expanded', 'false');
 }
 
-function toggleProfileMenu(){
+function toggleProfileMenu() {
   const menu = document.getElementById('profileMenu');
   const shell = document.getElementById('profileShell');
   const trigger = document.getElementById('profileTrigger');
@@ -949,624 +1530,129 @@ function toggleProfileMenu(){
   trigger?.setAttribute('aria-expanded', String(isOpen));
 }
 
-async function openDetailModal(type, item){
-  const normalizedItem = type === 'donor' ? normalizeDonorRecord(item) : item;
-  currentDetail = { type, item: normalizedItem };
-  const backdrop = document.getElementById('detailBackdrop');
-  const title = document.getElementById('detailTitle');
-  const subtitle = document.getElementById('detailSubtitle');
-  const grid = document.getElementById('detailGrid');
-  const stopBtn = document.getElementById('detailStopBtn');
-  const deleteBtn = document.getElementById('detailDeleteBtn');
-  const verifyBtn = document.getElementById('detailVerifyBtn');
-  const rejectBtn = document.getElementById('detailRejectBtn');
-  const editBtn = document.getElementById('detailEditBtn');
-
-  if(!backdrop || !title || !subtitle || !grid || !stopBtn || !deleteBtn || !verifyBtn || !rejectBtn || !editBtn){
-    return;
-  }
-
-  if(type === 'org'){
-    title.textContent = normalizedItem.orgName || normalizedItem.name || 'Organization Details';
-    subtitle.textContent = normalizedItem.verification_status || (normalizedItem.verified ? 'Verified account' : 'Pending verification');
-
-    const gridItems = [
-      ['Organization', normalizedItem.orgName || normalizedItem.name || '-'],
-      ['Organization Type', normalizedItem.org_type || '-'],
-      ['District', normalizedItem.district || '-'],
-      ['Municipality', normalizedItem.city || '-'],
-      ['Verification Status', normalizedItem.verification_status || (normalizedItem.verified ? 'Verified' : 'Pending')],
-    ];
-
-    if(normalizedItem.verification_document_type){
-      gridItems.push(['Verification Document Type', normalizedItem.verification_document_type]);
-    }
-
-    if(normalizedItem.verification_document_file){
-      gridItems.push(['Verification Document', `<a href="${escapeHtml(normalizedItem.verification_document_file)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
-    } else if(normalizedItem.verification_documents){
-      gridItems.push(['Legal Document', `<a href="${escapeHtml(normalizedItem.verification_documents)}" target="_blank" rel="noopener noreferrer" style="color: var(--red); text-decoration: none; font-weight: 600;">View Document</a>`]);
-    }
-
-    grid.innerHTML = gridItems.map(([label, value]) => `
-      <div class="detail-item">
-        <div class="label">${escapeHtml(label)}</div>
-        <div class="value">${value}</div>
-      </div>
-    `).join('');
-
-    stopBtn.style.display = 'none';
-    deleteBtn.style.display = 'none';
-    verifyBtn.textContent = 'Approve Account';
-    verifyBtn.style.display = (!normalizedItem.verified && normalizeDonorStatus(normalizedItem.verification_status) !== 'Verified' && normalizeDonorStatus(normalizedItem.verification_status) !== 'Rejected') ? 'inline-flex' : 'none';
-    rejectBtn.style.display = (!normalizedItem.verified && normalizeDonorStatus(normalizedItem.verification_status) !== 'Verified' && normalizeDonorStatus(normalizedItem.verification_status) !== 'Rejected') ? 'inline-flex' : 'none';
-    editBtn.style.display = 'none';
-  } else if(type === 'donor'){
-    const donor = normalizedItem || {};
-    title.textContent = donor.fullName || 'Donor Details';
-    subtitle.textContent = donor.email
-      ? `${donor.email} • ${normalizeDonorStatus(donor.verification_status)}`
-      : normalizeDonorStatus(donor.verification_status) || 'Pending verification';
-
-    grid.innerHTML = buildDonorDetailMarkup(donor);
-
-    stopBtn.style.display = 'none';
-    deleteBtn.textContent = 'Delete Donor';
-    deleteBtn.style.display = 'inline-flex';
-    verifyBtn.textContent = 'Verify';
-    verifyBtn.style.display = normalizeDonorStatus(donor.verification_status) === 'Pending' ? 'inline-flex' : 'none';
-    rejectBtn.style.display = 'none';
-    editBtn.style.display = 'none';
-
-    backdrop.classList.add('open');
-    backdrop.setAttribute('aria-hidden', 'false');
-
-    if(donor.user_id){
-      try{
-        const detailedDonor = await fetchDonorDetails(donor.user_id);
-        if(currentDetail?.type === 'donor' && Number(currentDetail.item?.user_id) === Number(donor.user_id)){
-          currentDetail.item = detailedDonor;
-          title.textContent = detailedDonor.fullName || 'Donor Details';
-          subtitle.textContent = detailedDonor.email
-            ? `${detailedDonor.email} • ${normalizeDonorStatus(detailedDonor.verification_status)}`
-            : normalizeDonorStatus(detailedDonor.verification_status) || 'Pending verification';
-          grid.innerHTML = buildDonorDetailMarkup(detailedDonor);
-          verifyBtn.style.display = normalizeDonorStatus(detailedDonor.verification_status) === 'Pending' ? 'inline-flex' : 'none';
-        }
-      }catch(error){
-        console.warn('Unable to load donor details:', error);
-      }
-    }
-
-    return;
-  } else {
-    title.textContent = normalizedItem.title || 'Campaign Details';
-    subtitle.textContent = normalizedItem.orgName || normalizedItem.org || 'Campaign information';
-
-    const bloodGroups = normalizedItem.bloodRequirements && normalizedItem.bloodRequirements.length
-      ? normalizedItem.bloodRequirements.map(r => r.bloodGroup).join(', ')
-      : 'All';
-
-    let gridHtml = [
-      ['Campaign', normalizedItem.title || '-'],
-      ['Organization', normalizedItem.org || normalizedItem.orgName || '-'],
-      ['Type', normalizedItem.type || '-'],
-      ['Date', formatDateString(normalizedItem.date)],
-      ['Time', normalizedItem.time || '-'],
-      ['Location', normalizedItem.location || '-'],
-      ['Blood Groups', bloodGroups],
-    ].map(([label, value]) => `
-      <div class="detail-item">
-        <div class="label">${escapeHtml(label)}</div>
-        <div class="value">${escapeHtml(value)}</div>
-      </div>
-    `).join('');
-
-    if(normalizedItem.bloodRequirements && normalizedItem.bloodRequirements.length){
-      gridHtml += `
-        <div class="detail-item full-width">
-          <div class="label">Blood Requirements</div>
-          <div class="blood-table-wrapper">
-            <table class="blood-table">
-              <thead>
-                <tr>
-                  <th>Blood Group</th>
-                  <th>Units</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${normalizedItem.bloodRequirements.map(r => `
-                  <tr>
-                    <td>${escapeHtml(r.bloodGroup)}</td>
-                    <td>${Number(r.unitsRequired)} ${Number(r.unitsRequired) === 1 ? 'Unit' : 'Units'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    grid.innerHTML = gridHtml;
-    stopBtn.style.display = normalizedItem.state === 'completed' ? 'none' : 'inline-flex';
-    deleteBtn.textContent = 'Delete Campaign';
-    deleteBtn.style.display = 'inline-flex';
-    verifyBtn.style.display = 'none';
-    rejectBtn.style.display = 'none';
-    editBtn.style.display = 'none';
-  }
-
-  backdrop.classList.add('open');
-  backdrop.setAttribute('aria-hidden', 'false');
-}
-
-function closeDetailModal(){
-  const backdrop = document.getElementById('detailBackdrop');
-  if(!backdrop) return;
-  backdrop.classList.remove('open');
-  backdrop.setAttribute('aria-hidden', 'true');
-  currentDetail = null;
-}
-
-async function modifyCampaign(action){
-  const user = getStoredUser();
-  const detail = currentDetail;
-  if(!user || !detail || detail.type !== 'campaign'){
-    return;
-  }
-
-  try{
-    const endpoint = action === 'stop'
-      ? `/api/org/campaigns/${detail.item.id}/stop`
-      : `/api/org/campaigns/${detail.item.id}`;
-    const response = await fetch(endpoint, {
-      method: action === 'stop' ? 'POST' : 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: user.email, role: user.role }),
-    });
-    const payload = await readJsonResponse(response);
-    if(!response.ok){
-      alert(payload.message || `Unable to ${action} campaign.`);
-      return;
-    }
-
-    closeDetailModal();
-    await loadAdminData();
-    const actionLabel = action === 'stop' ? 'stopped' : 'deleted';
-    alert(payload.message || `Campaign ${actionLabel} successfully.`);
-  }catch(error){
-    alert(error.message || `Unable to ${action} campaign.`);
-  }
-}
-
-async function verifyOrganization(){
-  await handleVerificationAction('approve');
-}
-
-async function rejectOrganization(){
-  await handleVerificationAction('reject');
-}
-
-async function handleVerificationAction(action){
-  const user = getStoredUser();
-  const detail = currentDetail;
-  if(!user || !detail || detail.type !== 'org'){
-    return;
-  }
-
-  try{
-    const response = await fetch(`/api/org/${detail.item.orgId}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: user.email, role: user.role, action }),
-    });
-    const payload = await readJsonResponse(response);
-    if(!response.ok){
-      alert(payload.message || `Unable to ${action} organization.`);
-      return;
-    }
-
-    closeDetailModal();
-    await loadAdminData();
-    alert(payload.message || `Organization ${action}ed successfully.`);
-  }catch(error){
-    alert(error.message || `Unable to ${action} organization.`);
-  }
-}
-
-async function verifyDonor(){
-  const detail = currentDetail;
-  if(!detail || detail.type !== 'donor'){
-    return;
-  }
-
-  if(!window.confirm('Verify this donor account? This will update the database and send a verification email to the donor.')){
-    return;
-  }
-
-  await handleDonorVerificationAction('verify');
-}
-
-async function rejectDonor(){
-  await handleDonorVerificationAction('reject');
-}
-
-async function handleDonorVerificationAction(action){
-  const user = getStoredUser();
-  const detail = currentDetail;
-  if(!user || !detail || detail.type !== 'donor'){
-    return;
-  }
-
-  try{
-    const response = await fetch(`/api/admin/donors/${detail.item.user_id}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: user.email, role: user.role, action }),
-    });
-    const payload = await readJsonResponse(response);
-    if(!response.ok){
-      alert(payload.message || `Unable to ${action} donor.`);
-      return;
-    }
-
-    closeDetailModal();
-    await loadAdminData();
-    const fallbackMessage = action === 'reject' ? 'Donor rejected successfully.' : 'Donor verified successfully.';
-    alert(payload.message || fallbackMessage);
-  }catch(error){
-    alert(error.message || `Unable to ${action} donor.`);
-  }
-}
-
-async function deleteDonor(){
-  const user = getStoredUser();
-  const detail = currentDetail;
-  if(!user || !detail || detail.type !== 'donor'){
-    return;
-  }
-
-  try{
-    const response = await fetch(`/api/admin/donors/${detail.item.user_id}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: user.email, role: user.role }),
-    });
-    const payload = await readJsonResponse(response);
-    if(!response.ok){
-      alert(payload.message || 'Unable to delete donor.');
-      return;
-    }
-
-    closeDetailModal();
-    await loadAdminData();
-    alert(payload.message || 'Donor deleted successfully.');
-  }catch(error){
-    alert(error.message || 'Unable to delete donor.');
-  }
-}
-
-function summaryLabel(org){
-  return org.verification_status || (org.verified ? 'Verified' : 'Pending');
-}
-
-function organizationCardMarkup(org){
-  const verificationStatus = org.verification_status || (org.verified ? 'Verified' : 'Pending');
-  const badgeClass = verificationStatus === 'Approved' || org.verified ? 'completed' : '';
-  return `
-    <article class="card">
-      <div class="card-img">
-        <img src="${escapeHtml(org.img || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=900&auto=format&fit=crop&q=70')}" alt="${escapeHtml(org.orgName || org.name)}" loading="lazy"/>
-        <span class="badge ${badgeClass}">${verificationStatus}</span>
-      </div>
-      <div class="body">
-        <h3>${escapeHtml(org.orgName || org.name)}</h3>
-        <p>${escapeHtml(org.district || 'District not listed')}, ${escapeHtml(org.city || 'City not listed')}</p>
-        <div class="card-actions">
-          <button class="detail-btn" type="button" data-detail-kind="org" data-detail-data="${encodeDetailData(org)}">View Details</button>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
-function donorCardMarkup(donor){
-  const status = normalizeDonorStatus(donor.verification_status);
-  const statusClass = donorStatusClass(status);
-  const registrationDate = donor.created_at ? formatDateString(donor.created_at) : '-';
-  const location = donor.city || donor.district || 'Location not listed';
-  return `
-    <tr>
-      <td>
-        <div class="table-name">
-          <span class="table-avatar">${escapeHtml(initialForName(donor.fullName || donor.email || 'D'))}</span>
-          <div class="table-name-text">
-            <strong>${escapeHtml(donor.fullName || '-')}</strong>
-            <span>${escapeHtml(location)}</span>
-          </div>
-        </div>
-      </td>
-      <td>${escapeHtml(donor.email || '-')}</td>
-      <td>${escapeHtml(donor.bloodGroup || '-')}</td>
-      <td>${escapeHtml(registrationDate)}</td>
-      <td><span class="status-pill ${statusClass}">${escapeHtml(status)}</span></td>
-      <td>
-        <div class="table-actions">
-          <button class="detail-btn" type="button" data-detail-kind="donor" data-detail-id="${escapeHtml(String(donor.user_id || ''))}">View Details</button>
-        </div>
-      </td>
-    </tr>
-  `;
-}
-
-function campaignCardMarkup(campaign, variant){
-  const badge = variant === 'completed' ? 'Completed' : 'Upcoming';
-  return `
-    <article class="card">
-      <div class="card-img">
-        <img src="${escapeHtml(campaign.img || 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=900&auto=format&fit=crop&q=70')}" alt="${escapeHtml(campaign.title)}" loading="lazy"/>
-        <span class="badge ${variant}">${badge}</span>
-      </div>
-      <div class="body">
-        <h3>${escapeHtml(campaign.title)}</h3>
-        <p>${escapeHtml(campaign.org || campaign.orgName || '')}</p>
-        <div class="meta-row">
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>${escapeHtml(campaign.date || '-')}</span>
-          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-7 7c0 4.2 4.3 8.7 6.3 10.5.4.4 1 .4 1.4 0C14.7 17.7 19 13.2 19 9a7 7 0 00-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(campaign.location || '-')}</span>
-        </div>
-        <div class="card-stats">
-          <div class="stat-box"><strong>${escapeHtml(campaign.type || 'Drive')}</strong><span>Type</span></div>
-          <div class="stat-box"><strong>${escapeHtml(`${campaign.spots ?? 0} / ${campaign.total ?? 0}`)}</strong><span>Spots</span></div>
-        </div>
-        <div class="card-actions">
-          <button class="detail-btn" type="button" data-detail-kind="campaign" data-detail-data="${encodeDetailData(campaign)}">View Details</button>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
-function filterOrganizations(){
-  const q = String(document.getElementById('orgSearch')?.value || '').trim().toLowerCase();
-  const status = String(document.getElementById('orgFilter')?.value || '').trim();
-  return adminState.organizations.filter((org) => {
-    const matchesQ = !q || [org.orgName, org.name, org.district, org.city, org.phone, ...(org.services || [])].some((field) => String(field || '').toLowerCase().includes(q));
-    const matchesStatus = !status || summaryLabel(org) === status;
-    return matchesQ && matchesStatus;
-  });
-}
-
-function filterDonors(){
-  const q = String(document.getElementById('donorSearch')?.value || '').trim().toLowerCase();
-  const status = String(document.getElementById('donorFilter')?.value || '').trim();
-  return adminState.donors.filter((donor) => {
-    const matchesQ = !q || [donor.fullName, donor.email, donor.bloodGroup, donor.district, donor.city, donor.phone].some((field) => String(field || '').toLowerCase().includes(q));
-    const matchesStatus = !status || normalizeDonorStatus(donor.verification_status) === status;
-    return matchesQ && matchesStatus;
-  });
-}
-
-function filterCampaigns(kind){
-  const q = String(document.getElementById(`${kind}Search`)?.value || '').trim().toLowerCase();
-  const type = String(document.getElementById(`${kind}Type`)?.value || '').trim();
-  return adminState.campaigns.filter((campaign) => {
-    const isTypeMatch = kind === 'completed'
-      ? campaign.state === 'completed'
-      : campaign.state === 'upcoming';
-    const matchesQ = !q || [campaign.title, campaign.location, campaign.org, campaign.date, campaign.time].some((field) => String(field || '').toLowerCase().includes(q));
-    const matchesType = !type || String(campaign.type || '') === type;
-    return isTypeMatch && matchesQ && matchesType;
-  });
-}
-
-function renderOrganizations(){
-  const grid = document.getElementById('orgGrid');
-  const items = filterOrganizations();
-  if(!items.length){
-    grid.innerHTML = '<div class="empty-state">No organizations match the current filters.</div>';
-    return;
-  }
-  grid.innerHTML = items.map(organizationCardMarkup).join('');
-}
-
-function renderDonors(){
-  const grid = document.getElementById('donorGrid');
-  const items = filterDonors();
-  if(!items.length){
-    grid.innerHTML = '<div class="empty-state">No donors match the current filters.</div>';
-    return;
-  }
-  grid.innerHTML = `
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Blood Group</th>
-          <th>Registration Date</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${items.map(donorCardMarkup).join('')}
-      </tbody>
-    </table>
-  `;
-}
-
-function renderCampaigns(kind){
-  const grid = document.getElementById(kind === 'completed' ? 'completedGrid' : 'upcomingGrid');
-  const items = filterCampaigns(kind);
-  if(!items.length){
-    grid.innerHTML = `<div class="empty-state">No ${kind} campaigns match the current filters.</div>`;
-    return;
-  }
-  grid.innerHTML = items.map((campaign) => campaignCardMarkup(campaign, kind)).join('');
-}
-
-async function loadAdminData(){
-  const storedUser = getStoredUser();
-  if(!storedUser || storedUser.role !== 'admin'){
-    location.href = 'login.html?role=admin';
-    return;
-  }
-
-  document.getElementById('adminNameDisplay').textContent = storedUser.fullName || 'Admin';
-  document.getElementById('profileInitial').textContent = initialForName(storedUser.fullName || storedUser.email || 'A');
-
-  try{
-    const donorParams = new URLSearchParams({
-      email: storedUser.email,
-      role: storedUser.role,
-    });
-    const [centersResp, eventsResp, donorsResp] = await Promise.all([
-      fetch('/api/centers'),
-      fetch('/api/events'),
-      fetch(`/api/admin/donors?${donorParams.toString()}`)
-    ]);
-
-    const centersJson = await readJsonResponse(centersResp);
-    const eventsJson = await readJsonResponse(eventsResp);
-    const donorsJson = await readJsonResponse(donorsResp);
-    if(!donorsResp.ok){
-      throw new Error(donorsJson.message || 'Unable to load donors.');
-    }
-    const centers = centersJson.data || [];
-    const events = eventsJson.data || [];
-    const donors = (donorsJson.data || []).map(normalizeDonorRecord);
-
-    adminState.organizations = centers;
-    adminState.campaigns = events.map((event) => ({
-      ...event,
-      state: event.status === 'stopped' ? 'completed' : 'upcoming',
-    }));
-    adminState.donors = donors;
-
-    document.getElementById('summaryOrgs').textContent = String(centers.length);
-    document.getElementById('summaryCompleted').textContent = String(adminState.campaigns.filter((item) => item.state === 'completed').length);
-    document.getElementById('summaryUpcoming').textContent = String(adminState.campaigns.filter((item) => item.state === 'upcoming').length);
-    document.getElementById('summaryTotal').textContent = String(adminState.campaigns.length);
-
-    renderOrganizations();
-    renderDonors();
-    renderCampaigns('completed');
-    renderCampaigns('upcoming');
-  }catch(error){
-    const message = escapeHtml(error.message || 'Unable to load admin data.');
-    document.getElementById('orgGrid').innerHTML = `<div class="empty-state">${message}</div>`;
-    document.getElementById('donorGrid').innerHTML = `<div class="empty-state">${message}</div>`;
-    document.getElementById('completedGrid').innerHTML = `<div class="empty-state">${message}</div>`;
-    document.getElementById('upcomingGrid').innerHTML = `<div class="empty-state">${message}</div>`;
-  }
-}
-
-function logout(){
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  sessionStorage.removeItem(AUTH_STORAGE_KEY);
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_KEY);
   location.replace('index.html');
 }
 
-document.getElementById('adminLogo')?.addEventListener('click', (event) => {
-  event.preventDefault();
-  setActiveTab('organizations');
-  document.getElementById('organizations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
+function attachEvents() {
+  const toolbar = document.getElementById('toolbar');
+  const confirmBackdrop = document.getElementById('confirmBackdrop');
 
-document.querySelectorAll('.nav-tab').forEach((link) => {
-  link.addEventListener('click', (event) => {
-    event.preventDefault();
-    const targetTab = link.dataset.tab;
-    setActiveTab(targetTab);
-    document.getElementById(targetTab === 'organizations' ? 'organizations' : `${targetTab}-campaigns`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.main-nav button').forEach((button) => {
+    button.addEventListener('click', () => setActiveSection(button.dataset.section));
   });
-});
 
-document.getElementById('profileTrigger')?.addEventListener('click', toggleProfileMenu);
-document.getElementById('logoutBtn')?.addEventListener('click', logout);
-document.getElementById('detailCloseBtn')?.addEventListener('click', closeDetailModal);
-document.getElementById('detailVerifyBtn')?.addEventListener('click', () => {
-  if(currentDetail?.type === 'donor'){
-    verifyDonor();
-  } else {
-    verifyOrganization();
-  }
-});
-document.getElementById('detailRejectBtn')?.addEventListener('click', () => {
-  if(currentDetail?.type === 'donor'){
-    rejectDonor();
-  } else {
-    rejectOrganization();
-  }
-});
-document.getElementById('detailStopBtn')?.addEventListener('click', () => modifyCampaign('stop'));
-document.getElementById('detailDeleteBtn')?.addEventListener('click', () => {
-  const detail = currentDetail;
-  if(detail?.type === 'donor' && window.confirm('Delete this donor? This action cannot be undone.')){
-    deleteDonor();
-  } else if(detail?.type === 'campaign' && window.confirm('Delete this campaign? This action cannot be undone.')){
-    modifyCampaign('delete');
-  }
-});
-document.getElementById('detailBackdrop')?.addEventListener('click', (event) => {
-  if(event.target.id === 'detailBackdrop'){
-    closeDetailModal();
-  }
-});
-document.getElementById('orgSearch')?.addEventListener('input', renderOrganizations);
-document.getElementById('orgFilter')?.addEventListener('change', renderOrganizations);
-document.getElementById('donorSearch')?.addEventListener('input', renderDonors);
-document.getElementById('donorFilter')?.addEventListener('change', renderDonors);
-document.getElementById('completedSearch')?.addEventListener('input', () => renderCampaigns('completed'));
-document.getElementById('completedType')?.addEventListener('change', () => renderCampaigns('completed'));
-document.getElementById('upcomingSearch')?.addEventListener('input', () => renderCampaigns('upcoming'));
-document.getElementById('upcomingType')?.addEventListener('change', () => renderCampaigns('upcoming'));
+  document.getElementById('brandLink')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    setActiveSection('organizations');
+  });
 
-document.addEventListener('click', (event) => {
-  const trigger = event.target.closest('[data-detail-kind]');
-  if(!trigger) return;
-  const kind = trigger.dataset.detailKind;
-  if(kind === 'donor'){
-    const donorId = Number.parseInt(trigger.dataset.detailId, 10);
-    if(!donorId){
+  document.getElementById('profileTrigger')?.addEventListener('click', toggleProfileMenu);
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+  document.getElementById('subnav')?.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-subsection]');
+    if (!button) return;
+    setActiveSubsection(button.dataset.subsection);
+  });
+
+  toolbar?.addEventListener('input', (event) => {
+    const input = event.target.closest('[data-search-input]');
+    if (!input) return;
+    state.searchTerms[state.activeSection] = input.value;
+    scheduleSearchLoad(state.activeSection);
+  });
+
+  toolbar?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-action="clear-search"]');
+    if (!button) return;
+    state.searchTerms[state.activeSection] = '';
+    const input = toolbar.querySelector('[data-search-input]');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    updateToolbarMeta();
+    loadActiveList();
+  });
+
+  confirmBackdrop?.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest('[data-action]');
+    if (button?.dataset.action === 'confirm-cancel') {
+      closeConfirmDialog(false);
       return;
     }
-    const donor = adminState.donors.find((item) => Number(item.user_id) === donorId);
-    openDetailModal('donor', donor || { user_id: donorId });
+    if (button?.dataset.action === 'confirm-accept') {
+      closeConfirmDialog(true);
+      return;
+    }
+    if (event.target === confirmBackdrop) {
+      closeConfirmDialog(false);
+    }
+  });
+
+  document.getElementById('content')?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === 'open-detail') {
+      await openDetail(button.dataset.id);
+      return;
+    }
+    if (action === 'retry-list') {
+      loadActiveList();
+      return;
+    }
+    await handleDetailAction(action);
+  });
+
+  document.addEventListener('click', (event) => {
+    const shell = document.getElementById('profileShell');
+    if (shell && !shell.contains(event.target)) {
+      ensureProfileMenuClosed();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      if (state.confirmDialog.open) {
+        closeConfirmDialog(false);
+        return;
+      }
+      if (state.viewMode === 'detail') {
+        backToList();
+        return;
+      }
+      ensureProfileMenuClosed();
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    const next = String(location.hash || '').replace('#', '').trim().toLowerCase();
+    if (SECTION_CONFIG[next]) {
+      setActiveSection(next);
+    }
+  });
+}
+
+function bootstrap() {
+  state.user = getStoredUser();
+  if (!state.user) {
+    redirectToLogin();
     return;
   }
 
-  const item = decodeDetailData(trigger.dataset.detailData);
-  if(item){
-    openDetailModal(kind, item);
-  }
-});
-
-document.addEventListener('click', (event) => {
-  const shell = document.getElementById('profileShell');
-  if(shell && !shell.contains(event.target)){
-    closeProfileMenu();
-  }
-});
-
-document.addEventListener('keydown', (event) => {
-  if(event.key === 'Escape'){
-    closeProfileMenu();
-    closeDetailModal();
-  }
-});
-
-if(!adminRefreshTimer){
-  adminRefreshTimer = window.setInterval(() => {
-    if(document.visibilityState === 'visible'){
-      loadAdminData();
-    }
-  }, 60000);
+  document.getElementById('profileName').textContent = state.user.fullName || state.user.full_name || 'Admin';
+  document.getElementById('profileInitial').textContent = initialForName(state.user.fullName || state.user.full_name || state.user.email || 'A');
+  attachEvents();
+  renderContent();
+  loadActiveList();
 }
 
-setActiveTab('organizations');
-loadAdminData();
+bootstrap();
 </script>
 </body>
 </html>
