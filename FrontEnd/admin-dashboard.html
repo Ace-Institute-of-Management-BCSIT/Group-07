@@ -100,6 +100,7 @@ button{cursor:pointer}
 }
 .page-head h1{
   font-family:var(--ff-head);font-size:2.25rem;line-height:1.1;margin-bottom:8px;
+  opacity:0;pointer-events:none;
 }
 .notice{
   min-width:280px;max-width:520px;
@@ -393,7 +394,7 @@ button{cursor:pointer}
 <main class="page">
   <section class="page-head">
     <div>
-      <h1 id="sectionTitle">Organizations</h1>
+      <h1 id="sectionTitle" aria-hidden="true">Organizations</h1>
     </div>
     <div class="notice info" id="notice" hidden></div>
   </section>
@@ -1017,7 +1018,7 @@ function renderOrganizationDetail(detail) {
   const name = detail.orgName || detail.name || 'Organization';
   const verificationDocLink = detail.verification_document_file ? `<a href="${escapeHtml(detail.verification_document_file)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.verification_document_name || 'View document')}</a>` : escapeHtml(detail.verification_document_name || '');
   const additionalDocsLink = detail.verification_documents ? `<a href="${escapeHtml(detail.verification_documents)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.verification_documents_name || 'View document')}</a>` : escapeHtml(detail.verification_documents_name || '');
-  const buildingPhotoLink = detail.building_photo ? `<a href="${escapeHtml(detail.building_photo)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.building_photo_name || 'View photo')}</a>` : escapeHtml(detail.building_photo_name || '');
+  const buildingPhotoLink = detail.building_photo ? `<a href="${escapeHtml(detail.building_photo)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.building_photo_name || 'View image')}</a>` : escapeHtml(detail.building_photo_name || '');
 
   const sections = [
     renderDetailSection('Registration information', [
@@ -1039,11 +1040,6 @@ function renderOrganizationDetail(detail) {
     ]),
   ].filter(Boolean).join('');
 
-  const media = [];
-  if (detail.building_photo) media.push(renderPreviewCard(detail.building_photo, detail.building_photo_name || 'Building photo', 'Building photo'));
-  if (detail.verification_document_file) media.push(renderPreviewCard(detail.verification_document_file, detail.verification_document_name || 'Verification document', 'Verification document'));
-  if (detail.verification_documents) media.push(renderPreviewCard(detail.verification_documents, detail.verification_documents_name || 'Additional documents', 'Additional documents'));
-
   return `
     <div class="detail-shell">
       <div class="detail-head">
@@ -1054,7 +1050,6 @@ function renderOrganizationDetail(detail) {
           </div>
         </div>
       </div>
-      ${media.length ? `<div class="preview-grid">${media.join('')}</div>` : ''}
       <div class="detail-body">${sections}</div>
       <div class="detail-footer">
         <div class="detail-actions">
@@ -1070,6 +1065,7 @@ function renderDonorDetail(detail) {
   const status = normalizeDonorStatus(detail.verification_status);
   const isVerified = status === 'Verified';
   const name = detail.fullName || detail.full_name || 'Donor';
+  const bloodVerificationDocumentLink = detail.blood_verification_document_file ? `<a href="${escapeHtml(detail.blood_verification_document_file)}" target="_blank" rel="noopener noreferrer">${escapeHtml(detail.blood_verification_document_name || 'View document')}</a>` : escapeHtml(detail.blood_verification_document_name || '');
   const sections = [
     renderDetailSection('Registration information', [
       renderField('Full name', name),
@@ -1089,13 +1085,12 @@ function renderDonorDetail(detail) {
     ]),
     renderDetailSection('Verification documents', [
       renderField('Document type', detail.blood_verification_document_type),
-      renderField('Document name', detail.blood_verification_document_name),
+      renderField('Document name', bloodVerificationDocumentLink, false, true),
     ]),
   ].filter(Boolean).join('');
 
   const media = [];
   if (detail.profile_picture || detail.profile_image_data) media.push(renderPreviewCard(detail.profile_picture || detail.profile_image_data, detail.profile_picture_name || detail.profile_image_name || 'Profile picture', 'Profile picture'));
-  if (detail.blood_verification_document_file) media.push(renderPreviewCard(detail.blood_verification_document_file, detail.blood_verification_document_name || 'Verification document', 'Verification document'));
 
   return `
     <div class="detail-shell">

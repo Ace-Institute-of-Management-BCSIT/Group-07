@@ -91,6 +91,15 @@ async function ensureDatabaseColumns() {
     `);
   } catch (e) {}
   try {
+    const [campaignBloodGroupColumns] = await pool.query(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'blood_drive_listings' AND COLUMN_NAME = 'blood_group_needed'`
+    );
+    if (!campaignBloodGroupColumns.length) {
+      await pool.query("ALTER TABLE blood_drive_listings ADD COLUMN blood_group_needed ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL AFTER image_url");
+    }
+  } catch (e) {}
+  try {
     await query(`ALTER TABLE donation_history ADD COLUMN campaign_id INT NULL AFTER request_id`);
   } catch (e) {}
   try {
@@ -789,6 +798,7 @@ function parseCampaignBloodRequirements(rawRequirements, { requireAtLeastOne = t
 function mapCampaignRow(row, reqMap = {}) {
   const bloodReqs = reqMap[row.event_id] || row.bloodRequirements || [];
   const totalUnitsRequired = bloodReqs.reduce((sum, r) => sum + Number(r.unitsRequired || 0), 0);
+  const bloodGroupNeeded = row.blood_group_needed || row.bloodGroupNeeded || bloodReqs[0]?.bloodGroup || null;
   return {
     id: row.event_id,
     title: row.title,
@@ -801,6 +811,8 @@ function mapCampaignRow(row, reqMap = {}) {
     type: row.event_type,
     status: row.campaign_status || row.status || 'active',
     img: row.image_url,
+    bloodGroupNeeded,
+    blood_group_needed: bloodGroupNeeded,
     bloodRequirements: bloodReqs,
     totalUnitsRequired: totalUnitsRequired,
     spots: totalUnitsRequired || row.spots_available || 0,
@@ -1733,7 +1745,11 @@ app.post('/api/org/campaigns', async (req, res) => {
   const location = String(req.body.location || '').trim();
   const eventType = String(req.body.eventType || 'Drive').trim();
   const imageUrl = String(req.body.imageUrl || req.body.imageData || '').trim();
-  const bloodGroupNeeded = String(req.body.bloodGroupNeeded || '').trim() || null;
+  const hasBloodRequirements = Object.prototype.hasOwnProperty.call(req.body, 'bloodRequirements');
+  const rawRequirements = hasBloodRequirements && Array.isArray(req.body.bloodRequirements)
+    ? req.body.bloodRequirements
+    : [];
+  const fallbackBloodGroup = String(req.body.bloodGroupNeeded || '').trim().toUpperCase();
 
   if (!email || !title || !eventDate || !timeRange || !location || !imageUrl) {
     return res.status(400).json({ message: 'Title, date, time, location, and campaign image are required.' });
@@ -1743,7 +1759,22 @@ app.post('/api/org/campaigns', async (req, res) => {
     return res.status(400).json({ message: 'Campaign type must be Drive, Camp, or Emergency.' });
   }
 
-  // No spots limit: allow unlimited applicants. Frontend will not send spotsTotal.
+  let bloodRequirements = [];
+  if (hasBloodRequirements) {
+    const parsedRequirements = parseCampaignBloodRequirements(rawRequirements);
+    if (parsedRequirements.error) {
+      return res.status(400).json({ message: parsedRequirements.error });
+    }
+    bloodRequirements = parsedRequirements.requirements;
+  } else if (VALID_CAMPAIGN_BLOOD_GROUPS.includes(fallbackBloodGroup)) {
+    bloodRequirements = [{ bloodGroup: fallbackBloodGroup, unitsRequired: 1 }];
+  }
+
+  if (!bloodRequirements.length) {
+    return res.status(400).json({ message: 'Please select at least one blood group requirement with a minimum of 1 unit.' });
+  }
+
+  const bloodGroupNeeded = bloodRequirements[0]?.bloodGroup || fallbackBloodGroup || null;
 
   try {
     const orgRows = await query(
@@ -1782,6 +1813,16 @@ app.post('/api/org/campaigns', async (req, res) => {
       ]
     );
 
+    for (const reqItem of bloodRequirements) {
+      await query(
+        `INSERT INTO campaign_blood_requirements (event_id, blood_group, units_required)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE units_required = VALUES(units_required)`,
+        [insertResult.insertId, reqItem.bloodGroup, reqItem.unitsRequired]
+      );
+    }
+
+    const reqMap = { [insertResult.insertId]: bloodRequirements };
     const rows = await query(
       `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
               bl.time_range, bl.location, bl.distance_km, bl.spots_total,
@@ -1833,10 +1874,54 @@ app.post('/api/org/campaigns', async (req, res) => {
 
     res.status(201).json({
       message: 'Campaign created successfully. All registered donors have been notified!',
-      campaign: mapCampaignRow(rows[0]),
+      campaign: mapCampaignRow(rows[0], reqMap),
     });
   } catch (error) {
     console.error('Campaign creation failed:', error);
+    sendDbError(res, error);
+  }
+});
+
+app.get('/api/org/campaigns', async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email query parameter is required.' });
+  }
+
+  try {
+    const orgRows = await query(
+      `SELECT o.org_id, o.org_name
+       FROM users u
+       INNER JOIN organizations o ON o.user_id = u.user_id
+       WHERE LOWER(u.email) = ? AND u.role = 'org'
+       LIMIT 1`,
+      [email]
+    );
+
+    if (!orgRows.length) {
+      return res.status(404).json({ message: 'Organization account not found.' });
+    }
+
+    const rows = await query(
+      `SELECT bl.event_id, bl.org_id, o.org_name, bl.title, bl.event_date,
+              bl.time_range, bl.location, bl.distance_km, bl.spots_total,
+              bl.spots_available, bl.event_type, bl.status AS campaign_status,
+              bl.blood_group_needed, bl.image_url
+       FROM blood_drive_listings bl
+       INNER JOIN organizations o ON o.org_id = bl.org_id
+       WHERE bl.org_id = ?
+       ORDER BY bl.event_date DESC, bl.event_id DESC`,
+      [orgRows[0].org_id]
+    );
+
+    const reqMap = await getCampaignBloodRequirementsMap(rows.map((row) => row.event_id));
+
+    res.json({
+      orgName: orgRows[0].org_name,
+      data: rows.map((row) => mapCampaignRow(row, reqMap)),
+    });
+  } catch (error) {
     sendDbError(res, error);
   }
 });
@@ -2017,7 +2102,7 @@ app.put('/api/org/campaigns/:eventId', async (req, res) => {
     }
 
     const campaignRows = await query(
-      `SELECT event_id, title, event_type, event_date, time_range, location, status
+      `SELECT event_id, title, event_type, event_date, time_range, location, status, blood_group_needed
        FROM blood_drive_listings
        WHERE event_id = ? AND org_id = ?
        LIMIT 1`,
@@ -2034,6 +2119,7 @@ app.put('/api/org/campaigns/:eventId', async (req, res) => {
     const eventDate = String(req.body.eventDate || currentCampaign.event_date || '').trim();
     const time = String(req.body.time || currentCampaign.time_range || '').trim();
     const location = String(req.body.location || currentCampaign.location || '').trim();
+    const currentBloodGroupNeeded = String(currentCampaign.blood_group_needed || '').trim().toUpperCase() || null;
 
     if (!title || !eventDate || !location) {
       return res.status(400).json({ message: 'Campaign name, date, and location are required.' });
@@ -2053,12 +2139,13 @@ app.put('/api/org/campaigns/:eventId', async (req, res) => {
     }
 
     const status = isCompleted ? 'completed' : currentCampaign.status || 'active';
+    const bloodGroupNeeded = bloodRequirements ? (bloodRequirements[0]?.bloodGroup || null) : currentBloodGroupNeeded;
 
     const result = await query(
       `UPDATE blood_drive_listings 
-       SET title = ?, event_type = ?, event_date = ?, time_range = ?, location = ?, status = ?
+       SET title = ?, event_type = ?, event_date = ?, time_range = ?, location = ?, status = ?, blood_group_needed = ?
        WHERE event_id = ? AND org_id = ?`,
-      [title, type, eventDate, time || '', location, status, eventId, organization.org_id]
+      [title, type, eventDate, time || '', location, status, bloodGroupNeeded, eventId, organization.org_id]
     );
 
     if (!result.affectedRows) {
